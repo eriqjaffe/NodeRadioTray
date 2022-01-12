@@ -1,0 +1,16 @@
+{
+  "name": "noderadiotray",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "audic-forked": "^0.1.0",
+    "electron": "^16.0.7"
+  }
+}
