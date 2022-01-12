@@ -15,7 +15,7 @@ const createTray = () => {
         click: async() => {
             audic.destroy();
             audic = new Audic("https://ais-sa3.cdnstream1.com/2606_128.aac")
-            audic = new Audic("E:\\rock\\A\\A Giant Dog\\Toy\\03. Bendover.mp3")
+            //audic = new Audic("E:\\rock\\A\\A Giant Dog\\Toy\\03. Bendover.mp3")
             await audic.play();
             tray.setToolTip(audic.src)
         }
