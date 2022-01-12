@@ -7,8 +7,10 @@ var player = null;
 
 var audic = new Audic("");
 
+var icon = process.platform === "win32" ? './images/icons8_radio_tower_34495e.ico' : './images/icons8_radio_tower_34495e.png'
+
 const createTray = () => {
-  tray = new Tray('./images/icons8_radio_tower_34495e.ico')
+  tray = new Tray(icon)
   contextMenu = Menu.buildFromTemplate([
     { 
         label: 'Bagel Radio', 
