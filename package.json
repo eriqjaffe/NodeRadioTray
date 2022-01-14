@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "audic-forked": "^0.1.0",
+    "bassaudio-updated": "^2.1.0",
     "electron": "^16.0.7"
   }
 }
