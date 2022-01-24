@@ -12,7 +12,21 @@ let tray = null
 var genreList = [];
 loadBookmarks();
 
-var icon = process.platform === "win32" ? './images/icons8_radio_tower_34495e.ico' : './images/icons8_radio_tower_34495e.png'
+var icon = null;
+switch (process.platform) {
+  case "win32":
+    icon = './images/tower_playing.ico'
+    break;
+  case "darwin":
+    icon = './images/tower_playing_mac.png'
+    break;
+  case "linux":
+    icon = './images/tower_playing.png'
+    break;
+  default:
+    icon = './images/tower_playing.png'
+    break;
+}
 
 var cards = basslib.getDevices();
 var cardsMenu = [];
