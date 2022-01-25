@@ -10,6 +10,7 @@
     <bookmark name="Covers" url="http://somafm.com/covers.pls" img="" />
   </group>
   <group name="Classical" img="">
+	<bookmark name="WFMT" url="https://wfmt.streamguys1.com/main-mp3" img="" />
     <bookmark name="CINEMIX" url="http://cinemix.us/cine.asx" img="" />
     <bookmark name="Classic FM" url="http://media-ice.musicradio.com/ClassicFMMP3.m3u" img="" />
     <bookmark name="KDFC" url="http://provisioning.streamtheworld.com/pls/KDFCFM.pls" img="" />
