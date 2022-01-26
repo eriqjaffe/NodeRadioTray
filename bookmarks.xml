@@ -1,6 +1,7 @@
 <bookmarks>
   <group name="Test" img="">
     <bookmark name="flac test" url="http://mscp2.live-streams.nl:8100/flac.flac" img="" />
+    <bookmark name="ogg vorbis test" url="http://stream-tx3.radioparadise.com/rp_192.ogg" img="" />
   </group>
   <group name="Chill" img="">
     <bookmark name="Beat Blender" url="http://somafm.com/beatblender.pls" img="" />

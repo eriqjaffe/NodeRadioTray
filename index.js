@@ -16,7 +16,7 @@ if (pluginsLoadResults === false) {
   console.log("Error loading plugins: " + basslib.BASS_ErrorGetCode());
   //process.exit();
 } else {
-  console.log("Plugins loaded");
+  console.log(pluginsLoadResults);
 }
 
 let tray = null
