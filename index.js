@@ -11,6 +11,13 @@ var outputDevice = -1;
 const store = new Store()
 
 basslib.EnableTags(true);
+pluginsLoadResults = basslib.LoadAllPlugins();
+if (pluginsLoadResults === false) {
+  console.log("Error loading plugins: " + basslib.BASS_ErrorGetCode());
+  //process.exit();
+} else {
+  console.log("Plugins loaded");
+}
 
 let tray = null
 
@@ -250,6 +257,8 @@ function loadBookmarks() {
 
 function playStream(streamName, url) {
   basslib.BASS_Free();
+  basslib.BASS_SetConfig(15, 0);
+  basslib.BASS_SetConfig(21, 1);
   var init = basslib.BASS_Init(
     outputDevice,
     44100,

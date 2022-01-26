@@ -1,4 +1,7 @@
 <bookmarks>
+  <group name="Test" img="">
+    <bookmark name="flac test" url="http://mscp2.live-streams.nl:8100/flac.flac" img="" />
+  </group>
   <group name="Chill" img="">
     <bookmark name="Beat Blender" url="http://somafm.com/beatblender.pls" img="" />
     <bookmark name="Groove Salad" url="http://somafm.com/groovesalad.pls" img="" />
@@ -53,8 +56,8 @@
     <bookmark name="Scott Shannon's True Oldies Channel" url="http://peta-source.live365cdn.com/b92108_128mp3" img="" />
   </group>
   <group name="Pop / Rock" img="">
-    <bookmark name="BAGeL Radio" url="https://ais-sa3.cdnstream1.com/2606_128.mp3" img="262660_237380536291258_653027_n.jpg" />
-    <bookmark name="Indie Pop Rocks!" url="https://ice2.somafm.com/indiepop-128-mp3" img="" />
+    <bookmark name="BAGeL Radio" url="https://ais-sa3.cdnstream1.com/2606_128.aac" img="262660_237380536291258_653027_n.jpg" />
+    <bookmark name="Indie Pop Rocks!" url="https://somafm.com/indiepop130.pls" img="" />
     <bookmark name="KCRW" url="https://kcrw.streamguys1.com/kcrw_192k_mp3_on_air" img="" />
     <bookmark name="KEXP" url="http://live-mp3-128.kexp.org:8000/listen.pls" img="" />
     <bookmark name="MOD Pizza" url="http://stream.customchannels.net/mod_pizza_96.mp3" img="150px-MOD_Pizza_logo.svg.png" />

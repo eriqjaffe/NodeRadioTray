@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "bassaudio-updated": "^2.1.0",
+    "bassaudio-updated": "^2.1.1",
     "ctray": "^1.0.0",
     "electron": "^16.0.7",
     "electron-store": "^8.0.1",

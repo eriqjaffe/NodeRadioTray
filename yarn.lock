@@ -150,10 +150,10 @@ balanced-match@^1.0.0:
   resolved "https://registry.yarnpkg.com/balanced-match/-/balanced-match-1.0.2.tgz#e83e3a7e3f300b34cb9d87f615fa0cbf357690ee"
   integrity sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==
 
-bassaudio-updated@^2.1.0:
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/bassaudio-updated/-/bassaudio-updated-2.1.0.tgz#4aa7f0c34a892a3ef6f73e6538b40cb8aef7bd7c"
-  integrity sha512-uIFTKIao/yaFxcUOFoCOtNMZj1O1iP4uwvrSRHjfyDW5cijTxObiXjKn4mvNDxVJZDtPdebRflVENyUyRnqO5w==
+bassaudio-updated@^2.1.1:
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/bassaudio-updated/-/bassaudio-updated-2.1.1.tgz#b87b5a95e6b5aa55cb0dfe920713c6eb325bdab5"
+  integrity sha512-16xAdYz/BkxgE9j7wVfgUxPTPrNwwIhawiHkWuYa9ZGjgbUZE4UDk1jrrrxTO8ZpI2J7k+15jtkjB6XmUhPskg==
   dependencies:
     chalk "^4.1.0"
     ffi-napi "^3.1.0"
