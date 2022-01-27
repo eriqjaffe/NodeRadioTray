@@ -1,28 +1,34 @@
 const { app, Menu, Tray, nativeImage, ipcRenderer } = require('electron')
-const xml2js = require('xml2js');
 const fs = require('fs');
-const parser = new xml2js.Parser({ attrkey: "ATTR" });
 const Store = require("electron-store");
 const bass = require("bassaudio-updated");
 var basslib = new bass();
 var stream = null;
 var outputDevice = -1;
+var _tagInfo = null;
 
 const store = new Store()
 
 basslib.EnableTags(true);
+var tagsEnabled = basslib.TagsEnabled();
+if (tagsEnabled) {
+  console.log("Tags enabled");
+} else {
+  console.log("Tags disabled");
+  //process.exit();
+}
+
 pluginsLoadResults = basslib.LoadAllPlugins();
 if (pluginsLoadResults === false) {
   console.log("Error loading plugins: " + basslib.BASS_ErrorGetCode());
   //process.exit();
 } else {
-  console.log(pluginsLoadResults);
+  //console.log(pluginsLoadResults);
 }
 
 let tray = null
 
-var genreList = [];
-loadBookmarks();
+var genreList = loadBookmarks();
 
 var idleIcon = null;
 var playingIcon = null;
@@ -219,45 +225,49 @@ app.whenReady().then(() => {
 app.on('activate', () => {})
 
 function loadBookmarks() {
-  let xml_string = fs.readFileSync("bookmarks.xml", "utf8")
-
-  parser.parseString(xml_string, function(error, result) {
-    if(error === null) {
-      for (var i = 0; i < result.bookmarks.group.length; i++) {
-        var bookmarks = [];
-        for (var j = 0; j < result.bookmarks.group[i].bookmark.length; j++) {
-          const tmp = []
-          tmp.name = result.bookmarks.group[i].bookmark[j].ATTR.name 
-          tmp.url = result.bookmarks.group[i].bookmark[j].ATTR.url
-          tmp.img = result.bookmarks.group[i].bookmark[j].ATTR.img
-          try {
-            if (tmp.img.length > 0 && fs.existsSync('./images/'+tmp.img)) {
-              var stationIcon = nativeImage.createFromPath(__dirname+'/images/'+tmp.img).resize({width:16})
-            } else {
-              var stationIcon = './images/icons8-radio-2.png'
-            }
-          } catch(err) {
-            console.error(err)
-          }
-          var bookmark = {
-            label: result.bookmarks.group[i].bookmark[j].ATTR.name,
-            click: async => { playStream(tmp.name, tmp.url)},
-            icon: stationIcon
-          }
-          bookmarks.push(bookmark)
+  var stationMenu = [];
+  let bookmarks = JSON.parse(fs.readFileSync('bookmarks.json'));
+  for(var i = 0; i < bookmarks.length; i++) {
+    var obj = bookmarks[i];
+    var stations = []
+    for (var j = 0; j < obj.bookmark.length; j++) {
+      const tmp = []
+      tmp.name = obj.bookmark[j].name
+      tmp.url = obj.bookmark[j].url
+      tmp.img = obj.bookmark[j].img
+      try {
+        if (tmp.img.length > 0 && fs.existsSync('./images/'+tmp.img)) {
+          var stationIcon = nativeImage.createFromPath(__dirname+'/images/'+tmp.img).resize({width:16})
+        } else {
+          var stationIcon = './images/icons8-radio-2.png'
         }
-        var genre = {
-          label: result.bookmarks.group[i].ATTR.name,
-          submenu: bookmarks,
-          icon: './images/icons8-radio-2.png'
-        }
-        genreList.push(genre)
+      } catch (error) {
+        console.error(error)
       }
+      var station = {
+        label: tmp.name,
+        click: async => { playStream(tmp.name, tmp.url)},
+        icon: stationIcon
+      }
+      stations.push(station)
     }
-    else {
-        console.log(error);
+    try {
+      if (obj.img.length > 0 && fs.existsSync('./images/'+obj.img)) {
+        var genreIcon = nativeImage.createFromPath(__dirname+'/images/'+obj.img).resize({width:16})
+      } else {
+        var genreIcon = './images/icons8-radio-2.png'
+      }
+    } catch (error) {
+      var genreIcon = './images/icons8-radio-2.png'
     }
-  });
+    var genre = {
+      label: obj.name,
+      submenu: stations,
+      icon: genreIcon
+    }
+    stationMenu.push(genre)
+  }
+  return stationMenu;
 }
 
 function playStream(streamName, url) {
@@ -287,7 +297,6 @@ function playStream(streamName, url) {
       toggleButtons(true);
       store.set('lastStation',streamName);
       store.set('lastURL',url)
-      //var tags = new basslib.TAGS_Read(stream);
       var artist = basslib.TAGS_Read(
         stream,
         basslib.BASS_TAGS_FORMAT_CONDITION.IF_X_THEN_A_IF_NOT_THEN_B(
@@ -301,25 +310,7 @@ function playStream(streamName, url) {
   } catch (error) {
     console.log(error)
   }
-}
-
-function changeOutput(output) {
-  console.log(stream)
-  console.log(output)
-  console.log(outputDevice)
-  //basslib.BASS_Free();
-  var result = basslib.BASS_ChannelIsActive(stream);
-  if (result == basslib.BASS_ChannelIsActiveAttribs.BASS_ACTIVE_PLAYING) {
-    console.log("channel is playing");
-    var success = basslib.BASS_ChannelSetDevice(stream, output);
-    if (!success) {
-      console.log("error init sound card:" + basslib.BASS_ErrorGetCode);
-    }
-  } else {
-    console.log("not playing")
-  }
-  
-}
+}5
 
 function toggleButtons(state) {
   playButton = contextMenu.getMenuItemById('playButton')
