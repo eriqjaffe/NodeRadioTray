@@ -24,19 +24,24 @@ let tray = null
 var genreList = [];
 loadBookmarks();
 
-var icon = null;
+var idleIcon = null;
+var playingIcon = null;
 switch (process.platform) {
   case "win32":
-    icon = './images/tower_playing.ico'
+    idleIcon = './images/tower_idle.ico'
+    playingIcon = './images/tower_playing.ico'
     break;
   case "darwin":
-    icon = './images/tower_playing_mac.png'
+    idleIcon = './images/tower_idle_mac.png'
+    playingIcon = './images/tower_playing_mac.png'
     break;
   case "linux":
-    icon = './images/tower_playing.png'
+    idleIcon = './images/tower_idle.png'
+    playingIcon = './images/tower_playing.png'
     break;
   default:
-    icon = './images/tower_playing.png'
+    idleIcon = './images/tower_idle.png'
+    playingIcon = './images/tower_playing.png'
     break;
 }
 
@@ -197,7 +202,7 @@ const menuTemplate = [
 ]
 
 const createTray = () => {
-  tray = new Tray(icon)
+  tray = new Tray(idleIcon)
   
   contextMenu = Menu.buildFromTemplate(menuTemplate)
   tray.setToolTip('NodeRadioTray')
@@ -323,21 +328,23 @@ function toggleButtons(state) {
   previousButton = contextMenu.getMenuItemById('previousButton')
   if (state == true) {
     playButton.enabled = false;
-    //playButton.icon = './images/icons8-Play_disabled.png'
+    //playButton.setImage('./images/icons8-Play_disabled.png');
     stopButton.enabled = true;
-    //stopButton.icon = './images/icons8-Stop.png'
+    //stopButton.setImage('./images/icons8-Stop.png');
     nextButton.enabled = true;
-    //nextButton.icon = './images/icons8-Fast Foward.png'
+    //nextButton.setImage('./images/icons8-Fast Foward.png');
     previousButton.enabled = true;
-    //nextButton.icon = './images/icons8-Rewind.png'
+    //nextButton.setImage('./images/icons8-Rewind.png');
+    tray.setImage(playingIcon);
   } else {
     playButton.enabled = true;
-    //playButton.icon = './images/icons8-Play.png'
+    //playButton.setImage('./images/icons8-Play.png');
     stopButton.enabled = false;
-    //stopButton.icon = './images/icons8-Stop_disabled.png'
+    //stopButton.setImage('./images/icons8-Stop_disabled.png');
     nextButton.enabled = false;
-    //nextButton.icon = './images/icons8-Fast Foward_disabled.png'
+    //nextButton.setImage('./images/icons8-Fast Foward_disabled.png');
     previousButton.enabled = false;
-    //nextButton.icon = './images/icons8-Rewind_disabled.png'
+    //nextButton.setImage('./images/icons8-Rewind_disabled.png');
+    tray.setImage(idleIcon);
   }
 }
