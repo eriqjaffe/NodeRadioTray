@@ -11,9 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "bassaudio-updated": "^2.1.1",
-    "ctray": "^1.0.0",
     "electron": "^16.0.7",
-    "electron-store": "^8.0.1",
-    "xml2js": "^0.4.23"
+    "electron-store": "^8.0.1"
   }
 }
