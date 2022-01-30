@@ -6,6 +6,7 @@ var basslib = new bass();
 var stream = null;
 var outputDevice = -1;
 var _tagInfo = null;
+var defaultOuputChecked = false;
 
 const store = new Store()
 
@@ -32,24 +33,41 @@ var genreList = loadBookmarks();
 
 var idleIcon = null;
 var playingIcon = null;
-switch (process.platform) {
+var darkIcon = (store.get("darkicon") == true) ? true : false;
+setIconTheme(darkIcon);
+/* switch (process.platform) {
   case "win32":
-    idleIcon = './images/tower_idle.ico'
-    playingIcon = './images/tower_playing.ico'
+    if (darkIcon = true) {
+      idleIcon = './images/idle.ico'
+      playingIcon = './images/playing.ico'
+    } else {
+      idleIcon = './images/idle_white.ico'
+      playingIcon = './images/playing_white.ico'
+    }
     break;
   case "darwin":
-    idleIcon = './images/tower_idle_mac.png'
-    playingIcon = './images/tower_playing_mac.png'
+    idleIcon = './images/idleTemplate.png'
+    playingIcon = './images/playingTemplate.png'
     break;
   case "linux":
-    idleIcon = './images/tower_idle.png'
-    playingIcon = './images/tower_playing.png'
+    if (darkIcon = true) {
+      idleIcon = './images/idle.png'
+      playingIcon = './images/playing.png'
+    } else {
+      idleIcon = './images/idle_white.png'
+      playingIcon = './images/playing_white.png'
+    }
     break;
   default:
-    idleIcon = './images/tower_idle.png'
-    playingIcon = './images/tower_playing.png'
+    if (darkIcon = true) {
+      idleIcon = './images/idle.png'
+      playingIcon = './images/playing.png'
+    } else {
+      idleIcon = './images/idle_white.png'
+      playingIcon = './images/playing_white.png'
+    }
     break;
-}
+} */
 
 var cards = basslib.getDevices();
 var cardsMenu = [];
@@ -99,6 +117,17 @@ const prefsTemplate = [
     label: 'Dark tray icon',
     click: e => {
       store.set("darkicon", e.checked)
+      setIconTheme(e.checked)
+      console.log(idleIcon)
+      if (stream == null) {
+        tray.setImage(idleIcon)
+      } else {
+        if (basslib.BASS_ChannelIsActive(stream)) {
+          tray.setImage(playingIcon)
+        } else {
+          tray.setImage(idleIcon)
+        }
+      }
     },
     type: "checkbox",
     checked: (store.get("darkicon") == true) ? true : false
@@ -111,7 +140,7 @@ const prefsTemplate = [
     type: "checkbox",
     checked: (store.get("autoplay") == true) ? true : false
   },
-  {
+  /* {
     label: 'Enable activity logging',
     click: e => {
       store.set("logging", e.checked)
@@ -137,11 +166,11 @@ const prefsTemplate = [
   },
   {
     label: 'Autostart with operating system'
-  }//,
-  //{
-  //  label: 'Enable sleep timer',
-  //  click: openAboutWindow()
-  //}
+  }
+  {
+    label: 'Enable sleep timer',
+    click: openAboutWindow()
+  } */
 ]
 
 const menuTemplate = [
@@ -337,5 +366,41 @@ function toggleButtons(state) {
     previousButton.enabled = false;
     //nextButton.setImage('./images/icons8-Rewind_disabled.png');
     tray.setImage(idleIcon);
+  }
+}
+
+function setIconTheme(checked) {
+  switch (process.platform) {
+    case "darwin":
+      idleIcon = './images/idleTemplate.png'
+      playingIcon = './images/playingTemplate.png'
+      break;
+    case "win32":
+      if (checked) {
+        idleIcon = './images/idle.ico'
+        playingIcon = './images/playing.ico'
+      } else {
+        idleIcon = './images/idle_white.ico'
+        playingIcon = './images/playing_white.ico'
+      }
+      break;
+    case "linux":
+      if (checked) {
+        idleIcon = './images/idle.png'
+        playingIcon = './images/playing.png'
+      } else {
+        idleIcon = './images/idle_white.png'
+        playingIcon = './images/playing_white.png'
+      }
+      break;
+    default:
+      if (checked) {
+        idleIcon = './images/idle.png'
+        playingIcon = './images/playing.png'
+      } else {
+        idleIcon = './images/idle_white.png'
+        playingIcon = './images/playing_white.png'
+      }
+      break;
   }
 }
