@@ -370,14 +370,9 @@ function playStream(streamName, url) {
         title: 'NodeRadioTray',
         message: 'Playback Error: ' + basslib.BASS_ErrorGetCode(),
         icon: path.join(__dirname, '/images/playing.png'),
-        //icon: path.join(__dirname, '/images/playing.png'),
         sound: true,
         wait: false,
         timeout: 3
-      },
-      function (err, response, metadata) {
-        // Response is response from notification
-        // Metadata contains activationType, activationAt, deliveredAt
       });
   }
   try {
@@ -388,14 +383,9 @@ function playStream(streamName, url) {
           title: 'NodeRadioTray',
           message: 'Playback Error: ' + basslib.BASS_ErrorGetCode(),
           icon: path.join(__dirname, '/images/playing.png'),
-          //icon: path.join(__dirname, '/images/playing.png'),
-          sound: true,
+         sound: true,
           wait: false,
           timeout: 3
-        },
-        function (err, response, metadata) {
-          // Response is response from notification
-          // Metadata contains activationType, activationAt, deliveredAt
         });
     } else {
       toggleButtons(true);
@@ -415,14 +405,9 @@ function playStream(streamName, url) {
             title: 'NodeRadioTray',
             message: 'Now Playing: '+streamName,
             icon: path.join(__dirname, '/images/playing.png'),
-            //icon: path.join(__dirname, '/images/playing.png'),
             sound: true,
             wait: false,
             timeout: 3
-          },
-          function (err, response, metadata) {
-            // Response is response from notification
-            // Metadata contains activationType, activationAt, deliveredAt
           });
       }
       tray.setToolTip("NodeRadioTray\r\n"+streamName)
