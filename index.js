@@ -146,7 +146,7 @@ var menuTemplate = [
       playStream(store.get('lastStation'), store.get('lastURL'));
     },
     icon: './images/icons8-Play.png',
-    visible: true
+    visible: process.platform == "linux" ? true : false
   },
   {
     label: "Stop",
@@ -156,19 +156,19 @@ var menuTemplate = [
       toggleButtons(false);
     },
     icon: './images/icons8-Stop.png',
-    visible: false
+    visible: process.platform == "linux" ? true : false
   },
   {
     label: "Next Station",
     id: "nextButton",
     icon: './images/icons8-Fast Forward.png',
-    visible: false
+    visible: process.platform == "linux" ? true : false
   },
   {
     label: "Previous Station",
     id: "previousButton",
     icon: './images/icons8-Rewind.png',
-    visible: false
+    visible: process.platform == "linux" ? true : false
   },
   { 
     type: 'separator'
