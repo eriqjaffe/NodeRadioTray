@@ -14,6 +14,7 @@ var idleIcon = null;
 var playingIcon = null;
 var _tagInfo = null;
 let tray = null;
+var currentOutputDevice = -1;
 
 const watcher = chokidar.watch([], { awaitWriteFinish: true })
   .on('change', function(path) {
@@ -146,7 +147,7 @@ var menuTemplate = [
       playStream(store.get('lastStation'), store.get('lastURL'));
     },
     icon: './images/icons8-Play.png',
-    visible: process.platform == "linux" ? true : false
+    visible: true
   },
   {
     label: "Stop",
@@ -250,6 +251,7 @@ function loadBookmarks() {
 
 function reloadBookmarks() {
   menuTemplate[0].submenu = loadBookmarks();
+  menuTemplate[3].submenu = loadCards();
   contextMenu = Menu.buildFromTemplate(menuTemplate)
   tray.setContextMenu(contextMenu)
 }
@@ -274,12 +276,15 @@ function loadCards() {
     cardsArr.typeNetwork = cards[i].typeNetwork,
     cardsArr.typeSPDIF = cards[i].typeSPDIF,
     cardsArr.typeSpeakers = cards[i].typeSpeakers */
+    console.log ("current output: "+currentOutputDevice)
     var card = {
       label: cards[i].name + " " ,
       type: 'radio',
-      checked: cards[i].IsDefault ? true : false,
+      checked: cardsArr.id == currentOutputDevice ? true : false,
       click: async => { 
         outputDevice = parseInt(cardsArr.id);
+        currentOutputDevice = parseInt(cardsArr.id);
+        console.log(currentOutputDevice + " chosen")
         basslib.BASS_Free();
         var init = basslib.BASS_Init(
           outputDevice,
