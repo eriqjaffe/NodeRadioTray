@@ -3,6 +3,9 @@ const fs = require('fs');
 const Store = require("electron-store");
 const bass = require("bassaudio-updated");
 const chokidar = require("chokidar");
+const prompt = require('electron-prompt');
+const notifier = require('node-notifier');
+const path = require('path');
 const basslib = new bass();
 const firstSoundCard = (process.platform == "win32") ? 2 : 1;
 const userData = app.getPath('userData');
@@ -43,6 +46,10 @@ if (pluginsLoadResults === false) {
 var darkIcon = (store.get("darkicon") == true) ? true : false;
 setIconTheme(darkIcon);
 
+if (!store.has("notifications")) {
+  store.set("notifications", true)
+} 
+
 const prefsTemplate = [
   {
     label: 'Dark tray icon',
@@ -71,6 +78,14 @@ const prefsTemplate = [
     type: "checkbox",
     checked: (store.get("autoplay") == true) ? true : false
   },
+  { 
+    label: 'Show notifications',
+    click: e => {
+      store.set("notifications", e.checked)
+    },
+    type: "checkbox",
+    checked: (store.get("notifications") == true) ? true : false
+  }
   /* {
     label: 'Enable activity logging',
     click: e => {
@@ -137,6 +152,12 @@ var menuTemplate = [
     },
     icon: './images/icons8-synchronize.png'
   },
+  { label: 'Play Custom URL',
+    click: e => {
+      playCustomURL();
+    },
+    icon: './images/icons8-add-link.png'
+  },
   { 
     type: 'separator'
   },
@@ -159,18 +180,24 @@ var menuTemplate = [
     icon: './images/icons8-Stop.png',
     visible: process.platform == "linux" ? true : false
   },
-  {
+  /*{
     label: "Next Station",
     id: "nextButton",
+    click: async() => {
+      nextStation();
+    },
     icon: './images/icons8-Fast Forward.png',
     visible: process.platform == "linux" ? true : false
-  },
-  {
+  },*/
+  /*{
     label: "Previous Station",
     id: "previousButton",
+    click: async() => {
+      previousStation();
+    },
     icon: './images/icons8-Rewind.png',
     visible: process.platform == "linux" ? true : false
-  },
+  },*/
   { 
     type: 'separator'
   },
@@ -197,6 +224,8 @@ app.whenReady().then(() => {
 })
 
 app.on('activate', () => {})
+
+app.on('window-all-closed', () => {})
 
 function loadBookmarks() {
   var stationMenu = [];
@@ -315,19 +344,59 @@ function playStream(streamName, url) {
     basslib.BASS_Initflags.BASS_DEVICE_STEREO
   );
   if (init === false) {
-    console.log("error at BASS_Init: " + basslib.BASS_ErrorGetCode());
-    process.exit();
+    notifier.notify(
+      {
+        title: 'NodeRadioTray',
+        message: 'BASS Init Error: ' + basslib.BASS_ErrorGetCode(),
+        icon: path.join(__dirname, '/images/playing.png'),
+        //icon: path.join(__dirname, '/images/playing.png'),
+        sound: true,
+        wait: false,
+        timeout: 3
+      },
+      function (err, response, metadata) {
+        // Response is response from notification
+        // Metadata contains activationType, activationAt, deliveredAt
+      });
+    //process.exit();
   } else {
     console.log("BASS: Bass initialized on device " + outputDevice);
   }
   stream = basslib.BASS_StreamCreateURL(url, 0, 0, null, null);
   if (basslib.BASS_ErrorGetCode() != basslib.BASS_ErrorCode.BASS_OK) {
     console.log("BASS: Error opening file:" + basslib.BASS_ErrorGetCode());
+    notifier.notify(
+      {
+        title: 'NodeRadioTray',
+        message: 'Playback Error: ' + basslib.BASS_ErrorGetCode(),
+        icon: path.join(__dirname, '/images/playing.png'),
+        //icon: path.join(__dirname, '/images/playing.png'),
+        sound: true,
+        wait: false,
+        timeout: 3
+      },
+      function (err, response, metadata) {
+        // Response is response from notification
+        // Metadata contains activationType, activationAt, deliveredAt
+      });
   }
   try {
     var success = basslib.BASS_ChannelPlay(stream, 0);
     if (!success) {
-      console.log("BASS: Error playing file:" + basslib.BASS_ErrorGetCode());
+      notifier.notify(
+        {
+          title: 'NodeRadioTray',
+          message: 'Playback Error: ' + basslib.BASS_ErrorGetCode(),
+          icon: path.join(__dirname, '/images/playing.png'),
+          //icon: path.join(__dirname, '/images/playing.png'),
+          sound: true,
+          wait: false,
+          timeout: 3
+        },
+        function (err, response, metadata) {
+          // Response is response from notification
+          // Metadata contains activationType, activationAt, deliveredAt
+        });
     } else {
       toggleButtons(true);
       store.set('lastStation',streamName);
@@ -340,6 +409,22 @@ function playStream(streamName, url) {
           "No artist"
         )
       );
+      if (store.get("notifications") == true) {
+        notifier.notify(
+          {
+            title: 'NodeRadioTray',
+            message: 'Now Playing: '+streamName,
+            icon: path.join(__dirname, '/images/playing.png'),
+            //icon: path.join(__dirname, '/images/playing.png'),
+            sound: true,
+            wait: false,
+            timeout: 3
+          },
+          function (err, response, metadata) {
+            // Response is response from notification
+            // Metadata contains activationType, activationAt, deliveredAt
+          });
+      }
       tray.setToolTip("NodeRadioTray\r\n"+streamName)
     }
   } catch (error) {
@@ -350,19 +435,19 @@ function playStream(streamName, url) {
 function toggleButtons(state) {
   playButton = contextMenu.getMenuItemById('playButton')
   stopButton = contextMenu.getMenuItemById('stopButton')
-  nextButton = contextMenu.getMenuItemById('nextButton')
-  previousButton = contextMenu.getMenuItemById('previousButton')
+  //nextButton = contextMenu.getMenuItemById('nextButton')
+  //previousButton = contextMenu.getMenuItemById('previousButton')
   if (state == true) {
     playButton.visible = false;
     stopButton.visible = true;
-    nextButton.visible = true;
-    previousButton.visible = true;
+    //nextButton.visible = true;
+    //previousButton.visible = true;
     tray.setImage(playingIcon);
   } else {
     playButton.visible = true;
     stopButton.visible = false;
-    nextButton.visible = false;
-    previousButton.visible = false;
+    //nextButton.visible = false;
+    //previousButton.visible = false;
     tray.setImage(idleIcon);
   }
 }
@@ -425,4 +510,25 @@ function initializeWatcher() {
     .on('ready', function() {
       console.log('Watching bookmark file:', watcher.getWatched());
   });
+}
+
+function playCustomURL() {
+  prompt({
+    title: 'Custom URL',
+    label: 'URL:',
+    value: '',
+    inputAttrs: {
+        type: 'url'
+    },
+    type: 'input',
+    icon: './images/playing.png'
+  })
+  .then((r) => {
+      if(r === null) {
+          console.log('user cancelled');
+      } else {
+          playStream('Custom URL', r);
+      }
+  })
+  .catch(console.error);
 }
