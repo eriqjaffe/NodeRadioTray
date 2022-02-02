@@ -73,7 +73,8 @@ const prefsTemplate = [
       }
     },
     type: "checkbox",
-    checked: (store.get("darkicon") == true) ? true : false
+    checked: (store.get("darkicon") == true) ? true : false,
+    visible: (process.platform == "darwin") ? false : true
   },
   {
     label: 'Auto play last station on startup',
@@ -314,20 +315,7 @@ function loadCards() {
   for (var i = firstSoundCard; i < cards.length; i++) {
     const cardsArr = [];
     cardsArr.id = i;
-  /*   cardsArr.name = cards[i].name;
-    cardsArr.typeDigital = cards[i].typeDigital,
-    cardsArr.typeDisplayPort = cards[i].typeDisplayPort,
-    cardsArr.typeHandset = cards[i].typeHandset,
-    cardsArr.typeHdmi = cards[i].typeHdmi,
-    cardsArr.typeHeadPhones = cards[i].typeHeadPhones,
-    cardsArr.typeHeadSet = cards[i].typeHeadSet,
-    cardsArr.typeLine = cards[i].typeLine,
-    cardsArr.typeMask = cards[i].typeMask,
-    cardsArr.typeMicrophone = cards[i].typeMicrophone,
-    cardsArr.typeNetwork = cards[i].typeNetwork,
-    cardsArr.typeSPDIF = cards[i].typeSPDIF,
-    cardsArr.typeSpeakers = cards[i].typeSpeakers */
-    console.log ("current output: "+currentOutputDevice)
+    cardsArr.name = cards[i].name;
     var card = {
       label: cards[i].name + " " ,
       type: 'radio',
