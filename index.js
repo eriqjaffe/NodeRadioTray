@@ -7,26 +7,27 @@ const prompt = require('electron-prompt');
 const notifier = require('node-notifier');
 const path = require('path');
 const AutoLaunch = require('auto-launch');
-const basslib = new bass();
-const firstSoundCard = (process.platform == "win32") ? 2 : 1;
+
 const userData = app.getPath('userData');
+const firstSoundCard = (process.platform == "win32") ? 2 : 1;
+const basslib = new bass();
 const store = new Store()
-var AutoLauncher = new AutoLaunch({
-  name: 'NodeRadioTray'
-});
+const AutoLauncher = new AutoLaunch(
+  {name: 'NodeRadioTray'}
+);
+const watcher = chokidar.watch([], { awaitWriteFinish: true })
+  .on('change', function(path) {
+    reloadBookmarks();
+})
+
 var stream = null;
 var outputDevice = -1;
 var contextMenu = null;
 var idleIcon = null;
 var playingIcon = null;
 var _tagInfo = null;
-let tray = null;
 var currentOutputDevice = -1;
-
-const watcher = chokidar.watch([], { awaitWriteFinish: true })
-  .on('change', function(path) {
-    reloadBookmarks();
-})
+var tray = null;
 
 initializeWatcher();
 
