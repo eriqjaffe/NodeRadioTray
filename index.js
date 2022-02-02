@@ -1,4 +1,4 @@
-const { app, Menu, Tray, nativeImage, shell } = require('electron')
+const { app, Menu, Tray, nativeImage, shell, globalShortcut } = require('electron')
 const fs = require('fs');
 const Store = require("electron-store");
 const bass = require("bassaudio-updated");
@@ -6,10 +6,14 @@ const chokidar = require("chokidar");
 const prompt = require('electron-prompt');
 const notifier = require('node-notifier');
 const path = require('path');
+const AutoLaunch = require('auto-launch');
 const basslib = new bass();
 const firstSoundCard = (process.platform == "win32") ? 2 : 1;
 const userData = app.getPath('userData');
 const store = new Store()
+var AutoLauncher = new AutoLaunch({
+  name: 'NodeRadioTray'
+});
 var stream = null;
 var outputDevice = -1;
 var contextMenu = null;
@@ -85,6 +89,29 @@ const prefsTemplate = [
     },
     type: "checkbox",
     checked: (store.get("notifications") == true) ? true : false
+  },
+  {
+    label: 'Use multimedia keys',
+    click: e => {
+      store.set("mmkeys", e.checked)
+      toggleMMKeys(e.checked)
+    },
+    type: "checkbox",
+    checked: (store.get("mmkeys") == true) ? true : false
+  },
+  {
+    label: 'Autostart with operating system',
+    click: e => {
+      if (e.checked) {
+        store.set("autorun", true)
+        AutoLauncher.enable()
+      } else {
+        store.set("autorun", false)
+        AutoLauncher.disable()
+      }
+    },
+    type: "checkbox",
+    checked: (store.get("autorun") == true) ? true : false
   }
   /* {
     label: 'Enable activity logging',
@@ -94,14 +121,6 @@ const prefsTemplate = [
     type: "checkbox",
     checked: (store.get("logging") == true) ? true : false
   }, */
-  /* {
-    label: 'Use multimedia keys',
-    click: e => {
-      store.set("mmkeys", e.checked)
-    },
-    type: "checkbox",
-    checked: (store.get("mmkeys") == true) ? true : false
-  }, */
   /* { 
     label: 'Back/forward keys switch stations',
     click: e => {
@@ -109,9 +128,6 @@ const prefsTemplate = [
     },
     type: "checkbox",
     checked: (store.get("stationswitcher") == true) ? true : false
-  }, */
-  /* {
-    label: 'Autostart with operating system'
   }, */
   /* {
     label: 'Enable sleep timer',
@@ -225,6 +241,7 @@ app.whenReady().then(() => {
   if (store.get("autoplay") == true) {
     playStream(store.get('lastStation'), store.get('lastURL'));
   }
+  toggleMMKeys(store.get("mmkeys"))
 })
 
 app.on('activate', () => {})
@@ -517,4 +534,24 @@ function playCustomURL() {
       }
   })
   .catch(console.error);
+}
+
+function toggleMMKeys(state) {
+  if (state == true) {
+    globalShortcut.register('MediaPlayPause', () => {
+      console.log("play pause button")
+      if (basslib.BASS_ChannelIsActive(stream)) {
+        basslib.BASS_Free();
+        toggleButtons(false);
+      } else {
+        playStream(store.get('lastStation'), store.get('lastURL'));
+      }
+    })
+    globalShortcut.register('MediaStop', () => {
+      basslib.BASS_Free();
+      toggleButtons(false);
+    })
+  } else {
+    globalShortcut.unregisterAll()
+  }
 }
