@@ -214,6 +214,10 @@ const createTray = () => {
   contextMenu = Menu.buildFromTemplate(menuTemplate)
   tray.setToolTip('NodeRadioTray')
   tray.setContextMenu(contextMenu)
+
+  tray.on("click", function(e) {
+    tray.popUpContextMenu(contextMenu)
+  })
 }
 
 app.whenReady().then(() => {
@@ -336,6 +340,8 @@ function loadCards() {
 
 function playStream(streamName, url) {
   basslib.BASS_Free();
+  tray.setToolTip("NodeRadioTray");
+  tray.setImage(idleIcon);
   basslib.BASS_SetConfig(15, 0);
   basslib.BASS_SetConfig(21, 1);
   var init = basslib.BASS_Init(
@@ -378,7 +384,7 @@ function playStream(streamName, url) {
           title: 'NodeRadioTray',
           message: 'Playback Error: ' + basslib.BASS_ErrorGetCode(),
           icon: path.join(__dirname, '/images/playing.png'),
-         sound: true,
+          sound: true,
           wait: false,
           timeout: 3
         });
