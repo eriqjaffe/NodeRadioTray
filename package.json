@@ -16,6 +16,7 @@
     "electron": "^16.0.7",
     "electron-prompt": "^1.7.0",
     "electron-store": "^8.0.1",
-    "node-notifier": "^10.0.0"
+    "node-notifier": "^10.0.0",
+    "regedit": "^5.0.0"
   }
 }
