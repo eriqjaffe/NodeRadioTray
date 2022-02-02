@@ -1,6 +1,5 @@
 const { app, Menu, Tray, nativeImage, shell, globalShortcut } = require('electron')
 const fs = require('fs');
-const os = require('os');
 const Store = require("electron-store");
 const bass = require("bassaudio-updated");
 const chokidar = require("chokidar");
@@ -8,7 +7,6 @@ const prompt = require('electron-prompt');
 const notifier = require('node-notifier');
 const path = require('path');
 const AutoLaunch = require('auto-launch');
-const regedit = require('regedit');
 
 const userData = app.getPath('userData');
 const firstSoundCard = (process.platform == "win32") ? 2 : 1;
@@ -31,7 +29,7 @@ var _tagInfo = null;
 var currentOutputDevice = -1;
 var tray = null;
 
-
+initializeWatcher();
 
 basslib.EnableTags(true);
 var tagsEnabled = basslib.TagsEnabled();
