@@ -63,6 +63,8 @@ if (process.platform == "win32") {
   } else {
     setIconTheme((store.get("darkicon") == true) ? true : false);
   }
+} else {
+  setIconTheme((store.get("darkicon") == true) ? true : false)
 }
 
 if (!store.has("notifications")) {
