@@ -48,22 +48,8 @@ if (pluginsLoadResults === false) {
   console.log("BASS: Plugins loaded");
 }
 
-if (process.platform == "win32") {
-  if (store.get("darkicon", "not set") == "not set") {
-    var theme = null;
-    regedit.list('HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize', function(err, result) {
-      if (result['HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize'].values['AppsUseLightTheme'].value == 1) {
-        setIconTheme(false);
-      } else {
-        setIconTheme(true);
-      }
-    })
-  } else {
-    setIconTheme((store.get("darkicon") == true) ? true : false);
-  }
-} else {
-  setIconTheme((store.get("darkicon") == true) ? true : false)
-}
+var darkIcon = (store.get("darkicon") == true) ? true : false;
+setIconTheme(darkIcon);
 
 if (!store.has("notifications")) {
   store.set("notifications", true)
@@ -87,7 +73,8 @@ const prefsTemplate = [
       }
     },
     type: "checkbox",
-    checked: (store.get("darkicon") == true) ? true : false
+    checked: (store.get("darkicon") == true) ? true : false,
+    visible: (process.platform == "darwin" ? false : true)
   },
   {
     label: 'Auto play last station on startup',
