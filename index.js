@@ -7,6 +7,7 @@ const prompt = require('electron-prompt');
 const notifier = require('node-notifier');
 const path = require('path');
 const AutoLaunch = require('auto-launch');
+const ref = require("ref-napi");
 
 const userData = app.getPath('userData');
 const firstSoundCard = (process.platform == "win32") ? 2 : 1;
@@ -196,6 +197,24 @@ var menuTemplate = [
       toggleButtons(false);
     },
     icon: './images/icons8-Stop.png',
+    visible: process.platform == "linux" ? true : false
+  },
+  {
+    label: "Volume Up",
+    id: "volumeUp",
+    click: async() => {
+      changeVolume("up")
+    },
+    icon: './images/icons8-thick-arrow-pointing-up-16.png',
+    visible: process.platform == "linux" ? true : false
+  },
+  {
+    label: "Volume Down",
+    id: "volumeDown",
+    click: async() => {
+      changeVolume("down")
+    },
+    icon: './images/icons8-thick-arrow-pointing-down-16.png',
     visible: process.platform == "linux" ? true : false
   },
   /*{
@@ -396,6 +415,11 @@ function playStream(streamName, url) {
       });
   }
   try {
+    basslib.BASS_ChannelSetAttribute(
+      stream,
+      basslib.BASS_ChannelAttributes.BASS_ATTRIB_VOL,
+      store.get("lastVolume", 0.5)
+    );
     var success = basslib.BASS_ChannelPlay(stream, 0);
     if (!success) {
       notifier.notify(
@@ -438,19 +462,25 @@ function playStream(streamName, url) {
 }
 
 function toggleButtons(state) {
-  playButton = contextMenu.getMenuItemById('playButton')
-  stopButton = contextMenu.getMenuItemById('stopButton')
+  playButton = contextMenu.getMenuItemById('playButton');
+  stopButton = contextMenu.getMenuItemById('stopButton');
+  volUpButton = contextMenu.getMenuItemById('volumeUp');
+  volDownButton = contextMenu.getMenuItemById('volumeDown')
   //nextButton = contextMenu.getMenuItemById('nextButton')
   //previousButton = contextMenu.getMenuItemById('previousButton')
   if (state == true) {
     playButton.visible = false;
     stopButton.visible = true;
+    volUpButton.visible = true;
+    volDownButton.visible = true;
     //nextButton.visible = true;
     //previousButton.visible = true;
     tray.setImage(playingIcon);
   } else {
     playButton.visible = true;
     stopButton.visible = false;
+    volUpButton.visible = false;
+    volDownButton.visible = false;
     //nextButton.visible = false;
     //previousButton.visible = false;
     tray.setImage(idleIcon);
@@ -553,7 +583,58 @@ function toggleMMKeys(state) {
       basslib.BASS_Free();
       toggleButtons(false);
     })
+    globalShortcut.register('Ctrl+VolumeUp', () => {
+      changeVolume("up")
+    })
+    globalShortcut.register('Ctrl+VolumeDown', () => {
+      changeVolume("down")
+    })
   } else {
     globalShortcut.unregisterAll()
   }
+}
+
+function changeVolume(direction) {
+  var volume = ref.alloc("float");
+  basslib.BASS_ChannelGetAttribute(
+    stream,
+    basslib.BASS_ChannelAttributes.BASS_ATTRIB_VOL,
+    volume
+  );
+  console.log(ref.deref(volume));
+  if (direction == "up" && ref.deref(volume) <= 1) {
+    basslib.BASS_ChannelSetAttribute(
+      stream,
+      basslib.BASS_ChannelAttributes.BASS_ATTRIB_VOL,
+      ref.deref(volume) + 0.1
+    );
+  }
+  if (direction == "up" && ref.deref(volume) <= 1 && ref.deref(volume) >= 0.9) {
+    basslib.BASS_ChannelSetAttribute(
+      stream,
+      basslib.BASS_ChannelAttributes.BASS_ATTRIB_VOL,
+      ref.deref(volume) + 0.1
+    );
+  }
+  if (direction == "down" && ref.deref(volume) >= 0) {
+    basslib.BASS_ChannelSetAttribute(
+      stream,
+      basslib.BASS_ChannelAttributes.BASS_ATTRIB_VOL,
+      ref.deref(volume) - 0.1
+    );
+  }
+  if (direction == "down" && ref.deref(volume) <= 0.1) {
+    basslib.BASS_ChannelSetAttribute(
+      stream,
+      basslib.BASS_ChannelAttributes.BASS_ATTRIB_VOL,
+      0
+    );
+  }
+  basslib.BASS_ChannelGetAttribute(
+    stream,
+    basslib.BASS_ChannelAttributes.BASS_ATTRIB_VOL,
+    volume
+  );
+  console.log(ref.deref(volume));
+  store.set("lastVolume", ref.deref(volume))
 }
