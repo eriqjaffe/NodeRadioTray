@@ -484,6 +484,7 @@ function toggleButtons(state) {
     //nextButton.visible = false;
     //previousButton.visible = false;
     tray.setImage(idleIcon);
+    tray.setToolTip("NodeRadioTray");
   }
 }
 
