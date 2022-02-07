@@ -13,10 +13,38 @@
     "auto-launch": "^5.0.5",
     "bassaudio-updated": "^2.1.1",
     "chokidar": "^3.5.3",
-    "electron": "^16.0.7",
     "electron-prompt": "^1.7.0",
     "electron-store": "^8.0.1",
     "node-notifier": "^10.0.0",
     "ref-napi": "^3.0.3"
+  },
+  "devDependencies": {
+    "electron": "^16.0.7",
+    "electron-builder": "^22.14.13"
+  },
+  "build": {
+    "appId": "com.hypermodules.testapp",
+    "mac": {
+      "category": "public.app-category.utilities",
+      "target": [
+        "zip",
+        "dmg"
+      ]
+    },
+    "portable": {
+      "artifactName": "${productName}_${version}_portable.${ext}"
+    },
+    "nsis": {
+      "perMachine": true,
+      "artifactName": "${productName}_${version}_setup.${ext}"
+    },
+    "linux": {
+      "target": [
+        "deb",
+        "rpm",
+        "tar.gz"
+      ]
+    },
+    "deb": {}
   }
 }
