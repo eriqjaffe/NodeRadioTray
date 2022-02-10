@@ -2,6 +2,10 @@
 
 A simple cross-platform internet radio player using node.js and Electron that reads URLs from a JSON file.  Based on RadioTray.
 
+## Prerequisites
+- node.js, at least version v16.14.0.  Older versions may work but haven't been tried.
+- yarn package manager
+
 ## How to install and run
 
 ```
