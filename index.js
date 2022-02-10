@@ -1,7 +1,7 @@
 const { app, Menu, Tray, nativeImage, shell, globalShortcut } = require('electron')
 const fs = require('fs');
 const Store = require("electron-store");
-const bass = require("bassaudio-updated");
+const bass = require("@eriqjaffe/bassaudio-updated");
 const chokidar = require("chokidar");
 const prompt = require('electron-prompt');
 const notifier = require('node-notifier');
