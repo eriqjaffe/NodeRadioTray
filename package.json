@@ -15,6 +15,7 @@
     "chokidar": "^3.5.3",
     "electron-prompt": "^1.7.0",
     "electron-store": "^8.0.1",
+    "node-gyp": "^8.4.1",
     "node-notifier": "^10.0.0",
     "ref-napi": "^3.0.3"
   },
@@ -23,6 +24,7 @@
     "electron-builder": "^22.14.13"
   },
   "build": {
+    "asar": false,
     "appId": "com.hypermodules.testapp",
     "mac": {
       "category": "public.app-category.utilities",

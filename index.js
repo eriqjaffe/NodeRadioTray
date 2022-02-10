@@ -21,6 +21,11 @@ const watcher = chokidar.watch([], { awaitWriteFinish: true })
     reloadBookmarks();
 })
 
+/* var kernel32 = ffi.Library("kernel32", {
+  'SetDllDirectoryA': ["bool", ["string"]]
+  })
+  kernel32.SetDllDirectoryA(path.join(__dirname, 'lib/win64')); */
+
 var stream = null;
 var outputDevice = -1;
 var contextMenu = null;
@@ -28,6 +33,7 @@ var idleIcon = null;
 var playingIcon = null;
 var _tagInfo = null;
 var currentOutputDevice = -1;
+
 var tray = null;
 
 initializeWatcher();
@@ -101,8 +107,8 @@ const prefsTemplate = [
     },
     type: "checkbox",
     checked: (store.get("mmkeys") == true) ? true : false
-  },
-  {
+  }
+  /* {
     label: 'Autostart with operating system',
     click: e => {
       if (e.checked) {
@@ -115,7 +121,7 @@ const prefsTemplate = [
     },
     type: "checkbox",
     checked: (store.get("autorun") == true) ? true : false
-  }
+  } */
   /* {
     label: 'Enable activity logging',
     click: e => {
@@ -143,39 +149,39 @@ var menuTemplate = [
     id: 'stationMenu',
     label: 'Stations',
     submenu: loadBookmarks(),
-    icon: './images/icons8-radio-2.png'
+    icon: path.join(__dirname, 'images/icons8-radio-2.png')
   },
   { 
     type: 'separator'
   },
   { label: 'Preferences',
     submenu: prefsTemplate,
-    icon: './images/icons8-settings.png'
+    icon: path.join(__dirname, 'images/icons8-settings.png')
   },
   { 
     label: 'Audio Output',
     submenu: loadCards(),
-    icon: './images/icons8-audio.png'
+    icon: path.join(__dirname, '/images/icons8-audio.png')
   },
   { 
     label: 'Edit Stations',
     click: e => {
       shell.openPath(userData+'/bookmarks.json');
     },
-    icon: './images/icons8-maintenance.png'
+    icon: path.join(__dirname, '/images/icons8-maintenance.png')
   },
   { 
     label: 'Reload Stations',
     click: e => {
       reloadBookmarks();
     },
-    icon: './images/icons8-synchronize.png'
+    icon: path.join(__dirname, '/images/icons8-synchronize.png')
   },
   { label: 'Play Custom URL',
     click: e => {
       playCustomURL();
     },
-    icon: './images/icons8-add-link.png'
+    icon: path.join(__dirname, '/images/icons8-add-link.png')
   },
   { 
     type: 'separator'
@@ -186,7 +192,7 @@ var menuTemplate = [
     click: async() => {
       playStream(store.get('lastStation'), store.get('lastURL'));
     },
-    icon: './images/icons8-Play.png',
+    icon: path.join(__dirname, '/images/icons8-Play.png'),
     visible: true
   },
   {
@@ -196,7 +202,7 @@ var menuTemplate = [
       basslib.BASS_Free();
       toggleButtons(false);
     },
-    icon: './images/icons8-Stop.png',
+    icon: path.join(__dirname, '/images/icons8-Stop.png'),
     visible: process.platform == "linux" ? true : false
   },
   {
@@ -205,7 +211,7 @@ var menuTemplate = [
     click: async() => {
       changeVolume("up")
     },
-    icon: './images/icons8-thick-arrow-pointing-up-16.png',
+    icon: path.join(__dirname, '/images/icons8-thick-arrow-pointing-up-16.png'),
     visible: process.platform == "linux" ? true : false
   },
   {
@@ -214,7 +220,7 @@ var menuTemplate = [
     click: async() => {
       changeVolume("down")
     },
-    icon: './images/icons8-thick-arrow-pointing-down-16.png',
+    icon: path.join(__dirname, '/images/icons8-thick-arrow-pointing-down-16.png'),
     visible: process.platform == "linux" ? true : false
   },
   /*{
@@ -223,7 +229,7 @@ var menuTemplate = [
     click: async() => {
       nextStation();
     },
-    icon: './images/icons8-Fast Forward.png',
+    icon: path.join(__dirname, '/images/icons8-Fast Forward.png'),
     visible: process.platform == "linux" ? true : false
   },*/
   /*{
@@ -232,7 +238,7 @@ var menuTemplate = [
     click: async() => {
       previousStation();
     },
-    icon: './images/icons8-Rewind.png',
+    icon: path.join(__dirname, '/images/icons8-Rewind.png'),
     visible: process.platform == "linux" ? true : false
   },*/
   { 
@@ -241,7 +247,7 @@ var menuTemplate = [
   {
     label: "Exit",
     role: "quit",
-    icon: './images/icons8-cancel.png'
+    icon: path.join(__dirname, '/images/icons8-cancel.png')
   }
 ]
 
@@ -285,7 +291,7 @@ function loadBookmarks() {
           if (tmp.img.length > 0 && fs.existsSync(userData+'/images/'+tmp.img)) {
             var stationIcon = nativeImage.createFromPath(userData+'/images/'+tmp.img).resize({width:16})
           } else {
-            var stationIcon = './images/icons8-radio-2.png'
+            var stationIcon = path.join(__dirname, '/images/icons8-radio-2.png')
           }
         } catch (error) {
           console.error(error)
@@ -301,10 +307,10 @@ function loadBookmarks() {
         if (obj.img.length > 0 && fs.existsSync(userData+'/images/'+obj.img)) {
           var genreIcon = nativeImage.createFromPath(userData+'/images/'+obj.img).resize({width:16})
         } else {
-          var genreIcon = './images/icons8-radio-2.png'
+          var genreIcon = path.join(__dirname, '/images/icons8-radio-2.png')
         }
       } catch (error) {
-        var genreIcon = './images/icons8-radio-2.png'
+        var genreIcon = path.join(__dirname, '/images/icons8-radio-2.png')
       }
       var genre = {
         label: obj.name,
@@ -491,34 +497,34 @@ function toggleButtons(state) {
 function setIconTheme(checked) {
   switch (process.platform) {
     case "darwin":
-      idleIcon = './images/idleTemplate.png'
-      playingIcon = './images/playingTemplate.png'
+      idleIcon = path.join(__dirname, '/images/idleTemplate.png')
+      playingIcon = path.join(__dirname, '/images/playingTemplate.png')
       break;
     case "win32":
       if (checked) {
-        idleIcon = './images/idle.ico'
-        playingIcon = './images/playing.ico'
+        idleIcon = path.join(__dirname, '/images/idle.ico')
+        playingIcon = path.join(__dirname, '/images/playing.ico')
       } else {
-        idleIcon = './images/idle_white.ico'
-        playingIcon = './images/playing_white.ico'
+        idleIcon = path.join(__dirname, '/images/idle_white.ico')
+        playingIcon = path.join(__dirname, '/images/playing_white.ico')
       }
       break;
     case "linux":
       if (checked) {
-        idleIcon = './images/idle.png'
-        playingIcon = './images/playing.png'
+        idleIcon = path.join(__dirname, '/images/idle.png')
+        playingIcon = path.join(__dirname, '/images/playing.png')
       } else {
-        idleIcon = './images/idle_white.png'
-        playingIcon = './images/playing_white.png'
+        idleIcon = path.join(__dirname, '/images/idle_white.png')
+        playingIcon = path.join(__dirname, '/images/playing_white.png')
       }
       break;
     default:
       if (checked) {
-        idleIcon = './images/idle.png'
-        playingIcon = './images/playing.png'
+        idleIcon = path.join(__dirname, '/images/idle.png')
+        playingIcon = path.join(__dirname, '/images/playing.png')
       } else {
-        idleIcon = './images/idle_white.png'
-        playingIcon = './images/playing_white.png'
+        idleIcon = path.join(__dirname, '/images/idle_white.png')
+        playingIcon = path.join(__dirname, '/images/playing_white.png')
       }
       break;
   }
@@ -528,7 +534,7 @@ function initializeWatcher() {
   if (!fs.existsSync(userData+'/bookmarks.json')) {
     try {
       console.log("User bookmarks file not found, creating...")
-      fs.copyFileSync(__dirname+"/bookmarks.json", userData+'/bookmarks.json');
+      fs.copyFileSync(path.join(__dirname, '/bookmarks.json'), userData+'/bookmarks.json');
     } catch (error) {
       console.log(error)
     }
@@ -557,7 +563,7 @@ function playCustomURL() {
         type: 'url'
     },
     type: 'input',
-    icon: './images/playing.png'
+    icon: path.join(__dirname, 'images/playing.png')
   })
   .then((r) => {
       if(r === null) {
