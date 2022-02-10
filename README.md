@@ -26,7 +26,7 @@ npm start
   - ```Windows:  C:\Users\<user>\AppData\Roaming\noderadiotray```
   - ```macOS: /Users/<user>/Library/Application Support/noderadiotray```
   - ```Linux: /home/<user>/.config/noderadiotray```
-- Dark and light tray icons are included.  macOS will automatically adjust the icons based on whether the system is in Dark Mode or not, but Windows and Linux users have to choose the icon theme manually.
+- Dark and light tray icons are included.  macOS will automatically adjust the icons based on whether the system is in Dark Mode or not, but Windows and Linux users have to choose the icon theme manually. I have not yet figured out how to reliably auto-detect the appropriate color theme but it's on the to-do list.
 
 ## Known issues
 - The app will occasionally not check the right radio button for your audio output on startup, but subsequent output selections (including checking the button that's already checked) should work as expected.
