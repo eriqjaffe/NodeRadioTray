@@ -1,13 +1,17 @@
 {
   "name": "noderadiotray",
   "version": "1.0.0",
-  "description": "",
+  "description": "Radio Tray using Node JS",
   "main": "index.js",
   "scripts": {
     "start": "electron .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": {
+    "name": "Eriq Jaffe",
+    "email": "eriqjaffe@gmail.com",
+    "url": "https://github.com/eriqjaffe/noderadiotray"
+  },
   "license": "ISC",
   "dependencies": {
     "auto-launch": "^5.0.5",
