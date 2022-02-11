@@ -276,6 +276,10 @@ app.on('activate', () => {})
 
 app.on('window-all-closed', () => {})
 
+if (process.platform == "darwin") {
+  app.dock.hide()
+}
+
 function loadBookmarks() {
   var stationMenu = [];
   try {
