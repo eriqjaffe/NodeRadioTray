@@ -6,7 +6,7 @@
   "scripts": {
     "start": "electron .",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "pack:win64": "electron-packager . --out=dist --overwrite --platform=win32 --arch=x64 --icon=build/playing.ico",
+    "pack:win64": "electron-packager . --out=dist --overwrite --platform=win32 --arch=x64 --icon=build/icon.ico",
     "pack:linux64": "electron-packager . --out dist/ --overwrite --platform linux --arch x64 --icon=build/icon.png",
     "pack:arm": "electron-packager . --out dist/ --overwrite --platform linux --arch armv7l --icon=build/icon.png",
     "pack:darwin": "electron-packager . --out dist/ --overwrite --platform darwin --icon=build/icon.icns",
