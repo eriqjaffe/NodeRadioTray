@@ -1,3 +1,4 @@
+if(require('electron-squirrel-startup')) return;
 const { app, Menu, Tray, nativeImage, shell, globalShortcut } = require('electron')
 const fs = require('fs');
 const Store = require("electron-store");
