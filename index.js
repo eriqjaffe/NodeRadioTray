@@ -6,16 +6,16 @@ const chokidar = require("chokidar");
 const prompt = require('electron-prompt');
 const notifier = require('node-notifier');
 const path = require('path');
-const AutoLaunch = require('auto-launch');
+//const AutoLaunch = require('auto-launch');
 const ref = require("ref-napi");
 
 const userData = app.getPath('userData');
 const firstSoundCard = (process.platform == "win32") ? 2 : 1;
 const basslib = new bass();
 const store = new Store()
-const AutoLauncher = new AutoLaunch(
+/* const AutoLauncher = new AutoLaunch(
   {name: 'NodeRadioTray'}
-);
+); */
 const watcher = chokidar.watch([], { awaitWriteFinish: true })
   .on('change', function(path) {
     reloadBookmarks();
