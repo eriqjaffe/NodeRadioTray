@@ -10,12 +10,14 @@ A simple cross-platform internet radio player that reads URLs from a JSON file u
 
 ## How to install and run
 
+You can use one of the pre-compiled binaries in the [releases](https://github.com/eriqjaffe/NodeRadioTray/releases) page.  Or I suppose you can...
 ```
 git clone https://github.com/eriqjaffe/NodeRadioTray
 cd NodeRadioTray
 yarn
 npm start
 ```
+Note that the ```npm start``` method will cause the "Autostart with OS" option to not work properly.
 
 ## Usage notes
 
