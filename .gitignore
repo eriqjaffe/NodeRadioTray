@@ -130,4 +130,4 @@ dist
 .pnp.*
 
 # other
-# build_linux.sh
+.DS_Store
