@@ -4,10 +4,6 @@ A simple cross-platform internet radio player that reads URLs from a JSON file u
 
 ![Windows screenshot](https://i.imgur.com/HNKCfwm.png)![Linux screenshot](https://i.imgur.com/W9jLwMM.png)![macOS screenshot](https://i.imgur.com/1bYZex8.png)
 
-## Prerequisites
-- node.js, at least version v16.14.0.  Older versions may work but haven't been tried.
-- yarn package manager
-
 ## How to install and run
 
 You can use one of the pre-compiled binaries in the [releases](https://github.com/eriqjaffe/NodeRadioTray/releases) page.  Or I suppose you can...
