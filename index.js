@@ -1,5 +1,5 @@
 if(require('electron-squirrel-startup')) return;
-const { app, Menu, Tray, nativeImage, shell, globalShortcut } = require('electron')
+const { app, Menu, Tray, nativeImage, shell, globalShortcut, BrowserWindow, ipcMain } = require('electron')
 const fs = require('fs');
 const Store = require("electron-store");
 const bass = require("@eriqjaffe/bassaudio-updated");
@@ -30,7 +30,8 @@ var playingIcon = null;
 var _tagInfo = null;
 var currentOutputDevice = -1;
 
-var tray = null;
+let tray
+let browserWindow;
 
 initializeWatcher();
 
@@ -163,6 +164,13 @@ var menuTemplate = [
     label: 'Edit Stations',
     click: e => {
       shell.openPath(userData+'/bookmarks.json');
+    },
+    icon: path.join(__dirname, '/images/icons8-maintenance.png')
+  },
+  { 
+    label: 'Edit Stations (experimental)',
+    click: e => {
+      editBookmarksGui()
     },
     icon: path.join(__dirname, '/images/icons8-maintenance.png')
   },
@@ -331,6 +339,17 @@ function reloadBookmarks() {
   menuTemplate[3].submenu = loadCards();
   contextMenu = Menu.buildFromTemplate(menuTemplate)
   tray.setContextMenu(contextMenu)
+}
+
+function editBookmarksGui() {
+
+  browserWindow = new BrowserWindow({
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
+  })
+  browserWindow.loadFile('index.html');
 }
 
 function loadCards() {
@@ -645,3 +664,7 @@ function changeVolume(direction) {
   console.log(ref.deref(volume));
   store.set("lastVolume", ref.deref(volume))
 }
+
+ipcMain.on('test-ipc', (event, arg) => {
+  console.log("you loaded the html!!!")
+})
