@@ -26,9 +26,12 @@
 
       .footer {
         height: 25%;
+        width: 100%;
         background-color: #333; /* Change the background color as needed */
         color: #fff; /* Change the text color as needed */
         text-align: center; /* Center align text within the footer */
+        bottom: 0;
+        position: absolute;
       }
 
       #tree {
@@ -46,8 +49,27 @@
     <div class="main-body">
       <div id="tree"></div>
     </div>
-    <div class="footer">
-        <!-- Your footer content goes here -->
+    <div class="footer" id="footerDiv">
+      <div class="footerChild" id="editGroupDiv" style="display:none;">
+        <form id='editGroupForm'>
+        <label>Group Name:</label>
+        <input type='text' class='editField' name='groupName' id='groupName' value='' required><br>
+        <label>Group Icon:</label>
+        <input type='text' class='editField' name='groupIcon' id='groupIcon' value=''><br>
+        <input type='submit' id='editGroupSubmit' value='Submit'>
+        </form>
+      </div>
+      <div class="footerChild" id="editStationDiv" style="display:none;">
+        <form id='editStationForm'>
+        <label>Station Name:</label>
+        <input type='text' class='editField' name='stationName' id='stationName' value='' required><br>
+        <label>Station URL:</label>
+        <input type='url' class='editField' name='stationURL' id='stationURL' value='' required><br>
+        <label>Station Icon:</label>
+        <input type='text' class='editField' name='stationIcon' id='stationIcon' value=''><br>
+        <input type='submit' id='editStationSubmit' value='Submit'>
+        </form>
+      </div>
     </div>
     
   </body>
@@ -58,11 +80,40 @@
       $("#tree").fancytree({
         source: convertToFancytreeFormat(response),
         activate: function(event, data){
-          var node = data.node;
-          console.log(node)
+          $(".footerChild").css("display","none")
+          $(".editField").val("")
+          let node = data.node
+          if (node.type == "group") {
+            $("#groupName").val(node.title)
+            $("#groupIcon").val(node.data.img)
+            $("#editGroupDiv").css("display","inline-block")
+          } else {
+            $("#stationName").val(node.title)
+            $("#stationIcon").val(node.data.img)
+            $("#stationURL").val(node.data.url)
+            $("#editStationDiv").css("display","inline-block")
+          }
         }
       })
     })
+
+    $("#editGroupForm").on("submit",function(e) {
+      e.preventDefault()
+      let nodeToEdit = $("#tree").fancytree("getActiveNode")
+      nodeToEdit.setTitle($("#groupName").val())
+      nodeToEdit.data.img = $("#groupIcon").val()
+      nodeToEdit.parent.sortChildren(null, true)
+    })
+
+    $("#editStationForm").on("submit",function(e) {
+      e.preventDefault()
+      let nodeToEdit = $("#tree").fancytree("getActiveNode")
+      nodeToEdit.setTitle($("#stationName").val())
+      nodeToEdit.data.img = $("#stationIcon").val()
+      nodeToEdit.data.url = $("#stationURL").val()
+      nodeToEdit.parent.sortChildren(null, true)
+    })
+
 
     function convertToFancytreeFormat(data) {
       // Initialize an empty array to store the transformed data
