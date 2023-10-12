@@ -10,6 +10,7 @@ const path = require('path');
 const AutoLaunch = require('auto-launch');
 const ref = require("ref-napi");
 
+const isMac = process.platform === 'darwin'
 const userData = app.getPath('userData');
 const firstSoundCard = (process.platform == "win32") ? 2 : 1;
 const basslib = new bass();
@@ -58,6 +59,114 @@ setIconTheme(darkIcon);
 if (!store.has("notifications")) {
   store.set("notifications", true)
 } 
+
+const template = [
+  ...(isMac ? [{
+      label: app.name,
+      submenu: [
+      { role: 'about' },
+      { type: 'separator' },
+      { role: 'services' },
+      { type: 'separator' },
+      { role: 'hide' },
+      { role: 'hideOthers' },
+      { role: 'unhide' },
+      { type: 'separator' },
+      { role: 'quit' }
+      ]
+  }] : []),
+  {
+      label: 'File',
+      submenu: [
+/*           {
+          click: () => mainWindow.webContents.send('load','click'),
+          accelerator: isMac ? 'Cmd+L' : 'Control+L',
+          label: 'Load Font',
+      }, */
+      {
+          click: () => mainWindow.webContents.send('save','click'),
+          accelerator: isMac ? 'Cmd+S' : 'Control+S',
+          label: 'Save Logo',
+      },
+      {
+        click: () => mainWindow.webContents.send('import-image','click'),
+        accelerator: isMac ? 'Cmd+I' : 'Control+I',
+        label: 'Import Image',
+      },
+      isMac ? { role: 'close' } : { role: 'quit' }
+      ]
+  },
+  {
+      label: 'View',
+      submenu: [
+      { role: 'reload' },
+      { role: 'forceReload' },
+      { role: 'toggleDevTools' },
+      { type: 'separator' },
+      { role: 'resetZoom' },
+      { role: 'zoomIn' },
+      { role: 'zoomOut' },
+      { type: 'separator' },
+      { role: 'togglefullscreen' }
+      ]
+  },
+  {
+      label: 'Window',
+      submenu: [
+      { role: 'minimize' },
+      { role: 'zoom' },
+      ...(isMac ? [
+          { type: 'separator' },
+          { role: 'front' },
+          { type: 'separator' },
+          { role: 'window' }
+      ] : [
+          { role: 'close' }
+      ])
+      ]
+  },
+  {
+      role: 'help',
+      submenu: [
+      {
+          click: () => mainWindow.webContents.send('about','click'),
+              label: 'About the OOTP Logo Maker',
+      },
+      {
+          label: 'About OOTP Baseball',
+          click: async () => {    
+          await shell.openExternal('https://www.ootpdevelopments.com/out-of-the-park-baseball-home/')
+          }
+      },
+      {
+          label: 'About Node.js',
+          click: async () => {    
+          await shell.openExternal('https://nodejs.org/en/about/')
+          }
+      },
+      {
+          label: 'About Electron',
+          click: async () => {
+          await shell.openExternal('https://electronjs.org')
+          }
+      },
+      {
+          label: 'About Fabric.js',
+          click: async () => {
+          await shell.openExternal('http://fabricjs.com/')
+          }
+      },
+      {
+          label: 'View project on GitHub',
+          click: async () => {
+          await shell.openExternal('https://github.com/eriqjaffe/OOTP-Logo-Maker')
+          }
+      }
+      ]
+  }
+  ]
+  
+  const menu = Menu.buildFromTemplate(template)
 
 const prefsTemplate = [
   {
@@ -351,6 +460,7 @@ function editBookmarksGui() {
       contextIsolation: false
     }
   })
+  browserWindow.setMenu(menu)
   browserWindow.loadFile('index.html');
 }
 
