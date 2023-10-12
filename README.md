@@ -11,9 +11,9 @@ You can use one of the pre-compiled binaries in the [releases](https://github.co
 git clone https://github.com/eriqjaffe/NodeRadioTray
 cd NodeRadioTray
 yarn
-npm start
+yarn start
 ```
-Note that the ```npm start``` method will cause the "Autostart with OS" option to not work properly.
+Note that the ```yarn start``` method will cause the "Autostart with OS" option to not work properly.
 
 ## Usage notes
 
