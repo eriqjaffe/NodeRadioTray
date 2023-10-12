@@ -344,6 +344,8 @@ function reloadBookmarks() {
 function editBookmarksGui() {
 
   browserWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -666,5 +668,6 @@ function changeVolume(direction) {
 }
 
 ipcMain.on('test-ipc', (event, arg) => {
-  console.log("you loaded the html!!!")
+  let bookmarks = JSON.parse(fs.readFileSync(userData+'/bookmarks.json'));
+  event.sender.send('get-bookmarks', bookmarks)
 })

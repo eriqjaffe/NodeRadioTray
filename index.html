@@ -5,17 +5,118 @@
     <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
     <title>Hello World!</title>
     <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
+    <script type="text/javascript" src="./scripts/jquery-1.11.3.min.js"></script>
+    <script type="text/javascript" src="./scripts/jquery.fancytree-all-deps.min.js"></script>
+    <link href="./scripts/skin-win8-n/ui.fancytree.min.css" rel="stylesheet">
     <script>
         const { ipcRenderer } = require('electron');
     </script>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      .main-body {
+        height: 75%; /* 100% - 25% for the footer */
+        background-color: #f0f0f0; /* Change the background color as needed */
+        position: relative;
+      }
+
+      .footer {
+        height: 25%;
+        background-color: #333; /* Change the background color as needed */
+        color: #fff; /* Change the text color as needed */
+        text-align: center; /* Center align text within the footer */
+      }
+
+      #tree {
+        height: 100%; /* Set the tree's height to 100% of the parent's height */
+        overflow: auto;
+      }
+
+      ul.fancytree-container {
+        background-color: inherit;
+        border: none;
+      }
+    </style>
   </head>
   <body>
-    <h1>Hello World!</h1>
-    We are using Node.js <span id="node-version"></span>,
-    Chromium <span id="chrome-version"></span>,
-    and Electron <span id="electron-version"></span>.
+    <div class="main-body">
+      <div id="tree"></div>
+    </div>
+    <div class="footer">
+        <!-- Your footer content goes here -->
+    </div>
+    
   </body>
   <script>
     ipcRenderer.send('test-ipc', null)
+
+    ipcRenderer.on('get-bookmarks', (event, response) => {
+      $("#tree").fancytree({
+        source: convertToFancytreeFormat(response),
+        activate: function(event, data){
+          var node = data.node;
+          console.log(node)
+        }
+      })
+    })
+
+    function convertToFancytreeFormat(data) {
+      // Initialize an empty array to store the transformed data
+      const transformedData = [];
+
+      // Iterate over the original JSON data
+      data.forEach(category => {
+        const folderItem = {
+          title: category.name,
+          folder: true,
+          img: "",
+          children: [],
+          type: 'group'
+        };
+
+        category.bookmark.forEach(bookmark => {
+          folderItem.children.push({
+            title: bookmark.name,
+            url: bookmark.url,
+            img: bookmark.img,
+            type: 'bookmark'
+          });
+        });
+
+        transformedData.push(folderItem);
+      });
+
+      return transformedData;
+    }
+
+    function convertToOriginalJSONFormat(data) {
+      // Initialize an empty array to store the transformed data
+      const originalJSONData = [];
+
+      // Iterate over the Fancytree data
+      data.forEach(folderItem => {
+        const category = {
+          name: folderItem.title,
+          img: "",
+          bookmark: [],
+        };
+
+        folderItem.children.forEach(bookmarkItem => {
+          category.bookmark.push({
+            name: bookmarkItem.title,
+            url: bookmarkItem.url || "", // Add a default value for url if it doesn't exist
+            img: bookmarkItem.img || "", // Add a default value for img if it doesn't exist
+          });
+        });
+
+        originalJSONData.push(category);
+      });
+
+      return originalJSONData;
+    }
   </script>
 </html>
