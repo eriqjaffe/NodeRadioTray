@@ -34,7 +34,8 @@ var currentOutputDevice = -1;
 
 let tray
 let browserWindow;
-let currentURL;
+let tooltipWindow = null;
+let hideTooltipTimeout = null;
 
 initializeWatcher();
 
@@ -65,7 +66,7 @@ setInterval(function () {
       try {
         const metadata = await parseRadioID3(store.get("lastURL"));
         let fullTitle = metadata.title.split(" - ")
-        tray.setToolTip(store.get("lastStation")+"\r\n"+fullTitle[0]+"\r\n"+fullTitle[1])
+        tray.setToolTip("📻 "+store.get("lastStation")+"\r\n👤  "+fullTitle[0]+"\r\n🎵 "+fullTitle[1])
       } catch (error) {
         tray.setToolTip("NodeRadioTray"+"\r\n"+store.get("lastStation"))
       } 
@@ -81,114 +82,6 @@ setIconTheme(darkIcon);
 if (!store.has("notifications")) {
   store.set("notifications", true)
 } 
-
-const template = [
-  ...(isMac ? [{
-      label: app.name,
-      submenu: [
-      { role: 'about' },
-      { type: 'separator' },
-      { role: 'services' },
-      { type: 'separator' },
-      { role: 'hide' },
-      { role: 'hideOthers' },
-      { role: 'unhide' },
-      { type: 'separator' },
-      { role: 'quit' }
-      ]
-  }] : []),
-  {
-      label: 'File',
-      submenu: [
-/*           {
-          click: () => mainWindow.webContents.send('load','click'),
-          accelerator: isMac ? 'Cmd+L' : 'Control+L',
-          label: 'Load Font',
-      }, */
-      {
-          click: () => mainWindow.webContents.send('save','click'),
-          accelerator: isMac ? 'Cmd+S' : 'Control+S',
-          label: 'Save Logo',
-      },
-      {
-        click: () => mainWindow.webContents.send('import-image','click'),
-        accelerator: isMac ? 'Cmd+I' : 'Control+I',
-        label: 'Import Image',
-      },
-      isMac ? { role: 'close' } : { role: 'quit' }
-      ]
-  },
-  {
-      label: 'View',
-      submenu: [
-      { role: 'reload' },
-      { role: 'forceReload' },
-      { role: 'toggleDevTools' },
-      { type: 'separator' },
-      { role: 'resetZoom' },
-      { role: 'zoomIn' },
-      { role: 'zoomOut' },
-      { type: 'separator' },
-      { role: 'togglefullscreen' }
-      ]
-  },
-  {
-      label: 'Window',
-      submenu: [
-      { role: 'minimize' },
-      { role: 'zoom' },
-      ...(isMac ? [
-          { type: 'separator' },
-          { role: 'front' },
-          { type: 'separator' },
-          { role: 'window' }
-      ] : [
-          { role: 'close' }
-      ])
-      ]
-  },
-  {
-      role: 'help',
-      submenu: [
-      {
-          click: () => mainWindow.webContents.send('about','click'),
-              label: 'About the OOTP Logo Maker',
-      },
-      {
-          label: 'About OOTP Baseball',
-          click: async () => {    
-          await shell.openExternal('https://www.ootpdevelopments.com/out-of-the-park-baseball-home/')
-          }
-      },
-      {
-          label: 'About Node.js',
-          click: async () => {    
-          await shell.openExternal('https://nodejs.org/en/about/')
-          }
-      },
-      {
-          label: 'About Electron',
-          click: async () => {
-          await shell.openExternal('https://electronjs.org')
-          }
-      },
-      {
-          label: 'About Fabric.js',
-          click: async () => {
-          await shell.openExternal('http://fabricjs.com/')
-          }
-      },
-      {
-          label: 'View project on GitHub',
-          click: async () => {
-          await shell.openExternal('https://github.com/eriqjaffe/OOTP-Logo-Maker')
-          }
-      }
-      ]
-  }
-  ]
-  
-  const menu = Menu.buildFromTemplate(template)
 
 const prefsTemplate = [
   {
