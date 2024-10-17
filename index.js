@@ -9,6 +9,7 @@ const notifier = require('node-notifier');
 const path = require('path');
 const AutoLaunch = require('auto-launch');
 const ref = require("ref-napi");
+const { parseRadioID3 } = require('radio-id3');
 
 const isMac = process.platform === 'darwin'
 const userData = app.getPath('userData');
@@ -28,11 +29,12 @@ var outputDevice = -1;
 var contextMenu = null;
 var idleIcon = null;
 var playingIcon = null;
-var _tagInfo = null;
+//var _tagInfo = new BASS_TAG_INFO;
 var currentOutputDevice = -1;
 
 let tray
 let browserWindow;
+let currentURL;
 
 initializeWatcher();
 
@@ -52,6 +54,26 @@ if (pluginsLoadResults === false) {
 } else {
   console.log("BASS: Plugins loaded");
 }
+
+setInterval(function () {
+  if (
+    basslib.BASS_ChannelIsActive(stream) ==
+    basslib.BASS_ChannelIsActiveAttribs.BASS_ACTIVE_PLAYING
+  ) {
+    getMetadata()
+    async function getMetadata() {
+      try {
+        const metadata = await parseRadioID3(store.get("lastURL"));
+        let fullTitle = metadata.title.split(" - ")
+        tray.setToolTip(store.get("lastStation")+"\r\n"+fullTitle[0]+"\r\n"+fullTitle[1])
+      } catch (error) {
+        tray.setToolTip("NodeRadioTray"+"\r\n"+store.get("lastStation"))
+      } 
+    }
+  } else {
+    //console.log("stopped");
+  }
+}, 1000);
 
 var darkIcon = (store.get("darkicon") == true) ? true : false;
 setIconTheme(darkIcon);
@@ -572,14 +594,7 @@ function playStream(streamName, url) {
       toggleButtons(true);
       store.set('lastStation',streamName);
       store.set('lastURL',url)
-      var artist = basslib.TAGS_Read(
-        stream,
-        basslib.BASS_TAGS_FORMAT_CONDITION.IF_X_THEN_A_IF_NOT_THEN_B(
-          basslib.BASS_TAGS_FORMAT_STRINGS.SONG_ARTIST,
-          basslib.BASS_TAGS_FORMAT_STRINGS.SONG_ARTIST,
-          "No artist"
-        )
-      );
+      
       if (store.get("notifications") == true) {
         notifier.notify(
           {
@@ -591,7 +606,7 @@ function playStream(streamName, url) {
             timeout: 3
           });
       }
-      tray.setToolTip("NodeRadioTray\r\n"+streamName)
+      //tray.setToolTip("NodeRadioTray\r\n"+streamName)
     }
   } catch (error) {
     console.log(error)
