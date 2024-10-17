@@ -9,7 +9,8 @@ const notifier = require('node-notifier');
 const path = require('path');
 const AutoLaunch = require('auto-launch');
 const ref = require("ref-napi");
-const { parseRadioID3 } = require('radio-id3');
+const parser = require("icecast-parser")
+//const { parseRadioID3 } = require('radio-id3');
 
 const isMac = process.platform === 'darwin'
 const userData = app.getPath('userData');
@@ -56,11 +57,13 @@ if (pluginsLoadResults === false) {
   console.log("BASS: Plugins loaded");
 }
 
-setInterval(function () {
+/* setInterval(function () {
   if (
     basslib.BASS_ChannelIsActive(stream) ==
     basslib.BASS_ChannelIsActiveAttribs.BASS_ACTIVE_PLAYING
   ) {
+    tray.setToolTip("NodeRadioTray"+"\r\n"+store.get("lastStation"))
+    
     getMetadata()
     async function getMetadata() {
       try {
@@ -74,7 +77,7 @@ setInterval(function () {
   } else {
     //console.log("stopped");
   }
-}, 1000);
+}, 1000); */
 
 var darkIcon = (store.get("darkicon") == true) ? true : false;
 setIconTheme(darkIcon);
@@ -499,7 +502,36 @@ function playStream(streamName, url) {
             timeout: 3
           });
       }
-      //tray.setToolTip("NodeRadioTray\r\n"+streamName)
+      
+      let radioStation = new parser.Parser({
+        keepListen: true, 
+        autoUpdate: false,
+        emptyInterval: 5 * 60,
+        errorInterval: 10 * 60,
+        keepListen: false,
+        metadataInterval: 1,
+        notifyOnChangeOnly: false,
+        url: store.get("lastURL"),
+        userAgent: 'Custom User Agent',
+      });
+
+      radioStation.on('metadata', (metadata) => {
+        const streamTitle = metadata.get('StreamTitle') ?? 'unknown';
+        if (streamTitle == "unknown") {
+          tray.setToolTip("NodeRadioTray\r\n"+streamName)
+        } else {
+          const splitTitle = streamTitle.split(' - '); // or use any other delimiter you want
+          tray.setToolTip("📻 "+store.get("lastStation")+"\r\n👤  "+splitTitle[0]+"\r\n🎵 "+splitTitle[1])
+        }
+      });
+
+      radioStation.on('empty', () => {
+        tray.setToolTip("NodeRadioTray\r\n"+streamName)
+      })
+
+      radioStation.on('error', () => {
+        tray.setToolTip("NodeRadioTray\r\n"+streamName)
+      })
     }
   } catch (error) {
     console.log(error)

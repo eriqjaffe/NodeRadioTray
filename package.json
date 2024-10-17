@@ -10,8 +10,10 @@
     "pack:linux64": "electron-packager . --out dist/ --overwrite --platform linux --arch x64 --icon=build/icon.png",
     "pack:arm": "electron-packager . --out dist/ --overwrite --platform linux --arch armv7l --icon=build/icon.png",
     "pack:darwin": "electron-packager . --out dist/ --overwrite --platform darwin --icon=build/icon.icns",
-    "pack:all": "yarn run pack:win64 && yarn run pack:linux",
-    "build:win64": "electron-installer-windows --src dist/NodeRadioTray-win32-x64/ --dest dist/installers/"
+    "pack:all": "yarn run pack:win64 && yarn run pack:linux64",
+    "build:win64": "electron-installer-windows --src ./dist/NodeRadioTray-win32-x64/ --dest ./dist/installers/",
+    "build:linux": ".\\node_modules\\.bin\\electron-builder -l",
+    "build:mac": ".\\node_modules\\.bin\\electron-builder -m"
   },
   "author": {
     "name": "Eriq Jaffe",
@@ -27,9 +29,9 @@
     "electron-prompt": "^1.7.0",
     "electron-squirrel-startup": "^1.0.0",
     "electron-store": "^8.0.1",
+    "icecast-parser": "^4.0.2",
     "node-gyp": "^8.4.1",
     "node-notifier": "^10.0.0",
-    "radio-id3": "^1.0.1",
     "ref-napi": "^3.0.3"
   },
   "devDependencies": {
