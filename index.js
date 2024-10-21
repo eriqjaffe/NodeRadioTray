@@ -35,6 +35,7 @@ var currentOutputDevice = -1;
 
 let tray
 let browserWindow;
+let radioStation;
 let tooltipWindow = null;
 let hideTooltipTimeout = null;
 
@@ -57,27 +58,42 @@ if (pluginsLoadResults === false) {
   console.log("BASS: Plugins loaded");
 }
 
-/* setInterval(function () {
+setInterval(function () {
   if (
     basslib.BASS_ChannelIsActive(stream) ==
     basslib.BASS_ChannelIsActiveAttribs.BASS_ACTIVE_PLAYING
   ) {
-    tray.setToolTip("NodeRadioTray"+"\r\n"+store.get("lastStation"))
-    
-    getMetadata()
-    async function getMetadata() {
-      try {
-        const metadata = await parseRadioID3(store.get("lastURL"));
-        let fullTitle = metadata.title.split(" - ")
-        tray.setToolTip("📻 "+store.get("lastStation")+"\r\n👤  "+fullTitle[0]+"\r\n🎵 "+fullTitle[1])
-      } catch (error) {
-        tray.setToolTip("NodeRadioTray"+"\r\n"+store.get("lastStation"))
-      } 
-    }
+    let radioStation = new parser.Parser({
+      autoUpdate: false,
+      emptyInterval: 5 * 60,
+      errorInterval: 10 * 60,
+      metadataInterval: 1,
+      notifyOnChangeOnly: false,
+      url: store.get("lastURL"),
+      userAgent: 'Custom User Agent',
+    });
+
+    radioStation.on('metadata', (metadata) => {
+      const streamTitle = metadata.get('StreamTitle') ?? 'unknown';
+      console.log(streamTitle)
+      if (streamTitle == "unknown") {
+        tray.setToolTip("NodeRadioTray\r\n"+streamName)
+      } else {
+        tray.setToolTip(store.get("lastStation")+"\r\n"+streamTitle)
+      }
+    });
+
+    radioStation.on('empty', () => {
+      tray.setToolTip("NodeRadioTray\r\n"+streamName)
+    })
+
+    radioStation.on('error', () => {
+      tray.setToolTip("NodeRadioTray\r\n"+streamName)
+    })
   } else {
-    //console.log("stopped");
+    tray.setToolTip('NodeRadioTray')
   }
-}, 1000); */
+}, 1000);
 
 var darkIcon = (store.get("darkicon") == true) ? true : false;
 setIconTheme(darkIcon);
@@ -503,35 +519,41 @@ function playStream(streamName, url) {
           });
       }
       
-      let radioStation = new parser.Parser({
-        keepListen: true, 
+/*       radioStation = new parser.Parser({
+        keepListen: true,
         autoUpdate: false,
         emptyInterval: 5 * 60,
         errorInterval: 10 * 60,
-        keepListen: false,
         metadataInterval: 1,
         notifyOnChangeOnly: false,
         url: store.get("lastURL"),
         userAgent: 'Custom User Agent',
       });
-
+  
       radioStation.on('metadata', (metadata) => {
         const streamTitle = metadata.get('StreamTitle') ?? 'unknown';
+        console.log(streamTitle)
         if (streamTitle == "unknown") {
           tray.setToolTip("NodeRadioTray\r\n"+streamName)
         } else {
-          const splitTitle = streamTitle.split(' - '); // or use any other delimiter you want
-          tray.setToolTip("📻 "+store.get("lastStation")+"\r\n👤  "+splitTitle[0]+"\r\n🎵 "+splitTitle[1])
+          tray.setToolTip(store.get("lastStation")+"\r\n"+streamTitle)
+          //const splitTitle = streamTitle.split(' - '); // or use any other delimiter you want
+          //tray.setToolTip("📻 "+store.get("lastStation")+"\r\n👤  "+splitTitle[0]+"\r\n🎵 "+splitTitle[1])
         }
       });
 
+      radioStation.on('end', () => {
+        console.log("ended")
+      })
+  
       radioStation.on('empty', () => {
         tray.setToolTip("NodeRadioTray\r\n"+streamName)
       })
-
+  
       radioStation.on('error', () => {
         tray.setToolTip("NodeRadioTray\r\n"+streamName)
-      })
+      }) */
+      
     }
   } catch (error) {
     console.log(error)
