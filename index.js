@@ -75,20 +75,20 @@ setInterval(function () {
 
     radioStation.on('metadata', (metadata) => {
       const streamTitle = metadata.get('StreamTitle') ?? 'unknown';
-      console.log(streamTitle)
+      //console.log(streamTitle)
       if (streamTitle == "unknown") {
-        tray.setToolTip("NodeRadioTray\r\n"+streamName)
+        tray.setToolTip("NodeRadioTray\r\n"+store.get("lastStation"))
       } else {
         tray.setToolTip(store.get("lastStation")+"\r\n"+streamTitle)
       }
     });
 
     radioStation.on('empty', () => {
-      tray.setToolTip("NodeRadioTray\r\n"+streamName)
+      tray.setToolTip("NodeRadioTray\r\n"+store.get("lastStation"))
     })
 
     radioStation.on('error', () => {
-      tray.setToolTip("NodeRadioTray\r\n"+streamName)
+      tray.setToolTip("NodeRadioTray\r\n"+store.get("lastStation"))
     })
   } else {
     tray.setToolTip('NodeRadioTray')
