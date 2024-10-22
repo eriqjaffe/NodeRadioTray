@@ -1,5 +1,5 @@
 if(require('electron-squirrel-startup')) return;
-const { app, Menu, Tray, nativeImage, shell, globalShortcut, BrowserWindow, ipcMain } = require('electron')
+const { app, Menu, Tray, nativeImage, shell, globalShortcut, BrowserWindow, ipcMain, dialog } = require('electron')
 const fs = require('fs');
 const Store = require("electron-store");
 const bass = require("@eriqjaffe/bassaudio-updated");
@@ -146,7 +146,13 @@ const template = [
       accelerator: isMac ? 'Cmd+I' : 'Control+I',
       label: 'Import Image',
     }, */
-    isMac ? { role: 'close' } : { role: 'quit' }
+    //isMac ? { role: 'close' } : { role: 'quit' }
+    {
+      label: 'Close',
+      click: () => {
+        browserWindow.close(); // Trigger window close
+      },
+    },
     ]
 },
 {
@@ -181,16 +187,6 @@ const template = [
 {
     role: 'help',
     submenu: [
-    /* {
-        click: () => mainWindow.webContents.send('about','click'),
-            label: 'About the OOTP Logo Maker',
-    },
-    {
-        label: 'About OOTP Baseball',
-        click: async () => {    
-        await shell.openExternal('https://www.ootpdevelopments.com/out-of-the-park-baseball-home/')
-        }
-    }, */
     {
         label: 'About Node.js',
         click: async () => {    
@@ -203,12 +199,6 @@ const template = [
         await shell.openExternal('https://electronjs.org')
         }
     },
-    /* {
-        label: 'About Fabric.js',
-        click: async () => {
-        await shell.openExternal('http://fabricjs.com/')
-        }
-    }, */
     {
         label: 'View project on GitHub',
         click: async () => {
@@ -216,7 +206,7 @@ const template = [
         }
     }
     ]
-}
+  }
 ]
 
 const menu = Menu.buildFromTemplate(template)
@@ -436,12 +426,13 @@ app.whenReady().then(() => {
     playStream(store.get('lastStation'), store.get('lastURL'));
   }
   toggleMMKeys(store.get("mmkeys"))
-  //console.log(contextMenu)
 })
 
 app.on('activate', () => {})
 
 app.on('window-all-closed', () => {})
+
+
 
 if (process.platform == "darwin") {
   app.dock.hide()
@@ -521,17 +512,45 @@ function reloadBookmarks() {
 }
 
 function editBookmarksGui() {
-
-  browserWindow = new BrowserWindow({
-    width: 800,
-    height: 650,
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false
-    }
-  })
-  browserWindow.setMenu(menu)
-  browserWindow.loadFile('index.html');
+  if (!browserWindow) {
+    browserWindow = new BrowserWindow({
+      width: 800,
+      height: 650,
+      webPreferences: {
+        nodeIntegration: true,
+        contextIsolation: false
+      }
+    })
+    browserWindow.setMenu(menu)
+    browserWindow.loadFile('index.html');
+    browserWindow.on('close', (event) => {
+      event.preventDefault()
+      browserWindow.webContents.send('check-tree');
+  
+      ipcMain.once('check-tree-response', (event, response) => {
+        console.log(response)
+        if (response == false) {
+          browserWindow.destroy()
+          browserWindow = null;
+        } else {
+          dialog.showMessageBox(null, {
+            type: 'question',
+            message: "The bookmarks appear to have been edited?  Do you want to save your changes?",
+            buttons: ['Yes', 'No'],
+          }).then(result => {
+            if (result.response === 1) {
+              browserWindow.destroy()
+              browserWindow = null;
+            } else {
+              browserWindow.webContents.send('save','dialog')
+            }
+          })
+        }
+      });
+    });
+  } else {
+    browserWindow.focus();
+  }
 }
 
 function loadCards() {
@@ -849,13 +868,21 @@ ipcMain.on('test-ipc', (event, arg) => {
 })
 
 ipcMain.on('save-bookmarks', (event, data) => {
-  fs.writeFile(userData+'/bookmarks.json', data, function(err) {
+  console.log(data.source)
+  fs.writeFile(userData+'/bookmarks.json', data.data, function(err) {
     if(err) {
       console.log(err);
     } else {
       reloadBookmarks();
+      if (data.source == "dialog") {
+        browserWindow.destroy()
+        browserWindow = null;
+      } else {
+        event.sender.send('save-complete', null)
+      }
     }
-  }); 
+  });
+  
 })
 
 function changeStation(dir) {

@@ -11,6 +11,7 @@
     <script>
         const { ipcRenderer } = require('electron');
         require('./renderer.js')
+        let treeModified = false;
     </script>
     <style>
       html, body {
@@ -135,6 +136,15 @@
       console.log(response)
       $("#tree").fancytree({
         source: convertToFancytreeFormat(response),
+        modifyChild: function(event, data) {
+            treeModified = true;
+        },
+        rename: function(event, data) {
+            treeModified = true;
+        },
+        remove: function(event, data) {
+            treeModified = true;
+        },
         activate: function(event, data){
           $(".footerChild").css("display","none")
           $(".editField").val("")
@@ -175,9 +185,18 @@
       $("#newStationDiv").css("display","inline-block")
     })
 
-    ipcRenderer.on('save', (event, data) => {
-      convertToOriginalJSONFormat()
+    ipcRenderer.on('save', (event, source) => {
+      console.log(source)
+      convertToOriginalJSONFormat(source)
     });
+
+    ipcRenderer.on('check-tree', () => {
+      ipcRenderer.send('check-tree-response', treeModified);
+    })
+
+    ipcRenderer.on('save-complete', () => {
+      treeModified = false;
+    })
 
     $("#editGroupForm").on("submit",function(e) {
       e.preventDefault()
@@ -242,7 +261,7 @@
       return transformedData;
     }
 
-    function convertToOriginalJSONFormat() {
+    function convertToOriginalJSONFormat(source) {
       // Initialize an empty array to store the transformed data
       const originalJSONData = [];
 
@@ -257,19 +276,21 @@
           bookmark: [],
         };
 
-        folderItem.children.forEach(bookmarkItem => {
-          category.bookmark.push({
-            name: bookmarkItem.title,
-            url: bookmarkItem.data.url || "", // Add a default value for url if it doesn't exist
-            img: bookmarkItem.data.img || "", // Add a default value for img if it doesn't exist
+        if (folderItem.children != undefined) {
+          folderItem.children.forEach(bookmarkItem => {
+            category.bookmark.push({
+              name: bookmarkItem.title,
+              url: bookmarkItem.data.url || "", // Add a default value for url if it doesn't exist
+              img: bookmarkItem.data.img || "", // Add a default value for img if it doesn't exist
+            });
           });
-        });
+        }
 
         originalJSONData.push(category);
       });
 
       console.log(originalJSONData)
-      ipcRenderer.send('save-bookmarks', JSON.stringify(originalJSONData, null, 3))
+      ipcRenderer.send('save-bookmarks', { source: source, data: JSON.stringify(originalJSONData, null, 3) })
     }
   </script>
 </html>
