@@ -10,6 +10,7 @@
     <link href="./scripts/skin-win8-n/ui.fancytree.min.css" rel="stylesheet">
     <script>
         const { ipcRenderer } = require('electron');
+        require('./renderer.js')
     </script>
     <style>
       html, body {
@@ -50,24 +51,78 @@
       <div id="tree"></div>
     </div>
     <div class="footer" id="footerDiv">
-      <div class="footerChild" id="editGroupDiv" style="display:none;">
-        <form id='editGroupForm'>
-        <label>Group Name:</label>
-        <input type='text' class='editField' name='groupName' id='groupName' value='' required><br>
-        <label>Group Icon:</label>
-        <input type='text' class='editField' name='groupIcon' id='groupIcon' value=''><br>
-        <input type='submit' id='editGroupSubmit' value='Submit'>
+      <div class="footerChild" id="editGroupDiv" style="display:none; text-align: center;">
+        <form id='editGroupForm' action="">
+          <table>
+            <tr>
+              <td style="text-align: right;">Group Name: </td>
+              <td><input type='text' class='editField' name='groupName' id='groupName' value='' required style="width:500px;"></td>
+            </tr>
+            <tr>
+              <td style="text-align: right;">Group Icon: </td>
+              <td><input type='text' class='editField' name='groupIcon' id='groupIcon' value='' style="width:500px;"></td>
+            </tr>
+          </table>
+          <input type='submit' id='editGroupSubmit' value='Submit'>
         </form>
       </div>
-      <div class="footerChild" id="editStationDiv" style="display:none;">
-        <form id='editStationForm'>
-        <label>Station Name:</label>
-        <input type='text' class='editField' name='stationName' id='stationName' value='' required><br>
-        <label>Station URL:</label>
-        <input type='url' class='editField' name='stationURL' id='stationURL' value='' required><br>
-        <label>Station Icon:</label>
-        <input type='text' class='editField' name='stationIcon' id='stationIcon' value=''><br>
-        <input type='submit' id='editStationSubmit' value='Submit'>
+      <div class="footerChild" id="editStationDiv" style="display:none; text-align:center;">
+        <form id='editStationForm' action="">
+          <table>
+            <tr>
+              <td style="text-align: right;">Station Name: </td>
+              <td><input type='text' class='editField' name='stationName' id='stationName' value='' required style="width:500px;"></td>
+            </tr>
+            <tr>
+              <td style="text-align: right;">Station URL: </td>
+              <td><input type='url' class='editField' name='stationURL' type="url" id='stationURL' value='' required style="width:500px;"></td>
+            </tr>
+            <tr>
+              <td style="text-align: right;">Station Icon: </td>
+              <td><input type='text' class='editField' name='stationIcon' id='stationIcon' value='' style="width:500px;"></td>
+            </tr>
+          </table>
+          <input type='submit' id='editStationSubmit' value='Submit'>
+        </form>
+      </div>
+      <div class="footerChild" id="newGroupDiv" style="display:none; text-align:center;">
+        ADD A NEW GROUP
+        <form id='newGroupForm' action="">
+          <table>
+            <tr>
+              <td style="text-align: right;">Group Name: </td>
+              <td><input type='text' class='editField' name='newGroupName' id='newGroupName' value='' required style="width:500px;"></td>
+            </tr>
+            <tr>
+              <td style="text-align: right;">Group Icon: </td>
+              <td><input type='text' class='editField' name='newGroupIcon' id='newGroupIcon' value='' style="width:500px;"></td>
+            </tr>
+          </table>
+          <input type='submit' id='newStationSubmit' value='Submit'>
+        </form>
+      </div>
+      <div class="footerChild" id="newStationDiv" style="display:none; text-align:center;">
+        <form id='newStationForm' action="">
+          ADD A NEW STATION
+          <table>
+            <tr>
+              <td style="text-align: right;">Station Name: </td>
+              <td><input type='text' class='editField' name='newStationName' id='newStationName' value='' required style="width:500px;"></td>
+            </tr>
+            <tr>
+              <td style="text-align: right;">Station URL: </td>
+              <td><input type='url' class='editField' name='newStationURL' type="url" id='newStationURL' value='' required style="width:500px;"></td>
+            </tr>
+            <tr>
+              <td style="text-align: right;">Station Group: </td>
+              <td><select name="newStationGroup" id="newStationGroup" style="width:500px;"></select></td>
+            </tr>
+            <tr>
+              <td style="text-align: right;">Station Icon: </td>
+              <td><input type='text' class='editField' name='newStationIcon' id='newStationIcon' value='' style="width:500px;"></td>
+            </tr>
+          </table>
+          <input type='submit' id='newStationSubmit' value='Submit'>
         </form>
       </div>
     </div>
@@ -77,6 +132,7 @@
     ipcRenderer.send('test-ipc', null)
 
     ipcRenderer.on('get-bookmarks', (event, response) => {
+      console.log(response)
       $("#tree").fancytree({
         source: convertToFancytreeFormat(response),
         activate: function(event, data){
@@ -97,6 +153,32 @@
       })
     })
 
+    ipcRenderer.on('addGroup', (event, data) => {
+      $(".footerChild").css("display","none")
+      $(".editField").val("")
+      $("#newGroupDiv").css("display","inline-block")
+    })
+
+    ipcRenderer.on('addStation', (event, data) => {
+      $("#newStationGroup").empty();
+      const tree = $.ui.fancytree.getTree("#tree").getRootNode()
+      tree.visit(function(node){
+        if (node.type == "group") {
+          $('#newStationGroup').append($('<option>', {
+            value: node.title,
+            text: node.title
+          }));
+        }
+      })
+      $(".footerChild").css("display","none")
+      $(".editField").val("")
+      $("#newStationDiv").css("display","inline-block")
+    })
+
+    ipcRenderer.on('save', (event, data) => {
+      convertToOriginalJSONFormat()
+    });
+
     $("#editGroupForm").on("submit",function(e) {
       e.preventDefault()
       let nodeToEdit = $("#tree").fancytree("getActiveNode")
@@ -114,6 +196,22 @@
       nodeToEdit.parent.sortChildren(null, true)
     })
 
+    $("#newGroupForm").on("submit",function(e) {
+      e.preventDefault()
+      const tree = $.ui.fancytree.getTree("#tree").getRootNode()
+      tree.addChildren({ title: $("#newGroupName").val(), folder: true, type: "group" })
+      tree.sortChildren(null, true)
+    })
+
+    $("#newStationForm").on("submit",function(e) {
+      e.preventDefault()
+      const tree = $.ui.fancytree.getTree("#tree")
+      const node = tree.findFirst(function(node) {
+        return node.type == "group" && node.title == $("#newStationGroup").val()
+      })
+      node.addChildren({ title: $("#newStationName").val(), type: "bookmark", url: $("#newStationURL").val(), img: $("#newStationIcon").val() })
+      node.sortChildren(null, true)
+    })
 
     function convertToFancytreeFormat(data) {
       // Initialize an empty array to store the transformed data
@@ -144,9 +242,12 @@
       return transformedData;
     }
 
-    function convertToOriginalJSONFormat(data) {
+    function convertToOriginalJSONFormat() {
       // Initialize an empty array to store the transformed data
       const originalJSONData = [];
+
+      // get Fancytree data
+      const data = $.ui.fancytree.getTree("#tree").rootNode.children
 
       // Iterate over the Fancytree data
       data.forEach(folderItem => {
@@ -167,6 +268,7 @@
         originalJSONData.push(category);
       });
 
+      console.log(originalJSONData)
       return originalJSONData;
     }
   </script>

@@ -103,13 +103,130 @@ if (!store.has("notifications")) {
   store.set("notifications", true)
 } 
 
+const template = [
+  ...(isMac ? [{
+      label: app.name,
+      submenu: [
+      { role: 'about' },
+      { type: 'separator' },
+      { role: 'services' },
+      { type: 'separator' },
+      { role: 'hide' },
+      { role: 'hideOthers' },
+      { role: 'unhide' },
+      { type: 'separator' },
+      { role: 'quit' }
+      ]
+  }] : []),
+  {
+    label: 'File',
+    submenu: [
+/*           {
+        click: () => mainWindow.webContents.send('load','click'),
+        accelerator: isMac ? 'Cmd+L' : 'Control+L',
+        label: 'Load Font',
+    }, */
+    {
+      click: () => browserWindow.webContents.send('addGroup','click'),
+      accelerator: isMac ? 'Cmd+G' : 'Control+G',
+      label: 'Add Group',
+    },
+    {
+      click: () => browserWindow.webContents.send('addStation','click'),
+      accelerator: isMac ? 'Cmd+A' : 'Control+A',
+      label: 'Add Station',
+    },
+    {
+        click: () => browserWindow.webContents.send('save','click'),
+        accelerator: isMac ? 'Cmd+S' : 'Control+S',
+        label: 'Save Bookmarks',
+    },
+/*     {
+      click: () => mainWindow.webContents.send('import-image','click'),
+      accelerator: isMac ? 'Cmd+I' : 'Control+I',
+      label: 'Import Image',
+    }, */
+    isMac ? { role: 'close' } : { role: 'quit' }
+    ]
+},
+{
+    label: 'View',
+    submenu: [
+    { role: 'reload' },
+    { role: 'forceReload' },
+    { role: 'toggleDevTools' },
+    { type: 'separator' },
+    { role: 'resetZoom' },
+    { role: 'zoomIn' },
+    { role: 'zoomOut' },
+    { type: 'separator' },
+    { role: 'togglefullscreen' }
+    ]
+},
+{
+    label: 'Window',
+    submenu: [
+    { role: 'minimize' },
+    { role: 'zoom' },
+    ...(isMac ? [
+        { type: 'separator' },
+        { role: 'front' },
+        { type: 'separator' },
+        { role: 'window' }
+    ] : [
+        { role: 'close' }
+    ])
+    ]
+},
+{
+    role: 'help',
+    submenu: [
+    /* {
+        click: () => mainWindow.webContents.send('about','click'),
+            label: 'About the OOTP Logo Maker',
+    },
+    {
+        label: 'About OOTP Baseball',
+        click: async () => {    
+        await shell.openExternal('https://www.ootpdevelopments.com/out-of-the-park-baseball-home/')
+        }
+    }, */
+    {
+        label: 'About Node.js',
+        click: async () => {    
+        await shell.openExternal('https://nodejs.org/en/about/')
+        }
+    },
+    {
+        label: 'About Electron',
+        click: async () => {
+        await shell.openExternal('https://electronjs.org')
+        }
+    },
+    /* {
+        label: 'About Fabric.js',
+        click: async () => {
+        await shell.openExternal('http://fabricjs.com/')
+        }
+    }, */
+    {
+        label: 'View project on GitHub',
+        click: async () => {
+        await shell.openExternal('https://github.com/eriqjaffe/NodeRadioTray')
+        }
+    }
+    ]
+}
+]
+
+const menu = Menu.buildFromTemplate(template)
+
 const prefsTemplate = [
   {
     label: 'Dark tray icon',
     click: e => {
       store.set("darkicon", e.checked)
       setIconTheme(e.checked)
-      console.log(idleIcon)
       if (stream == null) {
         tray.setImage(idleIcon)
       } else {
@@ -332,6 +449,7 @@ if (process.platform == "darwin") {
 
 function loadBookmarks() {
   var stationMenu = [];
+  bookmarksArr = []
   try {
     let bookmarks = JSON.parse(fs.readFileSync(userData+'/bookmarks.json'));
     bookmarks.forEach(genre => {
@@ -342,7 +460,6 @@ function loadBookmarks() {
           });
       });
     });
-    console.log(bookmarksArr[0].name)
     for(var i = 0; i < bookmarks.length; i++) {
       var obj = bookmarks[i];
       var stations = []
@@ -395,13 +512,19 @@ function reloadBookmarks() {
   menuTemplate[3].submenu = loadCards();
   contextMenu = Menu.buildFromTemplate(menuTemplate)
   tray.setContextMenu(contextMenu)
+  if (
+    basslib.BASS_ChannelIsActive(stream) ==
+    basslib.BASS_ChannelIsActiveAttribs.BASS_ACTIVE_PLAYING
+  ) {
+    toggleButtons(true)
+  }
 }
 
 function editBookmarksGui() {
 
   browserWindow = new BrowserWindow({
     width: 800,
-    height: 600,
+    height: 650,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -535,6 +658,10 @@ function playStream(streamName, url) {
   } catch (error) {
     console.log(error)
   }
+}
+
+function showVolume() {
+  
 }
 
 function toggleButtons(state) {
