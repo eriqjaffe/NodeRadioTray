@@ -848,6 +848,16 @@ ipcMain.on('test-ipc', (event, arg) => {
   event.sender.send('get-bookmarks', bookmarks)
 })
 
+ipcMain.on('save-bookmarks', (event, data) => {
+  fs.writeFile(userData+'/bookmarks.json', data, function(err) {
+    if(err) {
+      console.log(err);
+    } else {
+      reloadBookmarks();
+    }
+  }); 
+})
+
 function changeStation(dir) {
   let index;
   const currentIndex = bookmarksArr.findIndex(station => station.name === store.get('lastStation'));

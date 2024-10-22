@@ -260,8 +260,8 @@
         folderItem.children.forEach(bookmarkItem => {
           category.bookmark.push({
             name: bookmarkItem.title,
-            url: bookmarkItem.url || "", // Add a default value for url if it doesn't exist
-            img: bookmarkItem.img || "", // Add a default value for img if it doesn't exist
+            url: bookmarkItem.data.url || "", // Add a default value for url if it doesn't exist
+            img: bookmarkItem.data.img || "", // Add a default value for img if it doesn't exist
           });
         });
 
@@ -269,7 +269,7 @@
       });
 
       console.log(originalJSONData)
-      return originalJSONData;
+      ipcRenderer.send('save-bookmarks', JSON.stringify(originalJSONData, null, 3))
     }
   </script>
 </html>
