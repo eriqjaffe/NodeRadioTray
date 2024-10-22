@@ -35,6 +35,7 @@ var currentOutputDevice = -1;
 
 let tray
 let browserWindow;
+let bookmarksArr = []
 let radioStation;
 let tooltipWindow = null;
 let hideTooltipTimeout = null;
@@ -270,24 +271,26 @@ var menuTemplate = [
     icon: path.join(__dirname, '/images/icons8-thick-arrow-pointing-down-16.png'),
     visible: process.platform == "linux" ? true : false
   },
-  /*{
+  {
     label: "Next Station",
     id: "nextButton",
     click: async() => {
-      nextStation();
+      //nextStation();
+      changeStation("forward")
     },
     icon: path.join(__dirname, '/images/icons8-Fast Forward.png'),
     visible: process.platform == "linux" ? true : false
-  },*/
-  /*{
+  },
+  {
     label: "Previous Station",
     id: "previousButton",
     click: async() => {
-      previousStation();
+      //nextStation();
+      changeStation("backward")
     },
     icon: path.join(__dirname, '/images/icons8-Rewind.png'),
     visible: process.platform == "linux" ? true : false
-  },*/
+  },
   { 
     type: 'separator'
   },
@@ -316,6 +319,7 @@ app.whenReady().then(() => {
     playStream(store.get('lastStation'), store.get('lastURL'));
   }
   toggleMMKeys(store.get("mmkeys"))
+  //console.log(contextMenu)
 })
 
 app.on('activate', () => {})
@@ -330,6 +334,15 @@ function loadBookmarks() {
   var stationMenu = [];
   try {
     let bookmarks = JSON.parse(fs.readFileSync(userData+'/bookmarks.json'));
+    bookmarks.forEach(genre => {
+      genre.bookmark.forEach(station => {
+          bookmarksArr.push({
+              name: station.name,
+              url: station.url
+          });
+      });
+    });
+    console.log(bookmarksArr[0].name)
     for(var i = 0; i < bookmarks.length; i++) {
       var obj = bookmarks[i];
       var stations = []
@@ -518,42 +531,6 @@ function playStream(streamName, url) {
             timeout: 3
           });
       }
-      
-/*       radioStation = new parser.Parser({
-        keepListen: true,
-        autoUpdate: false,
-        emptyInterval: 5 * 60,
-        errorInterval: 10 * 60,
-        metadataInterval: 1,
-        notifyOnChangeOnly: false,
-        url: store.get("lastURL"),
-        userAgent: 'Custom User Agent',
-      });
-  
-      radioStation.on('metadata', (metadata) => {
-        const streamTitle = metadata.get('StreamTitle') ?? 'unknown';
-        console.log(streamTitle)
-        if (streamTitle == "unknown") {
-          tray.setToolTip("NodeRadioTray\r\n"+streamName)
-        } else {
-          tray.setToolTip(store.get("lastStation")+"\r\n"+streamTitle)
-          //const splitTitle = streamTitle.split(' - '); // or use any other delimiter you want
-          //tray.setToolTip("📻 "+store.get("lastStation")+"\r\n👤  "+splitTitle[0]+"\r\n🎵 "+splitTitle[1])
-        }
-      });
-
-      radioStation.on('end', () => {
-        console.log("ended")
-      })
-  
-      radioStation.on('empty', () => {
-        tray.setToolTip("NodeRadioTray\r\n"+streamName)
-      })
-  
-      radioStation.on('error', () => {
-        tray.setToolTip("NodeRadioTray\r\n"+streamName)
-      }) */
-      
     }
   } catch (error) {
     console.log(error)
@@ -565,23 +542,23 @@ function toggleButtons(state) {
   stopButton = contextMenu.getMenuItemById('stopButton');
   volUpButton = contextMenu.getMenuItemById('volumeUp');
   volDownButton = contextMenu.getMenuItemById('volumeDown')
-  //nextButton = contextMenu.getMenuItemById('nextButton')
-  //previousButton = contextMenu.getMenuItemById('previousButton')
+  nextButton = contextMenu.getMenuItemById('nextButton')
+  previousButton = contextMenu.getMenuItemById('previousButton')
   if (state == true) {
     playButton.visible = false;
     stopButton.visible = true;
     volUpButton.visible = true;
     volDownButton.visible = true;
-    //nextButton.visible = true;
-    //previousButton.visible = true;
+    nextButton.visible = true;
+    previousButton.visible = true;
     tray.setImage(playingIcon);
   } else {
     playButton.visible = true;
     stopButton.visible = false;
     volUpButton.visible = false;
     volDownButton.visible = false;
-    //nextButton.visible = false;
-    //previousButton.visible = false;
+    nextButton.visible = false;
+    previousButton.visible = false;
     tray.setImage(idleIcon);
     tray.setToolTip("NodeRadioTray");
   }
@@ -743,3 +720,17 @@ ipcMain.on('test-ipc', (event, arg) => {
   let bookmarks = JSON.parse(fs.readFileSync(userData+'/bookmarks.json'));
   event.sender.send('get-bookmarks', bookmarks)
 })
+
+function changeStation(dir) {
+  let index;
+  const currentIndex = bookmarksArr.findIndex(station => station.name === store.get('lastStation'));
+  if (currentIndex === -1) {
+      return null; // Return null if the name is not found
+  }
+  if (dir == "forward") {
+    index = (currentIndex + 1) % bookmarksArr.length;
+  } else {
+    index = (currentIndex - 1 + bookmarksArr.length) % bookmarksArr.length;
+  }
+  playStream(bookmarksArr[index].name, bookmarksArr[index].url)
+}
