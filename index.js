@@ -528,7 +528,6 @@ function editBookmarksGui() {
       browserWindow.webContents.send('check-tree');
   
       ipcMain.once('check-tree-response', (event, response) => {
-        console.log(response)
         if (response == false) {
           browserWindow.destroy()
           browserWindow = null;
@@ -824,7 +823,6 @@ function changeVolume(direction) {
     basslib.BASS_ChannelAttributes.BASS_ATTRIB_VOL,
     volume
   );
-  console.log(ref.deref(volume));
   if (direction == "up" && ref.deref(volume) <= 1) {
     basslib.BASS_ChannelSetAttribute(
       stream,
@@ -858,7 +856,6 @@ function changeVolume(direction) {
     basslib.BASS_ChannelAttributes.BASS_ATTRIB_VOL,
     volume
   );
-  console.log(ref.deref(volume));
   store.set("lastVolume", ref.deref(volume))
 }
 
@@ -868,7 +865,6 @@ ipcMain.on('test-ipc', (event, arg) => {
 })
 
 ipcMain.on('save-bookmarks', (event, data) => {
-  console.log(data.source)
   fs.writeFile(userData+'/bookmarks.json', data.data, function(err) {
     if(err) {
       console.log(err);
