@@ -22,7 +22,13 @@
     </script>
   </head>
   <body>
-    <div class="main-body">
+    <div class="header background-change">
+      <input type="button" id="btnAddGroup" value="Add Group" style="margin-right:25px;">
+      <input type="button" id="btnAddStation" value="Add Station" style="margin-right:25px;">
+      <input type="button" id="btnSave" value="Save Changes" style="margin-right:25px;">
+      <input type="button" id="btnCancel" value="Exit Without Saving">
+    </div>
+    <div class="main-body background-change">
       <div id="tree"></div>
     </div>
     <div class="footer" id="footerDiv">
@@ -168,16 +174,16 @@
       },
         modifyChild: function(event, data) {
             treeModified = true;
-            $(".main-body").css("background-color","#FAA0A0")
+            $(".background-change").css("background-color","#FAA0A0")
         },
         rename: function(event, data) {
             treeModified = true;
-            $(".main-body").css("background-color","#FAA0A0")
+            $(".background-change").css("background-color","#FAA0A0")
             console.log(treeModified)
         },
         remove: function(event, data) {
             treeModified = true;
-            $(".main-body").css("background-color","#FAA0A0")
+            $(".background-change").css("background-color","#FAA0A0")
         },
         click: function(event, data){
           $(".footerChild").css("display","none")
@@ -271,13 +277,13 @@
       }
     });
 
-    ipcRenderer.on('addGroup', (event, data) => {
+    $("#btnAddGroup").on("click", function() {
       $(".footerChild").css("display","none")
       $(".editField").val("")
       $("#newGroupDiv").css("display","inline-block")
     })
 
-    ipcRenderer.on('addStation', (event, data) => {
+    $("#btnAddStation").on("click", function() {
       $("#newStationGroup").empty();
       const tree = $.ui.fancytree.getTree("#tree").getRootNode()
       tree.visit(function(node){
@@ -293,10 +299,15 @@
       $("#newStationDiv").css("display","inline-block")
     })
 
-    ipcRenderer.on('save', (event, source) => {
+    $("#btnSave").on("submit",function(e) {
       console.log(source)
       convertToOriginalJSONFormat(source)
     });
+
+    $("#btnCancel").on("click", function(e) {
+      console.log('cancel')
+      ipcRenderer.send('check-tree-response', false);
+    })
 
     ipcRenderer.on('check-tree', () => {
       ipcRenderer.send('check-tree-response', treeModified);
@@ -304,7 +315,7 @@
 
     ipcRenderer.on('save-complete', () => {
       treeModified = false;
-      $(".main-body").css("background-color","#f0f0f0")
+      $(".background-change").css("background-color","#f0f0f0")
     })
 
     $(".cancelButton").on("click",function(e) {

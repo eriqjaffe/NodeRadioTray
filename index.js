@@ -29,7 +29,6 @@ var outputDevice = -1;
 var contextMenu = null;
 var idleIcon = null;
 var playingIcon = null;
-//var _tagInfo = new BASS_TAG_INFO;
 var currentOutputDevice = -1;
 
 let tray
@@ -39,18 +38,18 @@ let bookmarksArr = []
 
 initializeWatcher();
 
-basslib.EnableTags(true);
+/* basslib.EnableTags(true);
 var tagsEnabled = basslib.TagsEnabled();
 if (tagsEnabled) {
   console.log("BASS: Tags enabled");
 } else {
   console.log("BASS: Tags disabled");
   //process.exit();
-}
+} */
 
 pluginsLoadResults = basslib.LoadAllPlugins();
 if (pluginsLoadResults === false) {
-  console.log("BASS: Error loading plugins: " + basslib.BASS_ErrorGetCode());
+  console.error("BASS: Error loading plugins: " + basslib.BASS_ErrorGetCode());
   //process.exit();
 } else {
   console.log("BASS: Plugins loaded");
@@ -98,114 +97,6 @@ setIconTheme(darkIcon);
 if (!store.has("notifications")) {
   store.set("notifications", true)
 } 
-
-const template = [
-  ...(isMac ? [{
-      label: app.name,
-      submenu: [
-      { role: 'about' },
-      { type: 'separator' },
-      { role: 'services' },
-      { type: 'separator' },
-      { role: 'hide' },
-      { role: 'hideOthers' },
-      { role: 'unhide' },
-      { type: 'separator' },
-      { role: 'quit' }
-      ]
-  }] : []),
-  {
-    label: 'File',
-    submenu: [
-/*           {
-        click: () => mainWindow.webContents.send('load','click'),
-        accelerator: isMac ? 'Cmd+L' : 'Control+L',
-        label: 'Load Font',
-    }, */
-    {
-      click: () => browserWindow.webContents.send('addGroup','click'),
-      accelerator: isMac ? 'Cmd+G' : 'Control+G',
-      label: 'Add Group',
-    },
-    {
-      click: () => browserWindow.webContents.send('addStation','click'),
-      accelerator: isMac ? 'Cmd+A' : 'Control+A',
-      label: 'Add Station',
-    },
-    {
-        click: () => browserWindow.webContents.send('save','click'),
-        accelerator: isMac ? 'Cmd+S' : 'Control+S',
-        label: 'Save Bookmarks',
-    },
-/*     {
-      click: () => mainWindow.webContents.send('import-image','click'),
-      accelerator: isMac ? 'Cmd+I' : 'Control+I',
-      label: 'Import Image',
-    }, */
-    //isMac ? { role: 'close' } : { role: 'quit' }
-    {
-      label: 'Close',
-      click: () => {
-        browserWindow.close(); // Trigger window close
-      },
-    },
-    ]
-},
-{
-    label: 'View',
-    submenu: [
-    { role: 'reload' },
-    { role: 'forceReload' },
-    { role: 'toggleDevTools' },
-    { type: 'separator' },
-    { role: 'resetZoom' },
-    { role: 'zoomIn' },
-    { role: 'zoomOut' },
-    { type: 'separator' },
-    { role: 'togglefullscreen' }
-    ]
-},
-{
-    label: 'Window',
-    submenu: [
-    { role: 'minimize' },
-    { role: 'zoom' },
-    ...(isMac ? [
-        { type: 'separator' },
-        { role: 'front' },
-        { type: 'separator' },
-        { role: 'window' }
-    ] : [
-        { role: 'close' }
-    ])
-    ]
-},
-{
-    role: 'help',
-    submenu: [
-    {
-        label: 'About Node.js',
-        click: async () => {    
-        await shell.openExternal('https://nodejs.org/en/about/')
-        }
-    },
-    {
-        label: 'About Electron',
-        click: async () => {
-        await shell.openExternal('https://electronjs.org')
-        }
-    },
-    {
-        label: 'View project on GitHub',
-        click: async () => {
-        await shell.openExternal('https://github.com/eriqjaffe/NodeRadioTray')
-        }
-    }
-    ]
-  }
-]
-
-const menu = Menu.buildFromTemplate(template)
 
 const prefsTemplate = [
   {
@@ -266,26 +157,6 @@ const prefsTemplate = [
     type: "checkbox",
     checked: (store.get("autorun") == true) ? true : false
   }
-  /* {
-    label: 'Enable activity logging',
-    click: e => {
-      store.set("logging", e.checked)
-    },
-    type: "checkbox",
-    checked: (store.get("logging") == true) ? true : false
-  }, */
-  /* { 
-    label: 'Back/forward keys switch stations',
-    click: e => {
-      store.set("stationswitcher", e.checked)
-    },
-    type: "checkbox",
-    checked: (store.get("stationswitcher") == true) ? true : false
-  }, */
-  /* {
-    label: 'Enable sleep timer',
-    click: openAboutWindow()
-  } */
 ]
 
 var menuTemplate = [
@@ -417,8 +288,6 @@ var menuTemplate = [
     icon: path.join(__dirname, '/images/icons8-cancel.png')
   }
 ]
-
-//console.log(menuTemplate[11])
 
 const createTray = () => {
   tray = new Tray(idleIcon)
@@ -564,36 +433,36 @@ function editBookmarksGui() {
         contextIsolation: false
       }
     })
-    browserWindow.setMenu(menu)
+    browserWindow.setMenu(null)
     browserWindow.loadFile('stationeditor.html');
     browserWindow.on('close', (event) => {
       event.preventDefault()
       browserWindow.webContents.send('check-tree');
-  
-      ipcMain.once('check-tree-response', (event, response) => {
-        if (response == false) {
-          browserWindow.destroy()
-          browserWindow = null;
-        } else {
-          dialog.showMessageBox(null, {
-            type: 'question',
-            message: "The bookmarks appear to have been edited?  Do you want to save your changes?",
-            buttons: ['Yes', 'No'],
-          }).then(result => {
-            if (result.response === 1) {
-              browserWindow.destroy()
-              browserWindow = null;
-            } else {
-              browserWindow.webContents.send('save','dialog')
-            }
-          })
-        }
-      });
     });
   } else {
     browserWindow.focus();
   }
 }
+
+ipcMain.on('check-tree-response', (event, response) => {
+  if (response == false) {
+    browserWindow.destroy()
+    browserWindow = null;
+  } else {
+    dialog.showMessageBox(null, {
+      type: 'question',
+      message: "The bookmarks appear to have been edited?  Do you want to save your changes?",
+      buttons: ['Yes', 'No'],
+    }).then(result => {
+      if (result.response === 1) {
+        browserWindow.destroy()
+        browserWindow = null;
+      } else {
+        browserWindow.webContents.send('save','dialog')
+      }
+    })
+  }
+});
 
 function loadCards() {
   var cards = basslib.getDevices();
@@ -631,8 +500,14 @@ function loadCards() {
           basslib.BASS_Initflags.BASS_DEVICE_STEREO
         );
         if (init === false) {
-          console.log("error at BASS_Init: " + basslib.BASS_ErrorGetCode());
-          process.exit();
+          console.error("error at BASS_Init: " + basslib.BASS_ErrorGetCode());
+          dialog.showMessageBox(null, {
+            type: 'error',
+            message: "error at BASS_Init: " + basslib.BASS_ErrorGetCode(),
+            buttons: ['OK'],
+          }).then(result => {
+            process.exit();
+          })
         } else {
           console.log("BASS: Bass initialized on device " + outputDevice);
         }
@@ -842,7 +717,6 @@ function playCustomURL() {
 function toggleMMKeys(state) {
   if (state == true) {
     globalShortcut.register('MediaPlayPause', () => {
-      console.log("play pause button")
       if (basslib.BASS_ChannelIsActive(stream)) {
         basslib.BASS_Free();
         toggleButtons(false);
@@ -906,7 +780,6 @@ function changeVolume(direction) {
     volume
   );
   store.set("lastVolume", ref.deref(volume))
-  console.log(Math.round(parseFloat(ref.deref(volume)) * 100))
   menuTemplate[11].label = "Volume: "+Math.round(parseFloat(ref.deref(volume)) * 100)+"%"
   menuTemplate[11].icon = path.join(__dirname, '/images/'+Math.round(parseFloat(ref.deref(volume)) * 100)+"-percent-icon.png")
   contextMenu = Menu.buildFromTemplate(menuTemplate)
@@ -927,7 +800,12 @@ ipcMain.on('test-ipc', (event, arg) => {
 ipcMain.on('save-bookmarks', (event, data) => {
   fs.writeFile(userData+'/bookmarks.json', data.data, function(err) {
     if(err) {
-      console.log(err);
+      dialog.showMessageBox(null, {
+        type: 'error',
+        message: "An error occurred saving bookmarks:\r\r\n" + err,
+        buttons: ['OK'],
+      }).then(result => {})
+      console.error(err);
     } else {
       reloadBookmarks();
       if (data.source == "dialog") {
