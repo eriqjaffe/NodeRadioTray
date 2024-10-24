@@ -11,7 +11,7 @@
     "pack:arm": "electron-packager . --out dist/ --overwrite --platform linux --arch armv7l --icon=build/icon.png",
     "pack:darwin": "electron-packager . --out dist/ --overwrite --platform darwin --icon=build/icon.icns",
     "pack:all": "yarn run pack:win64 && yarn run pack:linux64",
-    "build:win64": "electron-installer-windows --src ./dist/NodeRadioTray-win32-x64/ --dest ./dist/installers/",
+    "build:win64": "electron-installer-windows --icon ./images/playing.ico --animation ./images/installer.gif --src ./dist/NodeRadioTray-win32-x64/ --dest ./dist/installers/" ,
     "build:linux": ".\\node_modules\\.bin\\electron-builder -l",
     "build:mac": ".\\node_modules\\.bin\\electron-builder -m"
   },
