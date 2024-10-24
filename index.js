@@ -10,7 +10,6 @@ const path = require('path');
 const AutoLaunch = require('auto-launch');
 const ref = require("ref-napi");
 const parser = require("icecast-parser")
-//const { parseRadioID3 } = require('radio-id3');
 
 const isMac = process.platform === 'darwin'
 const userData = app.getPath('userData');
@@ -35,10 +34,8 @@ var currentOutputDevice = -1;
 
 let tray
 let browserWindow;
+let browserWindow2;
 let bookmarksArr = []
-let radioStation;
-let tooltipWindow = null;
-let hideTooltipTimeout = null;
 
 initializeWatcher();
 
@@ -76,7 +73,6 @@ setInterval(function () {
 
     radioStation.on('metadata', (metadata) => {
       const streamTitle = metadata.get('StreamTitle') ?? 'unknown';
-      //console.log(streamTitle)
       if (streamTitle == "unknown") {
         tray.setToolTip("NodeRadioTray\r\n"+store.get("lastStation"))
       } else {
@@ -311,17 +307,18 @@ var menuTemplate = [
     submenu: loadCards(),
     icon: path.join(__dirname, '/images/icons8-audio.png')
   },
+  
   { 
     label: 'Edit Stations',
     click: e => {
-      shell.openPath(userData+'/bookmarks.json');
+      editBookmarksGui()
     },
     icon: path.join(__dirname, '/images/icons8-maintenance.png')
   },
   { 
-    label: 'Edit Stations (experimental)',
+    label: 'Edit Station JSON file',
     click: e => {
-      editBookmarksGui()
+      shell.openPath(userData+'/bookmarks.json');
     },
     icon: path.join(__dirname, '/images/icons8-maintenance.png')
   },
@@ -342,7 +339,7 @@ var menuTemplate = [
     type: 'separator'
   },
   {
-    label: "Play",
+    label: "Play "+store.get("lastStation"),
     id: "playButton",
     click: async() => {
       playStream(store.get('lastStation'), store.get('lastURL'));
@@ -358,6 +355,11 @@ var menuTemplate = [
       toggleButtons(false);
     },
     icon: path.join(__dirname, '/images/icons8-Stop.png'),
+    visible: process.platform == "linux" ? true : false
+  },
+  { label: "Volume: "+Math.round(parseFloat(store.get("lastVolume")) * 100)+"%",
+    id: "volumeDisplay",
+    icon: path.join(__dirname, '/images/'+Math.round(parseFloat(store.get("lastVolume")) * 100)+"-percent-icon.png"),
     visible: process.platform == "linux" ? true : false
   },
   {
@@ -402,11 +404,21 @@ var menuTemplate = [
     type: 'separator'
   },
   {
+    label: "About",
+    id: "About",
+    click: async() => {
+      showAbout()
+    },
+    icon: path.join(__dirname, '/images/icons8-about.png')
+  },
+  {
     label: "Exit",
     role: "quit",
     icon: path.join(__dirname, '/images/icons8-cancel.png')
   }
 ]
+
+//console.log(menuTemplate[11])
 
 const createTray = () => {
   tray = new Tray(idleIcon)
@@ -494,7 +506,7 @@ function loadBookmarks() {
     console.log("Bookmarks loaded")
     return stationMenu;
   } catch (error) {
-    console.log(error)
+    console.error(error)
   }
 }
 
@@ -511,7 +523,38 @@ function reloadBookmarks() {
   }
 }
 
+function showAbout() {
+  if (browserWindow) {
+    browserWindow.close()
+  }
+  if (!browserWindow2) {
+    browserWindow2 = new BrowserWindow({
+      width: 800,
+      height: 600,
+      webPreferences: {
+        nodeIntegration: true,
+        contextIsolation: false
+      }
+    })
+    browserWindow2.setMenu(null)
+    browserWindow2.loadFile('about.html')
+    browserWindow2.on('closed', () => {
+      browserWindow2.destroy()
+      browserWindow2 = null
+    })
+    browserWindow2.webContents.setWindowOpenHandler(({ url }) => {
+      shell.openExternal(url);
+      return { action: 'deny' };
+    });
+  } else {
+    browserWindow2.focus();
+  }
+}
+
 function editBookmarksGui() {
+  if (browserWindow2) {
+    browserWindow2.close()
+  }
   if (!browserWindow) {
     browserWindow = new BrowserWindow({
       width: 800,
@@ -522,7 +565,7 @@ function editBookmarksGui() {
       }
     })
     browserWindow.setMenu(menu)
-    browserWindow.loadFile('index.html');
+    browserWindow.loadFile('stationeditor.html');
     browserWindow.on('close', (event) => {
       event.preventDefault()
       browserWindow.webContents.send('check-tree');
@@ -674,7 +717,7 @@ function playStream(streamName, url) {
       }
     }
   } catch (error) {
-    console.log(error)
+    console.error(error)
   }
 }
 
@@ -685,6 +728,7 @@ function showVolume() {
 function toggleButtons(state) {
   playButton = contextMenu.getMenuItemById('playButton');
   stopButton = contextMenu.getMenuItemById('stopButton');
+  volDisplay = contextMenu.getMenuItemById('volumeDisplay')
   volUpButton = contextMenu.getMenuItemById('volumeUp');
   volDownButton = contextMenu.getMenuItemById('volumeDown')
   nextButton = contextMenu.getMenuItemById('nextButton')
@@ -692,6 +736,7 @@ function toggleButtons(state) {
   if (state == true) {
     playButton.visible = false;
     stopButton.visible = true;
+    volDisplay.visible = true;
     volUpButton.visible = true;
     volDownButton.visible = true;
     nextButton.visible = true;
@@ -700,12 +745,16 @@ function toggleButtons(state) {
   } else {
     playButton.visible = true;
     stopButton.visible = false;
+    volDisplay.visible = false;
     volUpButton.visible = false;
     volDownButton.visible = false;
     nextButton.visible = false;
     previousButton.visible = false;
     tray.setImage(idleIcon);
     tray.setToolTip("NodeRadioTray");
+    menuTemplate[9].label = "Play "+store.get("lastStation")
+    contextMenu = Menu.buildFromTemplate(menuTemplate)
+    tray.setContextMenu(contextMenu)
   }
 }
 
@@ -751,7 +800,7 @@ function initializeWatcher() {
       console.log("User bookmarks file not found, creating...")
       fs.copyFileSync(path.join(__dirname, '/bookmarks.json'), userData+'/bookmarks.json');
     } catch (error) {
-      console.log(error)
+      console.error(error)
     }
   }
   if (!fs.existsSync(userData+'/images')) {
@@ -759,7 +808,7 @@ function initializeWatcher() {
       console.log("User images directory not found, creating...")
       fs.mkdirSync(userData+'/images');
     } catch (error) {
-      console.log(error)
+      console.error(error)
     }
   }
   watcher.add(userData+'/bookmarks.json',
@@ -857,6 +906,17 @@ function changeVolume(direction) {
     volume
   );
   store.set("lastVolume", ref.deref(volume))
+  console.log(Math.round(parseFloat(ref.deref(volume)) * 100))
+  menuTemplate[11].label = "Volume: "+Math.round(parseFloat(ref.deref(volume)) * 100)+"%"
+  menuTemplate[11].icon = path.join(__dirname, '/images/'+Math.round(parseFloat(ref.deref(volume)) * 100)+"-percent-icon.png")
+  contextMenu = Menu.buildFromTemplate(menuTemplate)
+  tray.setContextMenu(contextMenu)
+  if (
+    basslib.BASS_ChannelIsActive(stream) ==
+    basslib.BASS_ChannelIsActiveAttribs.BASS_ACTIVE_PLAYING
+  ) {
+    toggleButtons(true)
+  }
 }
 
 ipcMain.on('test-ipc', (event, arg) => {

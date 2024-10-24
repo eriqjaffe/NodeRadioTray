@@ -1,0 +1,55 @@
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: "Outfit", sans-serif;
+    background-color: #f0f0f0;
+  }
+
+  input {
+    font-family: "Outfit", sans-serif;
+  }
+
+  .fancytree-title {
+    font-family: "Outfit", sans-serif!important;
+  }
+
+  .main-body {
+    height: 75%; /* 100% - 25% for the footer */
+    background-color: #f0f0f0; /* Change the background color as needed */
+    position: relative;
+  }
+
+  .footer {
+    height: 25%;
+    width: 100%;
+    background-color: #333; /* Change the background color as needed */
+    color: #fff; /* Change the text color as needed */
+    text-align: center; /* Center align text within the footer */
+    bottom: 0;
+    position: absolute;
+  }
+
+  #tree {
+    height: 100%; /* Set the tree's height to 100% of the parent's height */
+    overflow: auto;
+  }
+
+  ul.fancytree-container {
+    background-color: inherit;
+    border: none;
+  }
+
+  .context-menu-list .context-menu-icon.context-menu-icon--fa { 
+    font-family: "Outfit", sans-serif!important;
+    
+  }
+
+  .context-menu-item {
+    padding: 2px 2px 2px 10px!important;
+    font-size: .8em!important;
+  }
+
+  h1 {
+    text-align: center;
+  }

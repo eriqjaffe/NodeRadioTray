@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8">
     <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
-    <title>Hello World!</title>
+    <title>NodeRadioTray</title>
     <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
     <script type="text/javascript" src="./scripts/jquery-1.11.3.min.js"></script>
     <script type="text/javascript" src="./scripts/jquery.fancytree-all-deps.min.js"></script>
@@ -15,63 +15,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
     <link href="./scripts/skin-win8-n/ui.fancytree.min.css" rel="stylesheet">
     <link href="./scripts/jquery.contextMenu.css" rel="stylesheet" type='text/css'/>
+    <link href="./scripts/style.css" rel="stylesheet" type='text/css'/>
     <script>
         const { ipcRenderer } = require('electron');
-        require('./renderer.js')
         let treeModified = false;
     </script>
-    <style>
-      html, body {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-        font-family: "Outfit", sans-serif;
-      }
-
-      input {
-        font-family: "Outfit", sans-serif;
-      }
-
-      .fancytree-title {
-        font-family: "Outfit", sans-serif!important;
-      }
-
-      .main-body {
-        height: 75%; /* 100% - 25% for the footer */
-        background-color: #f0f0f0; /* Change the background color as needed */
-        position: relative;
-      }
-
-      .footer {
-        height: 25%;
-        width: 100%;
-        background-color: #333; /* Change the background color as needed */
-        color: #fff; /* Change the text color as needed */
-        text-align: center; /* Center align text within the footer */
-        bottom: 0;
-        position: absolute;
-      }
-
-      #tree {
-        height: 100%; /* Set the tree's height to 100% of the parent's height */
-        overflow: auto;
-      }
-
-      ul.fancytree-container {
-        background-color: inherit;
-        border: none;
-      }
-
-      .context-menu-list .context-menu-icon.context-menu-icon--fa { 
-        font-family: "Outfit", sans-serif!important;
-        
-      }
-
-      .context-menu-item {
-        padding: 2px 2px 2px 10px!important;
-        font-size: .8em!important;
-      }
-    </style>
   </head>
   <body>
     <div class="main-body">
