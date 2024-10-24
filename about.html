@@ -10,7 +10,9 @@
         window.module = module;
         module = undefined;
       }
+      const { ipcRenderer } = require('electron');
     </script>
+    <script type="text/javascript" src="./scripts/jquery-1.11.3.min.js"></script>
     <style>
         html, body {
             margin: 5px!important;
@@ -25,11 +27,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
     <link href="./scripts/style.css" rel="stylesheet" type='text/css'/>
+    
   </head>
   <body>
     <h1>NodeRadioTray</h1>
+    <h4 id="info"></h4>
     <p>NodeRadioTray is a simple, cross-platform internet radio player that sits in the system tray, hence the name.  It is heavily influenced by a Linux application called <a href="https://radiotray.sourceforge.net/" target="_blank">RadioTray</a>, originally written by Carlos Ribiero.</p>
-    <p>The original implimentation of this was <a href="https://github.com/eriqjaffe/WinRadioTray" target="_blank">WinRadioTray</a>, Windows-only C# app. While functional, it has some quirks and bugs that I've never been able to sort out, and I have never been entirely comfortable working with C# anyways. Also it was Windows-only which is fine as far as it goes, but after discovering Node.js and Electron I decided to rework WinRadioTray as a cross-platform app.</p>
+    <p>The original implimentation of this was <a href="https://github.com/eriqjaffe/WinRadioTray" target="_blank">WinRadioTray</a>, a Windows-only C# app. While functional, it has some quirks and bugs that I've never been able to sort out, and I have never been entirely comfortable working with C# anyways. Also it was Windows-only which is fine as far as it goes, but after discovering Node.js and Electron I decided to rework WinRadioTray as a cross-platform app.</p>
     <p>This software predominantly makes use of the following:
         <ul>
             <li><a href="https://nodejs.org/en/about" target="_blank">Node.js</a> (hence the name).</li>
@@ -41,4 +45,11 @@
     </p>
     <p>If you have any questions, feel free to <a href="mailto:eriqjaffe@gmail.com" target="_blank">email me</a> or report an issue on the <a href="https://github.com/eriqjaffe/noderadiotray" target="_blank">project's GitHub page</a>.</p>
   </body>
+  <script>
+    ipcRenderer.send("get-app-version", null)
+
+    ipcRenderer.on("get-app-version-response", (event, data) => {
+      $("#info").text("Version "+data)
+    })
+  </script>
 </html>
