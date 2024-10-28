@@ -12,8 +12,6 @@
     "pack:darwin": "electron-packager . --out dist/ --overwrite --platform darwin --icon=build/icon.icns",
     "pack:all": "yarn run pack:win64 && yarn run pack:linux64",
     "build:win64": "electron-installer-windows --icon ./images/playing.ico --animation ./images/installer.gif --src ./dist/NodeRadioTray-win32-x64/ --dest ./dist/installers/",
-    "build:linux": ".\\node_modules\\.bin\\electron-builder -l",
-    "build:mac": ".\\node_modules\\.bin\\electron-builder -m"
   },
   "author": {
     "name": "Eriq Jaffe",
@@ -33,7 +31,6 @@
   },
   "devDependencies": {
     "electron": "^33.0.2",
-    "electron-builder": "^22.14.13",
     "electron-installer-windows": "^3.0.0"
   }
 }
