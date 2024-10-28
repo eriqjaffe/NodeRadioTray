@@ -2,20 +2,20 @@ if(require('electron-squirrel-startup')) return;
 const { app, Menu, Tray, nativeImage, shell, globalShortcut, BrowserWindow, ipcMain, dialog } = require('electron')
 const fs = require('fs');
 const Store = require("electron-store");
-const bass = require("@eriqjaffe/bassaudio-updated");
+//const bass = require("@eriqjaffe/bassaudio-updated");
 const chokidar = require("chokidar");
 const prompt = require('electron-prompt');
 const notifier = require('node-notifier');
 const path = require('path');
 const AutoLaunch = require('auto-launch');
-const ref = require("ref-napi");
-const parser = require("icecast-parser")
+//const ref = require("ref-napi");
+//const parser = require("icecast-parser")
 const pkg = require('./package.json');
 
 const isMac = process.platform === 'darwin'
 const userData = app.getPath('userData');
 const firstSoundCard = (process.platform == "win32") ? 2 : 1;
-const basslib = new bass();
+//const basslib = new bass();
 const store = new Store()
 const AutoLauncher = new AutoLaunch(
   {name: 'NodeRadioTray'}
@@ -49,13 +49,13 @@ if (tagsEnabled) {
   //process.exit();
 } */
 
-pluginsLoadResults = basslib.LoadAllPlugins();
+/* pluginsLoadResults = basslib.LoadAllPlugins();
 if (pluginsLoadResults === false) {
   console.error("BASS: Error loading plugins: " + basslib.BASS_ErrorGetCode());
   //process.exit();
 } else {
   console.log("BASS: Plugins loaded");
-}
+} */
 
 /* setInterval(function () {
   if (
@@ -109,11 +109,11 @@ const prefsTemplate = [
       if (stream == null) {
         tray.setImage(idleIcon)
       } else {
-        if (basslib.BASS_ChannelIsActive(stream)) {
+        /* if (basslib.BASS_ChannelIsActive(stream)) {
           tray.setImage(playingIcon)
         } else {
           tray.setImage(idleIcon)
-        }
+        } */
       }
     },
     type: "checkbox",
@@ -224,7 +224,7 @@ var menuTemplate = [
     label: "Stop",
     id: "stopButton",
     click: async() => {
-      basslib.BASS_Free();
+      //basslib.BASS_Free();
       toggleButtons(false);
     },
     icon: path.join(__dirname, '/images/icons8-Stop.png'),
@@ -697,15 +697,15 @@ function playCustomURL() {
 function toggleMMKeys(state) {
   if (state == true) {
     globalShortcut.register('MediaPlayPause', () => {
-      if (basslib.BASS_ChannelIsActive(stream)) {
-        basslib.BASS_Free();
+      /* if (basslib.BASS_ChannelIsActive(stream)) {
+        //basslib.BASS_Free();
         toggleButtons(false);
       } else {
         playStream(store.get('lastStation'), store.get('lastURL'));
-      }
+      } */
     })
     globalShortcut.register('MediaStop', () => {
-      basslib.BASS_Free();
+      //basslib.BASS_Free();
       toggleButtons(false);
     })
     globalShortcut.register('Ctrl+VolumeUp', () => {
