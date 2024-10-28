@@ -2,15 +2,22 @@ if(require('electron-squirrel-startup')) return;
 const { app, Menu, Tray, nativeImage, shell, globalShortcut, BrowserWindow, ipcMain, dialog } = require('electron')
 const fs = require('fs');
 const Store = require("electron-store");
-//const bass = require("@eriqjaffe/bassaudio-updated");
 const chokidar = require("chokidar");
 const prompt = require('electron-prompt');
 const notifier = require('node-notifier');
 const path = require('path');
 const AutoLaunch = require('auto-launch');
-//const ref = require("ref-napi");
-//const parser = require("icecast-parser")
 const pkg = require('./package.json')
+
+/* import { app, Menu, Tray, nativeImage, shell, globalShortcut, BrowserWindow, ipcMain, dialog } from 'electron';
+import fs from 'fs';
+import Store from 'electron-store';
+import chokidar from 'chokidar';
+import prompt from 'electron-prompt';
+import notifier from 'node-notifier';
+import path from 'path';
+import AutoLaunch from 'auto-launch';
+import pkg from './package.json' assert { type: 'json' }; */
 
 const isMac = process.platform === 'darwin'
 const userData = app.getPath('userData');

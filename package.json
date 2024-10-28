@@ -32,7 +32,7 @@
     "node-notifier": "^10.0.0"
   },
   "devDependencies": {
-    "electron": "^16.0.7",
+    "electron": "^33.0.2",
     "electron-builder": "^22.14.13",
     "electron-installer-windows": "^3.0.0"
   }
