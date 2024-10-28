@@ -35,6 +35,7 @@ var currentOutputDevice = -1;
 let tray
 let browserWindow;
 let browserWindow2;
+let playerWindow;
 let bookmarksArr = []
 
 initializeWatcher();
@@ -56,7 +57,7 @@ if (pluginsLoadResults === false) {
   console.log("BASS: Plugins loaded");
 }
 
-setInterval(function () {
+/* setInterval(function () {
   if (
     basslib.BASS_ChannelIsActive(stream) ==
     basslib.BASS_ChannelIsActiveAttribs.BASS_ACTIVE_PLAYING
@@ -90,7 +91,7 @@ setInterval(function () {
   } else {
     tray.setToolTip('NodeRadioTray')
   }
-}, 1000);
+}, 1000); */
 
 var darkIcon = (store.get("darkicon") == true) ? true : false;
 setIconTheme(darkIcon);
@@ -174,12 +175,12 @@ var menuTemplate = [
     submenu: prefsTemplate,
     icon: path.join(__dirname, 'images/icons8-settings.png')
   },
-  { 
+  /* { 
     label: 'Audio Output',
     submenu: loadCards(),
     icon: path.join(__dirname, '/images/icons8-audio.png')
   },
-  
+   */
   { 
     label: 'Edit Stations',
     click: e => {
@@ -229,9 +230,9 @@ var menuTemplate = [
     icon: path.join(__dirname, '/images/icons8-Stop.png'),
     visible: process.platform == "linux" ? true : false
   },
-  { label: "Volume: "+Math.round(parseFloat(store.get("lastVolume")) * 100)+"%",
+  { label: "Volume: "+Math.round(parseFloat(store.get("lastVolume", .5)) * 100)+"%",
     id: "volumeDisplay",
-    icon: path.join(__dirname, '/images/'+Math.round(parseFloat(store.get("lastVolume")) * 100)+"-percent-icon.png"),
+    icon: path.join(__dirname, '/images/'+Math.round(parseFloat(store.get("lastVolume", .5)) * 100)+"-percent-icon.png"),
     visible: process.platform == "linux" ? true : false
   },
   {
@@ -304,6 +305,25 @@ const createTray = () => {
 
 app.whenReady().then(() => {
   createTray()
+
+  playerWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    show: false,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
+  })
+  playerWindow.setMenu(null)
+  playerWindow.loadFile('player.html')
+  playerWindow.webContents.openDevTools()
+
+  playerWindow.on('close', (event) => {
+    event.preventDefault(); // Prevent the window from closing
+    playerWindow.hide(); // Hide the window instead
+  });
+
   if (store.get("autoplay") == true) {
     playStream(store.get('lastStation'), store.get('lastURL'));
   }
@@ -314,7 +334,10 @@ app.on('activate', () => {})
 
 app.on('window-all-closed', () => {})
 
-
+app.on('before-quit', function (evt) {
+  playerWindow.destroy()
+  //tray.destroy();
+});
 
 if (process.platform == "darwin") {
   app.dock.hide()
@@ -382,15 +405,16 @@ function loadBookmarks() {
 
 function reloadBookmarks() {
   menuTemplate[0].submenu = loadBookmarks();
-  menuTemplate[3].submenu = loadCards();
+  //menuTemplate[3].submenu = loadCards();
   contextMenu = Menu.buildFromTemplate(menuTemplate)
   tray.setContextMenu(contextMenu)
-  if (
+  playerWindow.webContents.send("get-player-status", null)
+/*   if (
     basslib.BASS_ChannelIsActive(stream) ==
     basslib.BASS_ChannelIsActiveAttribs.BASS_ACTIVE_PLAYING
   ) {
     toggleButtons(true)
-  }
+  } */
 }
 
 function showAbout() {
@@ -445,6 +469,12 @@ function editBookmarksGui() {
   }
 }
 
+ipcMain.on('get-player-status-response', (event, data) => {
+  if (data == "playing") {
+    toggleButtons(true)
+  }
+})
+
 ipcMain.on('check-tree-response', (event, response) => {
   if (response == false) {
     browserWindow.destroy()
@@ -469,14 +499,14 @@ ipcMain.on('get-app-version', (event, response) => {
   event.sender.send('get-app-version-response', pkg.version)
 })
 
-function loadCards() {
+/* function loadCards() {
   var cards = basslib.getDevices();
   var cardsMenu = [];
 
   for (var i = firstSoundCard; i < cards.length; i++) {
     const cardsArr = [];
     cardsArr.id = i;
-  /*   cardsArr.name = cards[i].name;
+   cardsArr.name = cards[i].name;
     cardsArr.typeDigital = cards[i].typeDigital,
     cardsArr.typeDisplayPort = cards[i].typeDisplayPort,
     cardsArr.typeHandset = cards[i].typeHandset,
@@ -488,7 +518,7 @@ function loadCards() {
     cardsArr.typeMicrophone = cards[i].typeMicrophone,
     cardsArr.typeNetwork = cards[i].typeNetwork,
     cardsArr.typeSPDIF = cards[i].typeSPDIF,
-    cardsArr.typeSpeakers = cards[i].typeSpeakers */
+    cardsArr.typeSpeakers = cards[i].typeSpeakers
     console.log ("current output: "+currentOutputDevice)
     var card = {
       label: cards[i].name + " " ,
@@ -522,84 +552,28 @@ function loadCards() {
     cardsMenu.push(card)
   }
   return cardsMenu;
-}
+} */
 
 function playStream(streamName, url) {
-  basslib.BASS_Free();
   tray.setToolTip("NodeRadioTray");
   tray.setImage(idleIcon);
-  basslib.BASS_SetConfig(15, 0);
-  basslib.BASS_SetConfig(21, 1);
-  var init = basslib.BASS_Init(
-    outputDevice,
-    44100,
-    basslib.BASS_Initflags.BASS_DEVICE_STEREO
-  );
-  if (init === false) {
-    notifier.notify(
-      {
-        title: 'NodeRadioTray',
-        message: 'BASS Init Error: ' + basslib.BASS_ErrorGetCode(),
-        icon: path.join(__dirname, '/images/playing.png'),
-        sound: true,
-        wait: false,
-        timeout: 3
-      });
-    //process.exit();
-  } else {
-    console.log("BASS: Bass initialized on device " + outputDevice);
-  }
-  stream = basslib.BASS_StreamCreateURL(url, 0, 0, null, null);
-  if (basslib.BASS_ErrorGetCode() != basslib.BASS_ErrorCode.BASS_OK) {
-    console.log("BASS: Error opening file:" + basslib.BASS_ErrorGetCode());
-    notifier.notify(
-      {
-        title: 'NodeRadioTray',
-        message: 'Playback Error: ' + basslib.BASS_ErrorGetCode(),
-        icon: path.join(__dirname, '/images/playing.png'),
-        sound: true,
-        wait: false,
-        timeout: 3
-      });
-  }
-  try {
-    basslib.BASS_ChannelSetAttribute(
-      stream,
-      basslib.BASS_ChannelAttributes.BASS_ATTRIB_VOL,
-      store.get("lastVolume", 0.5)
-    );
-    var success = basslib.BASS_ChannelPlay(stream, 0);
-    if (!success) {
-      notifier.notify(
-        {
-          title: 'NodeRadioTray',
-          message: 'Playback Error: ' + basslib.BASS_ErrorGetCode(),
-          icon: path.join(__dirname, '/images/playing.png'),
-          sound: true,
-          wait: false,
-          timeout: 3
-        });
-    } else {
-      toggleButtons(true);
-      store.set('lastStation',streamName);
-      store.set('lastURL',url)
-      
-      if (store.get("notifications") == true) {
-        notifier.notify(
-          {
-            title: 'NodeRadioTray',
-            message: 'Now Playing: '+streamName,
-            icon: path.join(__dirname, '/images/playing.png'),
-            sound: true,
-            wait: false,
-            timeout: 3
-          });
-      }
-    }
-  } catch (error) {
-    console.error(error)
-  }
+  playerWindow.webContents.send("play", {streamName: streamName, url: url})
+  store.set('lastStation',streamName);
+  store.set('lastURL',url)
+  toggleButtons(true)
 }
+
+ipcMain.on('set-tooltip', (event, data) => {
+  console.log(data)
+  if (data.playing) {
+    tray.setImage(playingIcon);
+    tray.setToolTip(data.data) 
+    //toggleButtons(true)
+  } else {
+    tray.setImage(idleIcon);
+    toggleButtons(false)
+  }
+})
 
 function showVolume() {
   
@@ -621,7 +595,7 @@ function toggleButtons(state) {
     volDownButton.visible = true;
     nextButton.visible = true;
     previousButton.visible = true;
-    tray.setImage(playingIcon);
+    //tray.setImage(playingIcon);
   } else {
     playButton.visible = true;
     stopButton.visible = false;
@@ -630,11 +604,12 @@ function toggleButtons(state) {
     volDownButton.visible = false;
     nextButton.visible = false;
     previousButton.visible = false;
-    tray.setImage(idleIcon);
-    tray.setToolTip("NodeRadioTray");
-    menuTemplate[9].label = "Play "+store.get("lastStation")
+    //tray.setImage(idleIcon);
+    //tray.setToolTip("NodeRadioTray");
+    menuTemplate[8].label = "Play "+store.get("lastStation")
     contextMenu = Menu.buildFromTemplate(menuTemplate)
     tray.setContextMenu(contextMenu)
+    playerWindow.webContents.send("stop", null)
   }
 }
 
@@ -745,57 +720,25 @@ function toggleMMKeys(state) {
 }
 
 function changeVolume(direction) {
-  var volume = ref.alloc("float");
-  basslib.BASS_ChannelGetAttribute(
-    stream,
-    basslib.BASS_ChannelAttributes.BASS_ATTRIB_VOL,
-    volume
-  );
-  if (direction == "up" && ref.deref(volume) <= 1) {
-    basslib.BASS_ChannelSetAttribute(
-      stream,
-      basslib.BASS_ChannelAttributes.BASS_ATTRIB_VOL,
-      ref.deref(volume) + 0.1
-    );
-  }
-  if (direction == "up" && ref.deref(volume) <= 1 && ref.deref(volume) >= 0.9) {
-    basslib.BASS_ChannelSetAttribute(
-      stream,
-      basslib.BASS_ChannelAttributes.BASS_ATTRIB_VOL,
-      ref.deref(volume) + 0.1
-    );
-  }
-  if (direction == "down" && ref.deref(volume) >= 0) {
-    basslib.BASS_ChannelSetAttribute(
-      stream,
-      basslib.BASS_ChannelAttributes.BASS_ATTRIB_VOL,
-      ref.deref(volume) - 0.1
-    );
-  }
-  if (direction == "down" && ref.deref(volume) <= 0.1) {
-    basslib.BASS_ChannelSetAttribute(
-      stream,
-      basslib.BASS_ChannelAttributes.BASS_ATTRIB_VOL,
-      0
-    );
-  }
-  basslib.BASS_ChannelGetAttribute(
-    stream,
-    basslib.BASS_ChannelAttributes.BASS_ATTRIB_VOL,
-    volume
-  );
-  store.set("lastVolume", ref.deref(volume))
-  menuTemplate[11].label = "Volume: "+Math.round(parseFloat(ref.deref(volume)) * 100)+"%"
-  menuTemplate[11].icon = path.join(__dirname, '/images/'+Math.round(parseFloat(ref.deref(volume)) * 100)+"-percent-icon.png")
+  playerWindow.webContents.send("set-volume", { direction: direction })
+}
+
+ipcMain.on("get-initial-volume", (event, data) => {
+  playerWindow.webContents.send("get-initial-volume-response", { volume: store.get("lastVolume", 1.0) })
+})
+
+ipcMain.on("set-volume-response", (event, data) => {
+  store.set("lastVolume", data.volume)
+  menuTemplate[10].label = "Volume: "+Math.round(parseFloat(data.volume) * 100)+"%"
+  menuTemplate[10].icon = path.join(__dirname, '/images/'+Math.round(parseFloat(data.volume) * 100)+"-percent-icon.png")
   contextMenu = Menu.buildFromTemplate(menuTemplate)
   tray.setContextMenu(contextMenu)
-  if (
-    basslib.BASS_ChannelIsActive(stream) ==
-    basslib.BASS_ChannelIsActiveAttribs.BASS_ACTIVE_PLAYING
-  ) {
+  if (data.status == "playing") {
     toggleButtons(true)
+  } else {
+    toggleButtons(false)
   }
-}
+})
 
 ipcMain.on('test-ipc', (event, arg) => {
   let bookmarks = JSON.parse(fs.readFileSync(userData+'/bookmarks.json'));

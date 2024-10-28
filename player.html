@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <title>NodeRadioTray</title>
+    <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
+    <script type="text/javascript" src="./scripts/jquery-1.11.3.min.js"></script>
+    <script src="./scripts/icecast-metadata-player-1.17.3.main.min.js"></script>
+    <script>
+        const { ipcRenderer } = require('electron');
+        let player;
+        let volume = 1.0
+    </script>
+</head>
+<html>
+<body>
+
+</body>
+<script>
+    ipcRenderer.on("play", (event, data) => {
+        if (player != undefined || player != null) {
+            player.stop()
+        }
+        player = new IcecastMetadataPlayer(data.url, {
+            onMetadata: (metadata) => {
+                if (metadata.StreamTitle != undefined) {
+                    ipcRenderer.send("set-tooltip", {playing: true, data: data.streamName+"\r\n"+metadata.StreamTitle})
+                } else {
+                    ipcRenderer.send("set-tooltip", {playing: true, data: data.streamName})
+                }              
+            },
+            onWarn: (message) => {  
+                console.log(message)
+            },
+            onError: (message, error) => {
+                player.stop()
+                ipcRenderer.send('set-tooltip', {playing: false})
+                alert(error)
+            },
+            metadataTypes: ["icy"]
+        })
+        player.audioElement.volume = volume;
+        player.play()
+    })
+
+    ipcRenderer.send("get-initial-volume", null)
+
+    ipcRenderer.on("get-initial-volume-response", (event, data) => {
+        volume = parseFloat(data.volume)
+    })
+
+    ipcRenderer.on("set-volume", (event, data) => {
+        if (player != undefined || player != null) {
+            let vol = player.audioElement.volume
+            console.log("current volume", vol)
+            if (data.direction == "up" && vol < 1) {
+                vol = vol + .1
+            } 
+            if (data.direction == "down" && vol > 0) {
+                vol = vol - .1
+            }
+            console.log("new volume", vol)
+            player.audioElement.volume = vol
+            ipcRenderer.send("set-volume-response", { volume: vol, status: player.state })
+        } else {
+            if (data.direction == "up" && volume < 1) {
+                volume = volume + .1
+            } 
+            if (data.direction == "down" && volume > 0) {
+                volume = volume - .1
+            }
+            ipcRenderer.send("set-volume-response", { volume: volume, status: "stopped" })
+        }
+    })
+
+    ipcRenderer.on("stop", (event, data) => {
+        if (player != undefined || player != null) {
+            player.stop()
+        }
+        ipcRenderer.send("set-tooltip", {playing: false, data: "NodeRadioTray"})
+    })
+
+    ipcRenderer.on("get-player-status", (event, data) => {
+        console.log(player)
+        if (player != undefined) {
+            ipcRenderer.send("get-player-status-response", player.state)
+        } else {
+            ipcRenderer.send("get-player-status-response", "stopped")
+        }
+    })
+</script>
+</html>
