@@ -668,11 +668,6 @@ clone-response@^1.0.2:
   dependencies:
     mimic-response "^1.0.0"
 
-codec-parser@2.4.3:
-  version "2.4.3"
-  resolved "https://registry.yarnpkg.com/codec-parser/-/codec-parser-2.4.3.tgz#759b16b0db60125efcb394e7d5dc3617cc32bf27"
-  integrity sha512-3dAvFtdpxn4YLstqsB2ZiJXXNg7n1j7R5ONeDuk+2kBkb39PwrCRytOFHlSWA8q5jCjW3PumeMv9q37bFHsijg==
-
 color-convert@^1.9.0:
   version "1.9.3"
   resolved "https://registry.yarnpkg.com/color-convert/-/color-convert-1.9.3.tgz#bb71850690e1f136567de629d2d5471deda4c1e8"
@@ -1572,13 +1567,6 @@ humanize-ms@^1.2.1:
   integrity sha1-xG4xWaKT9riW2ikxbYtv6Lt5u+0=
   dependencies:
     ms "^2.0.0"
-
-icecast-metadata-js@^1.2.8:
-  version "1.2.8"
-  resolved "https://registry.yarnpkg.com/icecast-metadata-js/-/icecast-metadata-js-1.2.8.tgz#73e91ffbbbc8e911457de694e0d54cb49dddb0bc"
-  integrity sha512-de36uvcuEP7iSLvYMyAEs9sljq0LlOkO+PDqasT08xm9JhSPfNUrcRkuuSl4cV0Pwixr/KM8oC+sweBWnooYbw==
-  dependencies:
-    codec-parser "2.4.3"
 
 iconv-corefoundation@^1.1.7:
   version "1.1.7"

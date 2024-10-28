@@ -28,7 +28,6 @@
     "electron-prompt": "^1.7.0",
     "electron-squirrel-startup": "^1.0.0",
     "electron-store": "^8.0.1",
-    "icecast-metadata-js": "^1.2.8",
     "node-gyp": "^8.4.1",
     "node-notifier": "^10.0.0"
   },

@@ -10,7 +10,7 @@ const path = require('path');
 const AutoLaunch = require('auto-launch');
 //const ref = require("ref-napi");
 //const parser = require("icecast-parser")
-const pkg = require('./package.json');
+const pkg = require('./package.json')
 
 const isMac = process.platform === 'darwin'
 const userData = app.getPath('userData');
