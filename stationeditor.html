@@ -442,7 +442,7 @@
         originalJSONData.push(category);
       });
 
-      alert(originalJSONData)
+      //alert(originalJSONData)
       ipcRenderer.send('save-bookmarks', { source: source, data: JSON.stringify(originalJSONData, null, 3) })
     }
 
