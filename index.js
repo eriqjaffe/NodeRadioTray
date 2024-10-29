@@ -12,6 +12,7 @@ const parsers = require("playlist-parser");
 const M3U = parsers.M3U;
 const PLS = parsers.PLS;
 const ASX = parsers.ASX
+const log = require('electron-log/main');
 
 const isMac = process.platform === 'darwin'
 const userData = app.getPath('userData');
@@ -24,6 +25,13 @@ const watcher = chokidar.watch([], { awaitWriteFinish: true })
   .on('change', function(path) {
     reloadBookmarks();
 })
+
+log.initialize();
+log.transports.file.fileName = "metadata.log"
+log.eventLogger.startLogging
+
+const errorLog = log.create({ logId: 'errorLog' })
+//errorLog.eventLogger.startLogging
 
 var stream = null;
 var outputDevice = -1;
@@ -78,6 +86,14 @@ const prefsTemplate = [
     },
     type: "checkbox",
     checked: (store.get("notifications") == true) ? true : false
+  },
+  { 
+    label: 'Log metadata',
+    click: e => {
+      store.set("metadataLog", e.checked)
+    },
+    type: "checkbox",
+    checked: (store.get("metadataLog") == true) ? true : false
   },
   {
     label: 'Use multimedia keys',
@@ -255,8 +271,8 @@ app.whenReady().then(() => {
   createTray()
 
   playerWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1024,
+    height: 800,
     show: true,
     webPreferences: {
       nodeIntegration: true,
@@ -320,6 +336,7 @@ function loadBookmarks() {
           }
         } catch (error) {
           console.error(error)
+          errorLog.error(error)
         }
         var station = {
           label: tmp.name,
@@ -348,6 +365,7 @@ function loadBookmarks() {
     return stationMenu;
   } catch (error) {
     console.error(error)
+    errorLog.error(error)
   }
 }
 
@@ -465,6 +483,7 @@ function playStream(streamName, url) {
       })
       .catch(error => {
         console.error(`Error fetching URL: ${error.message}`);
+        errorLog.error(`Error fetching URL: ${error.message}`)
       });
       break;
     case ".m3u":
@@ -479,6 +498,10 @@ function playStream(streamName, url) {
           store.set('lastURL',url)
           toggleButtons(true)
         })
+        .catch(error => {
+          console.error(`Error fetching URL: ${error.message}`);
+          errorLog.error(`Error fetching URL: ${error.message}`)
+        });
       break;
     case ".asx":
       console.log("It's an asx")
@@ -492,6 +515,10 @@ function playStream(streamName, url) {
           store.set('lastURL',url)
           toggleButtons(true)
         })
+        .catch(error => {
+          console.error(`Error fetching URL: ${error.message}`);
+          errorLog.error(`Error fetching URL: ${error.message}`)
+        });
       break;
     default:
       console.log("It's a direct link")
@@ -507,16 +534,39 @@ ipcMain.on('set-tooltip', (event, data) => {
   console.log(data)
   if (data.playing) {
     tray.setImage(playingIcon);
-    tray.setToolTip(data.data) 
+    tray.setToolTip(data.data)
+    if (store.get("metadataLog") == true) {
+      log.info(data.data.replace("\r\n"," - "))
+    }
+    if (store.get("notifications") == true) {
+      notifier.notify(
+        {
+          title: 'NodeRadioTray',
+          message: data.data,
+          icon: path.join(__dirname, 'images/playing.png'), // Absolute path (doesn't work on balloons)
+          sound: false,
+          wait: false
+        }
+      );
+    }
   } else {
     tray.setImage(idleIcon);
     toggleButtons(false)
   }
 })
 
-function showVolume() {
-  
-}
+ipcMain.on('error-notification', (event, data) => {
+  notifier.notify(
+    {
+      title: 'NodeRadioTray Error',
+      message: data,
+      icon: path.join(__dirname, 'images/playing.png'), // Absolute path (doesn't work on balloons)
+      sound: false,
+      wait: false
+    }
+  );
+  errorLog.error(data)
+})
 
 function toggleButtons(state) {
   playButton = contextMenu.getMenuItemById('playButton');
@@ -595,6 +645,10 @@ function initializeWatcher() {
       fs.copyFileSync(path.join(__dirname, '/bookmarks.json'), userData+'/bookmarks.json');
     } catch (error) {
       console.error(error)
+      .catch(error => {
+        console.error(error);
+        errorLog.error(error)
+      });
     }
   }
   if (!fs.existsSync(userData+'/images')) {
@@ -603,6 +657,10 @@ function initializeWatcher() {
       fs.mkdirSync(userData+'/images');
     } catch (error) {
       console.error(error)
+      .catch(error => {
+        console.error(error);
+        errorLog.error(error)
+      });
     }
   }
   watcher.add(userData+'/bookmarks.json',
@@ -613,24 +671,28 @@ function initializeWatcher() {
 }
 
 function playCustomURL() {
-  prompt({
-    title: 'Custom URL',
-    label: 'URL:',
-    value: '',
-    inputAttrs: {
-        type: 'url'
-    },
-    type: 'input',
-    icon: path.join(__dirname, 'images/playing.png')
-  })
-  .then((r) => {
-      if(r === null) {
-          console.log('user cancelled');
-      } else {
-          playStream('Custom URL', r);
-      }
-  })
-  .catch(console.error);
+  try {
+    prompt({
+      title: 'Custom URL',
+      label: 'URL:',
+      value: '',
+      inputAttrs: {
+          type: 'url'
+      },
+      type: 'input',
+      icon: path.join(__dirname, 'images/playing.png')
+    })
+    .then((r) => {
+        if(r === null) {
+            console.log('user cancelled');
+        } else {
+            playStream('Custom URL', r);
+        }
+    })
+  } catch(error) {
+    console.error(`Error playing URL: ${error.message}`);
+    errorLog.error(`Error playing URL: ${error.message}`);
+  };
 }
 
 function toggleMMKeys(state) {
@@ -702,6 +764,7 @@ ipcMain.on('save-bookmarks', (event, data) => {
         buttons: ['OK'],
       }).then(result => {})
       console.error(err);
+      errorLog.error(err);
     } else {
       reloadBookmarks();
       if (data.source == "dialog") {
