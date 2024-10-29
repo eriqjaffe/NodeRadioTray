@@ -41,8 +41,8 @@ var playingIcon = null;
 var currentOutputDevice = -1;
 
 let tray
-let browserWindow;
-let browserWindow2;
+let editorWindow;
+let aboutWindow;
 let playerWindow;
 let bookmarksArr = []
 
@@ -241,10 +241,14 @@ var menuTemplate = [
     icon: path.join(__dirname, '/images/icons8-about.png')
   },
   {
-    label: "Show Debugging Window",
+    label: "Toggle Debugging Window",
     id: "ToggleDebug",
     click: async() => {
-      playerWindow.show()
+      if (playerWindow.isVisible()) {
+        playerWindow.hide()
+      } else {
+        playerWindow.show()
+      }
     },
     icon: path.join(__dirname, '/images/icons8-debug.png')
   },
@@ -378,11 +382,11 @@ function reloadBookmarks() {
 }
 
 function showAbout() {
-  if (browserWindow) {
-    browserWindow.close()
+  if (editorWindow) {
+    editorWindow.close()
   }
-  if (!browserWindow2) {
-    browserWindow2 = new BrowserWindow({
+  if (!aboutWindow) {
+    aboutWindow = new BrowserWindow({
       width: 800,
       height: 600,
       webPreferences: {
@@ -390,27 +394,27 @@ function showAbout() {
         contextIsolation: false
       }
     })
-    browserWindow2.setMenu(null)
-    browserWindow2.loadFile('about.html')
-    browserWindow2.on('closed', () => {
-      browserWindow2.destroy()
-      browserWindow2 = null
+    aboutWindow.setMenu(null)
+    aboutWindow.loadFile('about.html')
+    aboutWindow.on('closed', () => {
+      aboutWindow.destroy()
+      aboutWindow = null
     })
-    browserWindow2.webContents.setWindowOpenHandler(({ url }) => {
+    aboutWindow.webContents.setWindowOpenHandler(({ url }) => {
       shell.openExternal(url);
       return { action: 'deny' };
     });
   } else {
-    browserWindow2.focus();
+    aboutWindow.focus();
   }
 }
 
 function editBookmarksGui() {
-  if (browserWindow2) {
-    browserWindow2.close()
+  if (aboutWindow) {
+    aboutWindow.close()
   }
-  if (!browserWindow) {
-    browserWindow = new BrowserWindow({
+  if (!editorWindow) {
+    editorWindow = new BrowserWindow({
       width: 800,
       height: 650,
       webPreferences: {
@@ -418,15 +422,15 @@ function editBookmarksGui() {
         contextIsolation: false
       }
     })
-    browserWindow.setMenu(null)
-    browserWindow.loadFile('stationeditor.html');
-    browserWindow.webContents.openDevTools({ mode: 'detach' })
-    browserWindow.on('close', (event) => {
+    editorWindow.setMenu(null)
+    editorWindow.loadFile('stationeditor.html');
+    //editorWindow.webContents.openDevTools({ mode: 'detach' })
+    editorWindow.on('close', (event) => {
       event.preventDefault()
-      browserWindow.webContents.send('check-tree');
+      editorWindow.webContents.send('check-tree');
     });
   } else {
-    browserWindow.focus();
+    editorWindow.focus();
   }
 }
 
@@ -443,8 +447,8 @@ ipcMain.on('get-player-status-response', (event, data) => {
 
 ipcMain.on('check-tree-response', (event, response) => {
   if (response == false) {
-    browserWindow.destroy()
-    browserWindow = null;
+    editorWindow.destroy()
+    editorWindow = null;
   } else {
     dialog.showMessageBox(null, {
       type: 'question',
@@ -452,10 +456,10 @@ ipcMain.on('check-tree-response', (event, response) => {
       buttons: ['Yes', 'No'],
     }).then(result => {
       if (result.response === 1) {
-        browserWindow.destroy()
-        browserWindow = null;
+        editorWindow.destroy()
+        editorWindow = null;
       } else {
-        browserWindow.webContents.send('save','dialog')
+        editorWindow.webContents.send('save','dialog')
       }
     })
   }
@@ -768,8 +772,8 @@ ipcMain.on('save-bookmarks', (event, data) => {
     } else {
       reloadBookmarks();
       if (data.source == "dialog") {
-        browserWindow.destroy()
-        browserWindow = null;
+        editorWindow.destroy()
+        editorWindow = null;
       } else {
         event.sender.send('save-complete', null)
       }
