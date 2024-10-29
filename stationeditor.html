@@ -299,9 +299,8 @@
       $("#newStationDiv").css("display","inline-block")
     })
 
-    $("#btnSave").on("submit",function(e) {
-      console.log(source)
-      convertToOriginalJSONFormat(source)
+    $("#btnSave").on("click",function(e) {
+      convertToOriginalJSONFormat("button")
     });
 
     $("#btnCancel").on("click", function(e) {
@@ -443,7 +442,7 @@
         originalJSONData.push(category);
       });
 
-      console.log(originalJSONData)
+      alert(originalJSONData)
       ipcRenderer.send('save-bookmarks', { source: source, data: JSON.stringify(originalJSONData, null, 3) })
     }
 
