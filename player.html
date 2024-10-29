@@ -46,7 +46,7 @@
 </head>
 <html>
   <body>
-    <div style="width:40%; height: 450px; float:left; position:absolute; border:1px solid red;">
+    <div style="width:40%; height: 450px; float:left; position:absolute;">
         <table>
         <tr>
             <td class="leftCell">Player State:</td>
@@ -126,7 +126,7 @@
         </tr>
         </table>
     </div>
-    <div id="logWindow" style="width:59%; height: 450px; float:right; position:relative; border:1px solid blue;"></div>
+    <div id="logWindow" style="width:59%; height: 450px; float:right; position:relative;"></div>
   </body>
   <script>
     ipcRenderer.on("play", (event, data) => {
