@@ -18,27 +18,55 @@
 </body>
 <script>
     ipcRenderer.on("play", (event, data) => {
+        
+
         if (player != undefined || player != null) {
             player.stop()
         }
+
+        const onMetadata = (metadata) => {
+            if (metadata.StreamTitle != undefined) {
+                ipcRenderer.send("set-tooltip", {playing: true, data: data.streamName+"\r\n"+metadata.StreamTitle})
+            } else {
+                ipcRenderer.send("set-tooltip", {playing: true, data: data.streamName})
+            }
+        };
+
+        const onWarn = (message) => {
+            console.log(message)
+        }
+
+        const onError = (message, error) => {
+            player.stop()
+            //ipcRenderer.send('set-tooltip', {playing: false})
+            //ipcRenderer.send('reset', null)
+            console.log(message)
+        }
+
+        const onRetryTimeout = (message, error) => {
+            console.log("retry timeout", error)
+        }
+
+        const onStreamEnd = (message) => {
+            console.log("onStreamEnd", message)
+        }
+
+        const onStop = (message) => {
+            console.log("onStop!")
+        }
+
         player = new IcecastMetadataPlayer(data.url, {
-            onMetadata: (metadata) => {
-                if (metadata.StreamTitle != undefined) {
-                    ipcRenderer.send("set-tooltip", {playing: true, data: data.streamName+"\r\n"+metadata.StreamTitle})
-                } else {
-                    ipcRenderer.send("set-tooltip", {playing: true, data: data.streamName})
-                }              
-            },
-            onWarn: (message) => {  
-                console.log(message)
-            },
-            onError: (message, error) => {
-                player.stop()
-                ipcRenderer.send('set-tooltip', {playing: false})
-                alert(error)
-            },
+            onMetadata,
+            onWarn,
+            onError,
+            onRetryTimeout,
+            onStreamEnd,
+            onStop,
+            retryTimeout: 0,
+            enableLogging: true,
             metadataTypes: ["icy"]
         })
+
         player.audioElement.volume = volume;
         player.play()
     })
@@ -77,15 +105,23 @@
         if (player != undefined || player != null) {
             player.stop()
         }
-        ipcRenderer.send("set-tooltip", {playing: false, data: "NodeRadioTray"})
     })
 
     ipcRenderer.on("get-player-status", (event, data) => {
-        console.log(player)
         if (player != undefined) {
             ipcRenderer.send("get-player-status-response", player.state)
         } else {
             ipcRenderer.send("get-player-status-response", "stopped")
+        }
+    })
+
+    ipcRenderer.on("mm-get-player-status", (event, data) => {
+        console.log(player)
+        console.log(player.state)
+        if (player != undefined) {
+            ipcRenderer.send("mm-get-player-status-response", player.state)
+        } else {
+            ipcRenderer.send("mm-get-player-status-response", "stopped")
         }
     })
 </script>

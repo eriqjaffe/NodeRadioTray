@@ -27,7 +27,8 @@
     "electron-squirrel-startup": "^1.0.0",
     "electron-store": "^8.0.1",
     "node-gyp": "^8.4.1",
-    "node-notifier": "^10.0.0"
+    "node-notifier": "^10.0.0",
+    "playlist-parser": "^0.0.12"
   },
   "devDependencies": {
     "electron": "^33.0.2",

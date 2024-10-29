@@ -1729,6 +1729,13 @@ pkg-up@^3.1.0:
   dependencies:
     find-up "^3.0.0"
 
+playlist-parser@^0.0.12:
+  version "0.0.12"
+  resolved "https://registry.yarnpkg.com/playlist-parser/-/playlist-parser-0.0.12.tgz#4250e5b11771ad68213983bf9bb6ecab64ddf526"
+  integrity sha512-eMC1F79YUOd4eH5t+e8ejfE93x4/ikUddICAqByAVehAePF1tBBgU03wmUFXXzobgTd1qL46ynsxByUSIKpVLA==
+  dependencies:
+    xmldom "0.1.16"
+
 plist@^3.0.0, plist@^3.0.1:
   version "3.0.4"
   resolved "https://registry.yarnpkg.com/plist/-/plist-3.0.4.tgz#a62df837e3aed2bb3b735899d510c4f186019cbe"
@@ -2231,6 +2238,11 @@ xmlbuilder@^9.0.7:
   version "9.0.7"
   resolved "https://registry.yarnpkg.com/xmlbuilder/-/xmlbuilder-9.0.7.tgz#132ee63d2ec5565c557e20f4c22df9aca686b10d"
   integrity sha1-Ey7mPS7FVlxVfiD0wi35rKaGsQ0=
+
+xmldom@0.1.16:
+  version "0.1.16"
+  resolved "https://registry.yarnpkg.com/xmldom/-/xmldom-0.1.16.tgz#cf2602832b1ab5c3e6813fca08fe70196ba15e8c"
+  integrity sha512-BAf7j3VCoH0YKmJkdN1yXDeHRj+T9Z2oxIhuaSvX3NigmNEInT9o9We6T+Ruh75hLZQBnATmekSmd0nd6GGrow==
 
 y18n@^4.0.0:
   version "4.0.3"

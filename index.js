@@ -8,21 +8,14 @@ const notifier = require('node-notifier');
 const path = require('path');
 const AutoLaunch = require('auto-launch');
 const pkg = require('./package.json')
-
-/* import { app, Menu, Tray, nativeImage, shell, globalShortcut, BrowserWindow, ipcMain, dialog } from 'electron';
-import fs from 'fs';
-import Store from 'electron-store';
-import chokidar from 'chokidar';
-import prompt from 'electron-prompt';
-import notifier from 'node-notifier';
-import path from 'path';
-import AutoLaunch from 'auto-launch';
-import pkg from './package.json' assert { type: 'json' }; */
+const parsers = require("playlist-parser");
+const M3U = parsers.M3U;
+const PLS = parsers.PLS;
+const ASX = parsers.ASX
 
 const isMac = process.platform === 'darwin'
 const userData = app.getPath('userData');
 const firstSoundCard = (process.platform == "win32") ? 2 : 1;
-//const basslib = new bass();
 const store = new Store()
 const AutoLauncher = new AutoLaunch(
   {name: 'NodeRadioTray'}
@@ -47,59 +40,6 @@ let bookmarksArr = []
 
 initializeWatcher();
 
-/* basslib.EnableTags(true);
-var tagsEnabled = basslib.TagsEnabled();
-if (tagsEnabled) {
-  console.log("BASS: Tags enabled");
-} else {
-  console.log("BASS: Tags disabled");
-  //process.exit();
-} */
-
-/* pluginsLoadResults = basslib.LoadAllPlugins();
-if (pluginsLoadResults === false) {
-  console.error("BASS: Error loading plugins: " + basslib.BASS_ErrorGetCode());
-  //process.exit();
-} else {
-  console.log("BASS: Plugins loaded");
-} */
-
-/* setInterval(function () {
-  if (
-    basslib.BASS_ChannelIsActive(stream) ==
-    basslib.BASS_ChannelIsActiveAttribs.BASS_ACTIVE_PLAYING
-  ) {
-    let radioStation = new parser.Parser({
-      autoUpdate: false,
-      emptyInterval: 5 * 60,
-      errorInterval: 10 * 60,
-      metadataInterval: 1,
-      notifyOnChangeOnly: false,
-      url: store.get("lastURL"),
-      userAgent: 'Custom User Agent',
-    });
-
-    radioStation.on('metadata', (metadata) => {
-      const streamTitle = metadata.get('StreamTitle') ?? 'unknown';
-      if (streamTitle == "unknown") {
-        tray.setToolTip("NodeRadioTray\r\n"+store.get("lastStation"))
-      } else {
-        tray.setToolTip(store.get("lastStation")+"\r\n"+streamTitle)
-      }
-    });
-
-    radioStation.on('empty', () => {
-      tray.setToolTip("NodeRadioTray\r\n"+store.get("lastStation"))
-    })
-
-    radioStation.on('error', () => {
-      tray.setToolTip("NodeRadioTray\r\n"+store.get("lastStation"))
-    })
-  } else {
-    tray.setToolTip('NodeRadioTray')
-  }
-}, 1000); */
-
 var darkIcon = (store.get("darkicon") == true) ? true : false;
 setIconTheme(darkIcon);
 
@@ -116,11 +56,7 @@ const prefsTemplate = [
       if (stream == null) {
         tray.setImage(idleIcon)
       } else {
-        /* if (basslib.BASS_ChannelIsActive(stream)) {
-          tray.setImage(playingIcon)
-        } else {
-          tray.setImage(idleIcon)
-        } */
+        playerWindow.webContents.send("get-player-status", null)
       }
     },
     type: "checkbox",
@@ -231,7 +167,6 @@ var menuTemplate = [
     label: "Stop",
     id: "stopButton",
     click: async() => {
-      //basslib.BASS_Free();
       toggleButtons(false);
     },
     icon: path.join(__dirname, '/images/icons8-Stop.png'),
@@ -264,7 +199,6 @@ var menuTemplate = [
     label: "Next Station",
     id: "nextButton",
     click: async() => {
-      //nextStation();
       changeStation("forward")
     },
     icon: path.join(__dirname, '/images/icons8-Fast Forward.png'),
@@ -274,7 +208,6 @@ var menuTemplate = [
     label: "Previous Station",
     id: "previousButton",
     click: async() => {
-      //nextStation();
       changeStation("backward")
     },
     icon: path.join(__dirname, '/images/icons8-Rewind.png'),
@@ -290,6 +223,14 @@ var menuTemplate = [
       showAbout()
     },
     icon: path.join(__dirname, '/images/icons8-about.png')
+  },
+  {
+    label: "Show Debugging Window",
+    id: "ToggleDebug",
+    click: async() => {
+      playerWindow.show()
+    },
+    icon: path.join(__dirname, '/images/icons8-debug.png')
   },
   {
     label: "Exit",
@@ -316,7 +257,7 @@ app.whenReady().then(() => {
   playerWindow = new BrowserWindow({
     width: 800,
     height: 600,
-    show: false,
+    show: true,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -324,7 +265,7 @@ app.whenReady().then(() => {
   })
   playerWindow.setMenu(null)
   playerWindow.loadFile('player.html')
-  playerWindow.webContents.openDevTools()
+  playerWindow.webContents.openDevTools({ mode: 'bottom' })
 
   playerWindow.on('close', (event) => {
     event.preventDefault(); // Prevent the window from closing
@@ -343,7 +284,7 @@ app.on('window-all-closed', () => {})
 
 app.on('before-quit', function (evt) {
   playerWindow.destroy()
-  //tray.destroy();
+  tray.destroy();
 });
 
 if (process.platform == "darwin") {
@@ -416,12 +357,6 @@ function reloadBookmarks() {
   contextMenu = Menu.buildFromTemplate(menuTemplate)
   tray.setContextMenu(contextMenu)
   playerWindow.webContents.send("get-player-status", null)
-/*   if (
-    basslib.BASS_ChannelIsActive(stream) ==
-    basslib.BASS_ChannelIsActiveAttribs.BASS_ACTIVE_PLAYING
-  ) {
-    toggleButtons(true)
-  } */
 }
 
 function showAbout() {
@@ -467,6 +402,7 @@ function editBookmarksGui() {
     })
     browserWindow.setMenu(null)
     browserWindow.loadFile('stationeditor.html');
+    browserWindow.webContents.openDevTools({ mode: 'detach' })
     browserWindow.on('close', (event) => {
       event.preventDefault()
       browserWindow.webContents.send('check-tree');
@@ -475,6 +411,11 @@ function editBookmarksGui() {
     browserWindow.focus();
   }
 }
+
+ipcMain.on('reset', (event, data) => {
+  toggleButtons(false)
+  playerWindow.webContents.reloadIgnoringCache()
+})
 
 ipcMain.on('get-player-status-response', (event, data) => {
   if (data == "playing") {
@@ -506,68 +447,60 @@ ipcMain.on('get-app-version', (event, response) => {
   event.sender.send('get-app-version-response', pkg.version)
 })
 
-/* function loadCards() {
-  var cards = basslib.getDevices();
-  var cardsMenu = [];
-
-  for (var i = firstSoundCard; i < cards.length; i++) {
-    const cardsArr = [];
-    cardsArr.id = i;
-   cardsArr.name = cards[i].name;
-    cardsArr.typeDigital = cards[i].typeDigital,
-    cardsArr.typeDisplayPort = cards[i].typeDisplayPort,
-    cardsArr.typeHandset = cards[i].typeHandset,
-    cardsArr.typeHdmi = cards[i].typeHdmi,
-    cardsArr.typeHeadPhones = cards[i].typeHeadPhones,
-    cardsArr.typeHeadSet = cards[i].typeHeadSet,
-    cardsArr.typeLine = cards[i].typeLine,
-    cardsArr.typeMask = cards[i].typeMask,
-    cardsArr.typeMicrophone = cards[i].typeMicrophone,
-    cardsArr.typeNetwork = cards[i].typeNetwork,
-    cardsArr.typeSPDIF = cards[i].typeSPDIF,
-    cardsArr.typeSpeakers = cards[i].typeSpeakers
-    console.log ("current output: "+currentOutputDevice)
-    var card = {
-      label: cards[i].name + " " ,
-      type: 'radio',
-      checked: cardsArr.id == currentOutputDevice ? true : false,
-      click: async => { 
-        outputDevice = parseInt(cardsArr.id);
-        currentOutputDevice = parseInt(cardsArr.id);
-        console.log(currentOutputDevice + " chosen")
-        basslib.BASS_Free();
-        var init = basslib.BASS_Init(
-          outputDevice,
-          44100,
-          basslib.BASS_Initflags.BASS_DEVICE_STEREO
-        );
-        if (init === false) {
-          console.error("error at BASS_Init: " + basslib.BASS_ErrorGetCode());
-          dialog.showMessageBox(null, {
-            type: 'error',
-            message: "error at BASS_Init: " + basslib.BASS_ErrorGetCode(),
-            buttons: ['OK'],
-          }).then(result => {
-            process.exit();
-          })
-        } else {
-          console.log("BASS: Bass initialized on device " + outputDevice);
-        }
-        playStream(store.get("lastStation"), store.get("lastURL"))
-      }
-    }
-    cardsMenu.push(card)
-  }
-  return cardsMenu;
-} */
-
 function playStream(streamName, url) {
   tray.setToolTip("NodeRadioTray");
   tray.setImage(idleIcon);
-  playerWindow.webContents.send("play", {streamName: streamName, url: url})
-  store.set('lastStation',streamName);
-  store.set('lastURL',url)
-  toggleButtons(true)
+  switch (url.toLowerCase().slice(-4)) {
+    case ".pls":
+      console.log("It's a pls")
+      fetch(url)
+        .then(response => response.text())
+        .then(data => {
+          var playlist = PLS.parse(data);
+          console.log(playlist[0].file)
+          playerWindow.webContents.send("play", {streamName: streamName, url: playlist[0].file})
+          store.set('lastStation',streamName);
+          store.set('lastURL',url)
+          toggleButtons(true)
+      })
+      .catch(error => {
+        console.error(`Error fetching URL: ${error.message}`);
+      });
+      break;
+    case ".m3u":
+      console.log("It's an m3u")
+      fetch(url)
+        .then(response => response.text())
+        .then(data => {
+          var playlist = M3U.parse(data);
+          console.log(playlist[0].file)
+          playerWindow.webContents.send("play", {streamName: streamName, url: playlist[0].file})
+          store.set('lastStation',streamName);
+          store.set('lastURL',url)
+          toggleButtons(true)
+        })
+      break;
+    case ".asx":
+      console.log("It's an asx")
+      fetch(url)
+        .then(response => response.text())
+        .then(data => {
+          var playlist = ASX.parse(data);
+          console.log(playlist[0].file)
+          playerWindow.webContents.send("play", {streamName: streamName, url: playlist[0].file})
+          store.set('lastStation',streamName);
+          store.set('lastURL',url)
+          toggleButtons(true)
+        })
+      break;
+    default:
+      console.log("It's a direct link")
+      playerWindow.webContents.send("play", {streamName: streamName, url: url})
+      store.set('lastStation',streamName);
+      store.set('lastURL',url)
+      toggleButtons(true)
+      break;
+  }
 }
 
 ipcMain.on('set-tooltip', (event, data) => {
@@ -575,7 +508,6 @@ ipcMain.on('set-tooltip', (event, data) => {
   if (data.playing) {
     tray.setImage(playingIcon);
     tray.setToolTip(data.data) 
-    //toggleButtons(true)
   } else {
     tray.setImage(idleIcon);
     toggleButtons(false)
@@ -602,7 +534,7 @@ function toggleButtons(state) {
     volDownButton.visible = true;
     nextButton.visible = true;
     previousButton.visible = true;
-    //tray.setImage(playingIcon);
+    tray.setImage(playingIcon);
   } else {
     playButton.visible = true;
     stopButton.visible = false;
@@ -611,8 +543,8 @@ function toggleButtons(state) {
     volDownButton.visible = false;
     nextButton.visible = false;
     previousButton.visible = false;
-    //tray.setImage(idleIcon);
-    //tray.setToolTip("NodeRadioTray");
+    tray.setImage(idleIcon);
+    tray.setToolTip("NodeRadioTray");
     menuTemplate[8].label = "Play "+store.get("lastStation")
     contextMenu = Menu.buildFromTemplate(menuTemplate)
     tray.setContextMenu(contextMenu)
@@ -704,6 +636,7 @@ function playCustomURL() {
 function toggleMMKeys(state) {
   if (state == true) {
     globalShortcut.register('MediaPlayPause', () => {
+      playerWindow.webContents.send("mm-get-player-status", null)
       /* if (basslib.BASS_ChannelIsActive(stream)) {
         //basslib.BASS_Free();
         toggleButtons(false);
@@ -712,7 +645,6 @@ function toggleMMKeys(state) {
       } */
     })
     globalShortcut.register('MediaStop', () => {
-      //basslib.BASS_Free();
       toggleButtons(false);
     })
     globalShortcut.register('Ctrl+VolumeUp', () => {
@@ -725,6 +657,15 @@ function toggleMMKeys(state) {
     globalShortcut.unregisterAll()
   }
 }
+
+ipcMain.on('mm-get-player-status-response', (event, data) => {
+  console.log(data)
+  if (data == "playing") {
+    toggleButtons(false)
+  } else {
+    playStream(store.get('lastStation'), store.get('lastURL'));
+  }
+})
 
 function changeVolume(direction) {
   playerWindow.webContents.send("set-volume", { direction: direction })
