@@ -25,6 +25,7 @@
         }
 
         const onMetadata = (metadata) => {
+            console.log("onMetadata firing...")
             if (metadata.StreamTitle != undefined) {
                 ipcRenderer.send("set-tooltip", {playing: true, data: data.streamName+"\r\n"+metadata.StreamTitle})
             } else {
@@ -38,9 +39,10 @@
 
         const onError = (message, error) => {
             player.stop()
-            //ipcRenderer.send('set-tooltip', {playing: false})
+            ipcRenderer.send('set-tooltip', {playing: false})
             //ipcRenderer.send('reset', null)
             console.log(message)
+            alert(message)
         }
 
         const onRetryTimeout = (message, error) => {
