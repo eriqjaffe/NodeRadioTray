@@ -10,6 +10,7 @@
     <script type="text/javascript" src="./scripts/jquery.fancytree.dnd5.js"></script>
     <script type="text/javascript" src="./scripts/jquery.contextMenu.js"></script>
     <script type="text/javascript" src="./scripts/jquery.fancytree.contextMenu.js"></script>
+    <script src="./scripts/icecast-metadata-player-1.17.3.main.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
@@ -19,6 +20,7 @@
     <script>
         const { ipcRenderer } = require('electron');
         let treeModified = false;
+
     </script>
   </head>
   <body>
@@ -80,10 +82,10 @@
               <td style="text-align: right;">Group Name: </td>
               <td><input type='text' class='editField' name='newGroupName' id='newGroupName' value='' required style="width:500px;"></td>
             </tr>
-            <tr>
+            <!--<tr>
               <td style="text-align: right;">Group Icon: </td>
               <td><input type='text' class='editField' name='newGroupIcon' id='newGroupIcon' value='' style="width:500px;"></td>
-            </tr>
+            </tr>-->
           </table>
           <input type='submit' id='newStationSubmit' value='Submit'>
           <input type="button" class="cancelButton" value="Cancel">
@@ -105,10 +107,10 @@
               <td style="text-align: right;">Station Group: </td>
               <td><select name="newStationGroup" id="newStationGroup" style="width:500px;"></select></td>
             </tr>
-            <tr>
+            <!--<tr>
               <td style="text-align: right;">Station Icon: </td>
-              <td><input type='text' class='editField' name='newStationIcon' id='newStationIcon' value='' style="width:500px;"></td>
-            </tr>
+              <td><input type='text' class='editField' name='newStationIcon' id='newStationIcon' value='' style="width:500px; display:none;"></td>
+            </tr>-->
           </table>
           <input type='submit' id='newStationSubmit' value='Submit'>
           <input type="button" class="cancelButton" value="Cancel">
@@ -284,6 +286,7 @@
     })
 
     $("#btnAddStation").on("click", function() {
+      
       $("#newStationGroup").empty();
       const tree = $.ui.fancytree.getTree("#tree").getRootNode()
       tree.visit(function(node){
@@ -304,8 +307,9 @@
     });
 
     $("#btnCancel").on("click", function(e) {
-      console.log('cancel')
-      ipcRenderer.send('check-tree-response', false);
+      if (confirm("Are you sure?")) {
+        ipcRenderer.send('check-tree-response', false);
+      }
     })
 
     ipcRenderer.on('check-tree', () => {
@@ -334,13 +338,38 @@
 
     $("#editStationForm").on("submit",function(e) {
       e.preventDefault()
-      let tree = $.ui.fancytree.getTree("#tree");
-      let nodeToEdit = tree.getActiveNode();
-      nodeToEdit.setTitle($("#stationName").val())
-      nodeToEdit.data.img = $("#stationIcon").val()
-      nodeToEdit.data.url = $("#stationURL").val()
-      nodeToEdit.parent.sortChildren(null, true)
-      resetStuff()
+
+      const onPlay = () => {
+        console.log('stream is OK, updating')
+        player.stop()
+        let tree = $.ui.fancytree.getTree("#tree");
+        let nodeToEdit = tree.getActiveNode();
+        nodeToEdit.setTitle($("#stationName").val())
+        nodeToEdit.data.img = $("#stationIcon").val()
+        nodeToEdit.data.url = $("#stationURL").val()
+        nodeToEdit.parent.sortChildren(null, true)
+        resetStuff()
+      }
+
+      const onStop = () => {
+        console.log("test complete, player stopped")
+      }
+
+      const onError = (message, error) => {
+        alert("The URL you provided is not playable.")
+        player.stop()
+      }
+
+      const player = new IcecastMetadataPlayer($("#stationURL").val(), {
+        onError,
+        onPlay,
+        onStop,
+        retryTimeout: 0,
+        metadataTypes: ["icy"],
+      });
+
+      player.audioElement.volume = 0;
+      player.play();
     })
 
     $("#deleteGroup").on("click", function(e) {
@@ -371,18 +400,43 @@
 
     $("#newStationForm").on("submit",function(e) {
       e.preventDefault()
-      const tree = $.ui.fancytree.getTree("#tree")
-      const node = tree.findFirst(function(node) {
-        return node.type == "group" && node.title == $("#newStationGroup").val()
-      })
-      node.addChildren({ title: $("#newStationName").val(), type: "bookmark", url: $("#newStationURL").val(), img: $("#newStationIcon").val() })
-      node.sortChildren(null, true)
-      let station = node.findFirst($("#newStationName").val())
-      node.setExpanded()
-      station.setFocus()
-      station.setActive()
-      station.makeVisible({scrollIntoView: true});
-      resetStuff()
+
+      const onPlay = () => {
+        console.log('stream is OK, adding')
+        player.stop()
+        const tree = $.ui.fancytree.getTree("#tree")
+        const node = tree.findFirst(function(node) {
+          return node.type == "group" && node.title == $("#newStationGroup").val()
+        })
+        node.addChildren({ title: $("#newStationName").val(), type: "bookmark", url: $("#newStationURL").val(), img: $("#newStationIcon").val() })
+        node.sortChildren(null, true)
+        let station = node.findFirst($("#newStationName").val())
+        node.setExpanded()
+        station.setFocus()
+        station.setActive()
+        station.makeVisible({scrollIntoView: true});
+        resetStuff()
+      }
+
+      const onStop = () => {
+        console.log("test complete, player stopped")
+      }
+
+      const onError = (message, error) => {
+        alert("The URL you provided is not playable.")
+        player.stop()
+      }
+
+      const player = new IcecastMetadataPlayer($("#newStationURL").val(), {
+        onError,
+        onPlay,
+        onStop,
+        retryTimeout: 0,
+        metadataTypes: ["icy"],
+      });
+
+      player.audioElement.volume = 0;
+      player.play();
     })
 
     function convertToFancytreeFormat(data) {
@@ -451,6 +505,37 @@
       $(".footerChild").css("display","none")
       $(".editField").val("")
       $(".editName").html("")
+    }
+
+    function checkStation(url) {
+      console.log
+      let result = false;
+      const onMetadata = (metadata) => {
+        console.log(metadata)
+      }
+
+      const onPlay = () => {
+        console.log('stream is OK')
+        player.stop()
+        result = true;
+      }
+
+      const onError = (message, error) => {
+        console.log('stream is not OK')
+        player.stop()
+        result = false;
+      }
+
+      const player = new IcecastMetadataPlayer(url, {
+        onError,
+        onPlay,
+        retryTimeout: 0,
+        metadataTypes: ["icy"],
+      });
+
+      player.audioElement.volume = 0;
+      player.play();
+      console.log('result in function ',result)
     }
   </script>
 </html>
