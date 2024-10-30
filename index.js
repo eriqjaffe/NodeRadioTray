@@ -34,11 +34,9 @@ const errorLog = log.create({ logId: 'errorLog' })
 //errorLog.eventLogger.startLogging
 
 var stream = null;
-var outputDevice = -1;
 var contextMenu = null;
 var idleIcon = null;
 var playingIcon = null;
-var currentOutputDevice = -1;
 
 let tray
 let editorWindow;
@@ -134,12 +132,6 @@ var menuTemplate = [
     submenu: prefsTemplate,
     icon: path.join(__dirname, 'images/icons8-settings.png')
   },
-  /* { 
-    label: 'Audio Output',
-    submenu: loadCards(),
-    icon: path.join(__dirname, '/images/icons8-audio.png')
-  },
-   */
   { 
     label: 'Edit Stations',
     click: e => {
@@ -277,7 +269,7 @@ app.whenReady().then(() => {
   playerWindow = new BrowserWindow({
     width: 1024,
     height: 800,
-    show: true,
+    show: false,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -424,7 +416,7 @@ function editBookmarksGui() {
     })
     editorWindow.setMenu(null)
     editorWindow.loadFile('stationeditor.html');
-    //editorWindow.webContents.openDevTools({ mode: 'detach' })
+    editorWindow.webContents.openDevTools({ mode: 'detach' })
     editorWindow.on('close', (event) => {
       event.preventDefault()
       editorWindow.webContents.send('check-tree');
@@ -433,41 +425,6 @@ function editBookmarksGui() {
     editorWindow.focus();
   }
 }
-
-ipcMain.on('reset', (event, data) => {
-  toggleButtons(false)
-  playerWindow.webContents.reloadIgnoringCache()
-})
-
-ipcMain.on('get-player-status-response', (event, data) => {
-  if (data == "playing") {
-    toggleButtons(true)
-  }
-})
-
-ipcMain.on('check-tree-response', (event, response) => {
-  if (response == false) {
-    editorWindow.destroy()
-    editorWindow = null;
-  } else {
-    dialog.showMessageBox(null, {
-      type: 'question',
-      message: "The bookmarks appear to have been edited?  Do you want to save your changes?",
-      buttons: ['Yes', 'No'],
-    }).then(result => {
-      if (result.response === 1) {
-        editorWindow.destroy()
-        editorWindow = null;
-      } else {
-        editorWindow.webContents.send('save','dialog')
-      }
-    })
-  }
-});
-
-ipcMain.on('get-app-version', (event, response) => {
-  event.sender.send('get-app-version-response', pkg.version)
-})
 
 function playStream(streamName, url) {
   tray.setToolTip("NodeRadioTray");
@@ -533,44 +490,6 @@ function playStream(streamName, url) {
       break;
   }
 }
-
-ipcMain.on('set-tooltip', (event, data) => {
-  console.log(data)
-  if (data.playing) {
-    tray.setImage(playingIcon);
-    tray.setToolTip(data.data)
-    if (store.get("metadataLog") == true) {
-      log.info(data.data.replace("\r\n"," - "))
-    }
-    if (store.get("notifications") == true) {
-      notifier.notify(
-        {
-          title: 'NodeRadioTray',
-          message: data.data,
-          icon: path.join(__dirname, 'images/playing.png'), // Absolute path (doesn't work on balloons)
-          sound: false,
-          wait: false
-        }
-      );
-    }
-  } else {
-    tray.setImage(idleIcon);
-    toggleButtons(false)
-  }
-})
-
-ipcMain.on('error-notification', (event, data) => {
-  notifier.notify(
-    {
-      title: 'NodeRadioTray Error',
-      message: data,
-      icon: path.join(__dirname, 'images/playing.png'), // Absolute path (doesn't work on balloons)
-      sound: false,
-      wait: false
-    }
-  );
-  errorLog.error(data)
-})
 
 function toggleButtons(state) {
   playButton = contextMenu.getMenuItemById('playButton');
@@ -703,12 +622,6 @@ function toggleMMKeys(state) {
   if (state == true) {
     globalShortcut.register('MediaPlayPause', () => {
       playerWindow.webContents.send("mm-get-player-status", null)
-      /* if (basslib.BASS_ChannelIsActive(stream)) {
-        //basslib.BASS_Free();
-        toggleButtons(false);
-      } else {
-        playStream(store.get('lastStation'), store.get('lastURL'));
-      } */
     })
     globalShortcut.register('MediaStop', () => {
       toggleButtons(false);
@@ -724,6 +637,97 @@ function toggleMMKeys(state) {
   }
 }
 
+function changeStation(dir) {
+  let index;
+  const currentIndex = bookmarksArr.findIndex(station => station.name === store.get('lastStation'));
+  if (currentIndex === -1) {
+      return null; // Return null if the name is not found
+  }
+  if (dir == "forward") {
+    index = (currentIndex + 1) % bookmarksArr.length;
+  } else {
+    index = (currentIndex - 1 + bookmarksArr.length) % bookmarksArr.length;
+  }
+  playStream(bookmarksArr[index].name, bookmarksArr[index].url)
+}
+
+function changeVolume(direction) {
+  playerWindow.webContents.send("set-volume", { direction: direction })
+}
+
+ipcMain.on('reset', (event, data) => {
+  toggleButtons(false)
+  playerWindow.webContents.reloadIgnoringCache()
+})
+
+ipcMain.on('get-player-status-response', (event, data) => {
+  if (data == "playing") {
+    toggleButtons(true)
+  }
+})
+
+ipcMain.on('check-tree-response', (event, response) => {
+  if (response == false) {
+    editorWindow.destroy()
+    editorWindow = null;
+  } else {
+    dialog.showMessageBox(null, {
+      type: 'question',
+      message: "The bookmarks appear to have been edited?  Do you want to save your changes?",
+      buttons: ['Yes', 'No'],
+    }).then(result => {
+      if (result.response === 1) {
+        editorWindow.destroy()
+        editorWindow = null;
+      } else {
+        editorWindow.webContents.send('save','dialog')
+      }
+    })
+  }
+});
+
+ipcMain.on('get-app-version', (event, response) => {
+  event.sender.send('get-app-version-response', pkg.version)
+})
+
+ipcMain.on('set-tooltip', (event, data) => {
+  console.log(data)
+  if (data.playing) {
+    tray.setImage(playingIcon);
+    tray.setToolTip(data.data)
+    if (store.get("metadataLog") == true) {
+      log.info(data.data.replace("\r\n"," - "))
+    }
+    if (store.get("notifications") == true) {
+      notifier.notify(
+        {
+          title: 'NodeRadioTray',
+          message: data.data,
+          icon: path.join(__dirname, 'images/playing.png'), // Absolute path (doesn't work on balloons)
+          sound: false,
+          wait: false
+        }
+      );
+    }
+  } else {
+    tray.setImage(idleIcon);
+    toggleButtons(false)
+  }
+})
+
+ipcMain.on('error-notification', (event, data) => {
+  notifier.notify(
+    {
+      title: 'NodeRadioTray Error',
+      message: data,
+      icon: path.join(__dirname, 'images/playing.png'), // Absolute path (doesn't work on balloons)
+      sound: false,
+      wait: false
+    }
+  );
+  errorLog.error(data)
+})
+
 ipcMain.on('mm-get-player-status-response', (event, data) => {
   console.log(data)
   if (data == "playing") {
@@ -732,10 +736,6 @@ ipcMain.on('mm-get-player-status-response', (event, data) => {
     playStream(store.get('lastStation'), store.get('lastURL'));
   }
 })
-
-function changeVolume(direction) {
-  playerWindow.webContents.send("set-volume", { direction: direction })
-}
 
 ipcMain.on("get-initial-volume", (event, data) => {
   playerWindow.webContents.send("get-initial-volume-response", { volume: store.get("lastVolume", 1.0) })
@@ -781,17 +781,3 @@ ipcMain.on('save-bookmarks', (event, data) => {
   });
   
 })
-
-function changeStation(dir) {
-  let index;
-  const currentIndex = bookmarksArr.findIndex(station => station.name === store.get('lastStation'));
-  if (currentIndex === -1) {
-      return null; // Return null if the name is not found
-  }
-  if (dir == "forward") {
-    index = (currentIndex + 1) % bookmarksArr.length;
-  } else {
-    index = (currentIndex - 1 + bookmarksArr.length) % bookmarksArr.length;
-  }
-  playStream(bookmarksArr[index].name, bookmarksArr[index].url)
-}
