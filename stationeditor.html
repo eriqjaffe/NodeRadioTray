@@ -321,6 +321,51 @@
       $(".background-change").css("background-color","#f0f0f0")
     })
 
+    ipcRenderer.on('extract-url-response', (event, data) => {
+      const onPlay = () => {
+        player.stop()
+        let tree = $.ui.fancytree.getTree("#tree");
+        if (data.action == "edit") {
+          let nodeToEdit = tree.getActiveNode();
+          nodeToEdit.setTitle($("#stationName").val())
+          nodeToEdit.data.img = $("#stationIcon").val()
+          nodeToEdit.data.url = $("#stationURL").val()
+          nodeToEdit.parent.sortChildren(null, true)
+          resetStuff()
+        } else if (data.action == "add") {
+          const node = tree.findFirst(function(node) {
+            return node.type == "group" && node.title == $("#newStationGroup").val()
+          })
+          node.addChildren({ title: $("#newStationName").val(), type: "bookmark", url: $("#newStationURL").val(), img: $("#newStationIcon").val() })
+          node.sortChildren(null, true)
+          let station = node.findFirst($("#newStationName").val())
+          node.setExpanded()
+          station.setFocus()
+          station.setActive()
+          station.makeVisible({scrollIntoView: true});
+        }
+        resetStuff()
+      }
+
+      const onStop = () => {}
+
+      const onError = (message, error) => {
+        alert("The URL you provided is not playable.")
+        player.stop()
+      }
+
+      const player = new IcecastMetadataPlayer(data.url, {
+        onError,
+        onPlay,
+        onStop,
+        retryTimeout: 0,
+        metadataTypes: ["icy"],
+      });
+
+      player.audioElement.volume = 0;
+      player.play();
+    })
+
     $(".cancelButton").on("click",function(e) {
       e.preventDefault()
       resetStuff()
@@ -338,38 +383,7 @@
 
     $("#editStationForm").on("submit",function(e) {
       e.preventDefault()
-
-      const onPlay = () => {
-        console.log('stream is OK, updating')
-        player.stop()
-        let tree = $.ui.fancytree.getTree("#tree");
-        let nodeToEdit = tree.getActiveNode();
-        nodeToEdit.setTitle($("#stationName").val())
-        nodeToEdit.data.img = $("#stationIcon").val()
-        nodeToEdit.data.url = $("#stationURL").val()
-        nodeToEdit.parent.sortChildren(null, true)
-        resetStuff()
-      }
-
-      const onStop = () => {
-        console.log("test complete, player stopped")
-      }
-
-      const onError = (message, error) => {
-        alert("The URL you provided is not playable.")
-        player.stop()
-      }
-
-      const player = new IcecastMetadataPlayer($("#stationURL").val(), {
-        onError,
-        onPlay,
-        onStop,
-        retryTimeout: 0,
-        metadataTypes: ["icy"],
-      });
-
-      player.audioElement.volume = 0;
-      player.play();
+      ipcRenderer.send('extract-url', {action: "edit", url: $("#stationURL").val() })
     })
 
     $("#deleteGroup").on("click", function(e) {
@@ -400,43 +414,7 @@
 
     $("#newStationForm").on("submit",function(e) {
       e.preventDefault()
-
-      const onPlay = () => {
-        console.log('stream is OK, adding')
-        player.stop()
-        const tree = $.ui.fancytree.getTree("#tree")
-        const node = tree.findFirst(function(node) {
-          return node.type == "group" && node.title == $("#newStationGroup").val()
-        })
-        node.addChildren({ title: $("#newStationName").val(), type: "bookmark", url: $("#newStationURL").val(), img: $("#newStationIcon").val() })
-        node.sortChildren(null, true)
-        let station = node.findFirst($("#newStationName").val())
-        node.setExpanded()
-        station.setFocus()
-        station.setActive()
-        station.makeVisible({scrollIntoView: true});
-        resetStuff()
-      }
-
-      const onStop = () => {
-        console.log("test complete, player stopped")
-      }
-
-      const onError = (message, error) => {
-        alert("The URL you provided is not playable.")
-        player.stop()
-      }
-
-      const player = new IcecastMetadataPlayer($("#newStationURL").val(), {
-        onError,
-        onPlay,
-        onStop,
-        retryTimeout: 0,
-        metadataTypes: ["icy"],
-      });
-
-      player.audioElement.volume = 0;
-      player.play();
+      ipcRenderer.send('extract-url', {action: "add", url: $("#newStationURL").val() })
     })
 
     function convertToFancytreeFormat(data) {

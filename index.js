@@ -416,7 +416,7 @@ function editBookmarksGui() {
     })
     editorWindow.setMenu(null)
     editorWindow.loadFile('stationeditor.html');
-    //editorWindow.webContents.openDevTools({ mode: 'detach' })
+    editorWindow.webContents.openDevTools({ mode: 'detach' })
     editorWindow.on('close', (event) => {
       event.preventDefault()
       editorWindow.webContents.send('check-tree');
@@ -426,68 +426,27 @@ function editBookmarksGui() {
   }
 }
 
-function playStream(streamName, url) {
-  tray.setToolTip("NodeRadioTray");
-  tray.setImage(idleIcon);
-  switch (url.toLowerCase().slice(-4)) {
-    case ".pls":
-      console.log("It's a pls")
-      fetch(url)
-        .then(response => response.text())
-        .then(data => {
-          var playlist = PLS.parse(data);
-          console.log(playlist[0].file)
-          playerWindow.webContents.send("play", {streamName: streamName, url: playlist[0].file})
-          store.set('lastStation',streamName);
-          store.set('lastURL',url)
-          toggleButtons(true)
-      })
-      .catch(error => {
-        console.error(`Error fetching URL: ${error.message}`);
-        errorLog.error(`Error fetching URL: ${error.message}`)
-      });
-      break;
-    case ".m3u":
-      console.log("It's an m3u")
-      fetch(url)
-        .then(response => response.text())
-        .then(data => {
-          var playlist = M3U.parse(data);
-          console.log(playlist[0].file)
-          playerWindow.webContents.send("play", {streamName: streamName, url: playlist[0].file})
-          store.set('lastStation',streamName);
-          store.set('lastURL',url)
-          toggleButtons(true)
-        })
-        .catch(error => {
-          console.error(`Error fetching URL: ${error.message}`);
-          errorLog.error(`Error fetching URL: ${error.message}`)
-        });
-      break;
-    case ".asx":
-      console.log("It's an asx")
-      fetch(url)
-        .then(response => response.text())
-        .then(data => {
-          var playlist = ASX.parse(data);
-          console.log(playlist[0].file)
-          playerWindow.webContents.send("play", {streamName: streamName, url: playlist[0].file})
-          store.set('lastStation',streamName);
-          store.set('lastURL',url)
-          toggleButtons(true)
-        })
-        .catch(error => {
-          console.error(`Error fetching URL: ${error.message}`);
-          errorLog.error(`Error fetching URL: ${error.message}`)
-        });
-      break;
-    default:
-      console.log("It's a direct link")
-      playerWindow.webContents.send("play", {streamName: streamName, url: url})
-      store.set('lastStation',streamName);
-      store.set('lastURL',url)
-      toggleButtons(true)
-      break;
+async function playStream(streamName, url) {
+  try {
+    tray.setToolTip("NodeRadioTray");
+    tray.setImage(idleIcon);
+    
+    // Use extractURLfromPlaylist to get the final URL
+    const streamUrl = await extractURLfromPlaylist(url);
+    
+    // Send the stream URL to the player window
+    playerWindow.webContents.send("play", { streamName: streamName, url: streamUrl });
+    
+    // Update the last station and URL in storage
+    store.set('lastStation', streamName);
+    store.set('lastURL', url);
+    
+    // Toggle the buttons to indicate streaming status
+    toggleButtons(true);
+    
+  } catch (error) {
+    console.error(`Error playing stream: ${error.message}`);
+    errorLog.error(`Error playing stream: ${error.message}`);
   }
 }
 
@@ -654,6 +613,46 @@ function changeStation(dir) {
 function changeVolume(direction) {
   playerWindow.webContents.send("set-volume", { direction: direction })
 }
+
+async function extractURLfromPlaylist(url) {
+  try {
+    switch (url.toLowerCase().slice(-4)) {
+      case ".pls":
+        const plsResponse = await fetch(url);
+        const plsData = await plsResponse.text();
+        const plsPlaylist = PLS.parse(plsData);
+        return plsPlaylist[0].file;
+
+      case ".m3u":
+        const m3uResponse = await fetch(url);
+        const m3uData = await m3uResponse.text();
+        const m3uPlaylist = M3U.parse(m3uData);
+        return m3uPlaylist[0].file;
+
+      case ".asx":
+        const asxResponse = await fetch(url);
+        const asxData = await asxResponse.text();
+        const asxPlaylist = ASX.parse(asxData);
+        return asxPlaylist[0].file;
+
+      default:
+        return url;
+    }
+  } catch (error) {
+    console.error("Error fetching or parsing playlist:", error);
+    return url; // Return the original URL if an error occurs
+  }
+}
+
+ipcMain.on('extract-url', async (event, data) => {
+  try {
+    let url = await extractURLfromPlaylist(data.url);
+    editorWindow.webContents.send('extract-url-response', { action: data.action, url: url })
+  } catch (error) {
+    console.error("Error extracting URL:", error);
+    editorWindow.webContents.send('extract-url-response', { action: data.action, url: data.url })
+  }
+});
 
 ipcMain.on('reset', (event, data) => {
   toggleButtons(false)
