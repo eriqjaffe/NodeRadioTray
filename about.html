@@ -32,18 +32,17 @@
   <body>
     <h1>NodeRadioTray</h1>
     <h4 id="info"></h4>
-    <p>NodeRadioTray is a simple, cross-platform internet radio player that sits in the system tray, hence the name.  It is heavily influenced by a Linux application called <a href="https://radiotray.sourceforge.net/" target="_blank">RadioTray</a>, originally written by Carlos Ribiero.</p>
-    <p>The original implimentation of this was <a href="https://github.com/eriqjaffe/WinRadioTray" target="_blank">WinRadioTray</a>, a Windows-only C# app. While functional, it has some quirks and bugs that I've never been able to sort out, and I have never been entirely comfortable working with C# anyways. Also it was Windows-only which is fine as far as it goes, but after discovering Node.js and Electron I decided to rework WinRadioTray as a cross-platform app.</p>
+    <p style="text-align: justify;">NodeRadioTray is a simple, cross-platform internet radio player that sits in the system tray, hence the name.  It is heavily influenced by a Linux application called <a href="https://radiotray.sourceforge.net/" target="_blank">RadioTray</a>, originally written by Carlos Ribiero.</p>
+    <p style="text-align: justify;">The original implimentation of this was <a href="https://github.com/eriqjaffe/WinRadioTray" target="_blank">WinRadioTray</a> which, while functional, has some quirks and bugs that I've never been able to sort out, and I have never been entirely comfortable working with C# anyways. Also it's Windows-only which is fine as far as it goes, but after discovering Node.js and Electron I decided to rework it as a cross-platform app.</p>
     <p>This software predominantly makes use of the following:
         <ul>
             <li><a href="https://nodejs.org/en/about" target="_blank">Node.js</a> (hence the name).</li>
             <li><a href="https://www.electronjs.org/" target="_blank"">Electron</a></li>
-            <li><a href="https://www.un4seen.com/" target="_blank">BASS Audio Library</a> (specfically, a slightly modified version of <a href="https://github.com/Psycokwet/bassaudio-updated" target="_blank">Psycokwet's implmentation</a>) for audio playback.</li>
-            <li><a href="https://github.com/ghaiklor/icecast-parser" target="_blank">icecast-parser</a> for metadata retrieval.</li>
+            <li><a href="https://www.npmjs.com/package/icecast-metadata-player" target="_blank">icecast-metadata-player</a> for audio playback and metadata retrieval.</li>
             <li>Icons from <a href="https://icons8.com/" target="_blank">Icons8</a>.</li>
         </ul>
     </p>
-    <p>If you have any questions, feel free to <a href="mailto:eriqjaffe@gmail.com" target="_blank">email me</a> or report an issue on the <a href="https://github.com/eriqjaffe/noderadiotray" target="_blank">project's GitHub page</a>.</p>
+    <p style="text-align: justify;">If you have any questions, feel free to report an issue on the <a href="https://github.com/eriqjaffe/noderadiotray" target="_blank">project's GitHub page</a>.</p>
   </body>
   <script>
     ipcRenderer.send("get-app-version", null)
