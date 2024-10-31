@@ -175,12 +175,12 @@ var menuTemplate = [
       toggleButtons(false);
     },
     icon: path.join(__dirname, '/images/icons8-Stop.png'),
-    visible: process.platform == "linux" ? true : false
+    visible: false
   },
   { label: "Volume: "+Math.round(parseFloat(store.get("lastVolume", 1)) * 100)+"%",
     id: "volumeDisplay",
     icon: path.join(__dirname, '/images/'+Math.round(parseFloat(store.get("lastVolume", .5)) * 100)+"-percent-icon.png"),
-    visible: process.platform == "linux" ? true : false
+    visible: false
   },
   {
     label: "Volume Up",
@@ -189,7 +189,7 @@ var menuTemplate = [
       changeVolume("up")
     },
     icon: path.join(__dirname, '/images/icons8-thick-arrow-pointing-up-16.png'),
-    visible: process.platform == "linux" ? true : false
+    visible: false
   },
   {
     label: "Volume Down",
@@ -198,7 +198,7 @@ var menuTemplate = [
       changeVolume("down")
     },
     icon: path.join(__dirname, '/images/icons8-thick-arrow-pointing-down-16.png'),
-    visible: process.platform == "linux" ? true : false
+    visible: false
   },
   {
     label: "Next Station",
@@ -207,7 +207,7 @@ var menuTemplate = [
       changeStation("forward")
     },
     icon: path.join(__dirname, '/images/icons8-Fast Forward.png'),
-    visible: process.platform == "linux" ? true : false
+    visible: false
   },
   {
     label: "Previous Station",
@@ -216,7 +216,7 @@ var menuTemplate = [
       changeStation("backward")
     },
     icon: path.join(__dirname, '/images/icons8-Rewind.png'),
-    visible: process.platform == "linux" ? true : false
+    visible: false
   },
   { 
     type: 'separator'
@@ -458,6 +458,7 @@ function toggleButtons(state) {
     nextButton.visible = true;
     previousButton.visible = true;
     tray.setImage(playingIcon);
+    tray.setContextMenu(contextMenu)
   } else {
     playButton.visible = true;
     stopButton.visible = false;
