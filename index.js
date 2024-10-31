@@ -242,6 +242,14 @@ var menuTemplate = [
     icon: path.join(__dirname, '/images/icons8-debug.png')
   },
   {
+    label: "Open Log Folder",
+    id: "OpenLogFolder",
+    click: async() => {
+      shell.openPath(userData+'/logs/')
+    },
+    icon: path.join(__dirname, '/images/icons8-log.png')
+  },
+  {
     label: "Exit",
     role: "quit",
     icon: path.join(__dirname, '/images/icons8-cancel.png')
