@@ -434,6 +434,7 @@ async function playStream(streamName, url) {
     const streamUrl = await extractURLfromPlaylist(url);
     playerWindow.webContents.send("play", { streamName: streamName, url: streamUrl });
     store.set('lastStation', streamName);
+    store.set('lastURL', url)
     toggleButtons(true);
   } catch (error) {
     toggleButtons(false);
