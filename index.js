@@ -14,9 +14,7 @@ const PLS = parsers.PLS;
 const ASX = parsers.ASX
 const log = require('electron-log/main');
 
-const isMac = process.platform === 'darwin'
 const userData = app.getPath('userData');
-const firstSoundCard = (process.platform == "win32") ? 2 : 1;
 const store = new Store()
 const AutoLauncher = new AutoLaunch(
   {name: 'NodeRadioTray'}
@@ -31,7 +29,6 @@ log.transports.file.fileName = "metadata.log"
 log.eventLogger.startLogging
 
 const errorLog = log.create({ logId: 'errorLog' })
-//errorLog.eventLogger.startLogging
 
 var stream = null;
 var contextMenu = null;
@@ -331,7 +328,6 @@ function loadBookmarks() {
             var stationIcon = path.join(__dirname, '/images/icons8-radio-2.png')
           }
         } catch (error) {
-          console.error(error)
           errorLog.error(error)
         }
         var station = {
@@ -357,17 +353,14 @@ function loadBookmarks() {
       }
       stationMenu.push(genre)
     }
-    console.log("Bookmarks loaded")
     return stationMenu;
   } catch (error) {
-    console.error(error)
     errorLog.error(error)
   }
 }
 
 function reloadBookmarks() {
   menuTemplate[0].submenu = loadBookmarks();
-  //menuTemplate[3].submenu = loadCards();
   contextMenu = Menu.buildFromTemplate(menuTemplate)
   tray.setContextMenu(contextMenu)
   playerWindow.webContents.send("get-player-status", null)
@@ -430,22 +423,12 @@ async function playStream(streamName, url) {
   try {
     tray.setToolTip("NodeRadioTray");
     tray.setImage(idleIcon);
-    
-    // Use extractURLfromPlaylist to get the final URL
     const streamUrl = await extractURLfromPlaylist(url);
-    
-    // Send the stream URL to the player window
     playerWindow.webContents.send("play", { streamName: streamName, url: streamUrl });
-    
-    // Update the last station and URL in storage
     store.set('lastStation', streamName);
-    store.set('lastURL', url);
-    
-    // Toggle the buttons to indicate streaming status
     toggleButtons(true);
-    
   } catch (error) {
-    console.error(`Error playing stream: ${error.message}`);
+    toggleButtons(false);
     errorLog.error(`Error playing stream: ${error.message}`);
   }
 }
@@ -523,33 +506,27 @@ function setIconTheme(checked) {
 function initializeWatcher() {
   if (!fs.existsSync(userData+'/bookmarks.json')) {
     try {
-      console.log("User bookmarks file not found, creating...")
       fs.copyFileSync(path.join(__dirname, '/bookmarks.json'), userData+'/bookmarks.json');
     } catch (error) {
-      console.error(error)
+      errorLog.error(error)
       .catch(error => {
-        console.error(error);
         errorLog.error(error)
       });
     }
   }
   if (!fs.existsSync(userData+'/images')) {
     try {
-      console.log("User images directory not found, creating...")
       fs.mkdirSync(userData+'/images');
     } catch (error) {
-      console.error(error)
+      errorLog.error(error)
       .catch(error => {
-        console.error(error);
         errorLog.error(error)
       });
     }
   }
   watcher.add(userData+'/bookmarks.json',
     { awaitWriteFinish: true })
-    .on('ready', function() {
-      console.log('Watching bookmark file:', watcher.getWatched());
-  });
+    .on('ready', function() {});
 }
 
 function playCustomURL() {
@@ -566,13 +543,11 @@ function playCustomURL() {
     })
     .then((r) => {
         if(r === null) {
-            console.log('user cancelled');
         } else {
             playStream('Custom URL', r);
         }
     })
   } catch(error) {
-    console.error(`Error playing URL: ${error.message}`);
     errorLog.error(`Error playing URL: ${error.message}`);
   };
 }
@@ -622,25 +597,21 @@ async function extractURLfromPlaylist(url) {
         const plsData = await plsResponse.text();
         const plsPlaylist = PLS.parse(plsData);
         return plsPlaylist[0].file;
-
       case ".m3u":
         const m3uResponse = await fetch(url);
         const m3uData = await m3uResponse.text();
         const m3uPlaylist = M3U.parse(m3uData);
         return m3uPlaylist[0].file;
-
       case ".asx":
         const asxResponse = await fetch(url);
         const asxData = await asxResponse.text();
         const asxPlaylist = ASX.parse(asxData);
         return asxPlaylist[0].file;
-
       default:
         return url;
     }
   } catch (error) {
-    console.error("Error fetching or parsing playlist:", error);
-    return url; // Return the original URL if an error occurs
+    return url;
   }
 }
 
@@ -690,7 +661,6 @@ ipcMain.on('get-app-version', (event, response) => {
 })
 
 ipcMain.on('set-tooltip', (event, data) => {
-  console.log(data)
   if (data.playing) {
     tray.setImage(playingIcon);
     tray.setToolTip(data.data)
@@ -728,7 +698,6 @@ ipcMain.on('error-notification', (event, data) => {
 })
 
 ipcMain.on('mm-get-player-status-response', (event, data) => {
-  console.log(data)
   if (data == "playing") {
     toggleButtons(false)
   } else {
@@ -766,7 +735,6 @@ ipcMain.on('save-bookmarks', (event, data) => {
         message: "An error occurred saving bookmarks:\r\r\n" + err,
         buttons: ['OK'],
       }).then(result => {})
-      console.error(err);
       errorLog.error(err);
     } else {
       reloadBookmarks();
