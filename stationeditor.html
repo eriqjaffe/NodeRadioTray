@@ -10,12 +10,14 @@
     <script type="text/javascript" src="./scripts/jquery.fancytree.dnd5.js"></script>
     <script type="text/javascript" src="./scripts/jquery.contextMenu.js"></script>
     <script type="text/javascript" src="./scripts/jquery.fancytree.contextMenu.js"></script>
+    <script type="text/javascript" src="./scripts/jquery.magnific-popup.js"></script>
     <script src="./scripts/icecast-metadata-player-1.17.3.main.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
     <link href="./scripts/skin-win8-n/ui.fancytree.min.css" rel="stylesheet">
     <link href="./scripts/jquery.contextMenu.css" rel="stylesheet" type='text/css'/>
+    <link href="./scripts/magnific-popup.css" rel="stylesheet" type='text/css'/>
     <link href="./scripts/style.css" rel="stylesheet" type='text/css'/>
     <script>
         const { ipcRenderer } = require('electron');
@@ -117,7 +119,10 @@
         </form>
       </div>
     </div>
-    
+    <div id="checkingStream" class="white-popup mfp-hide" style="text-align:center;">
+      <h2 style="width:100%;">Checking Stream...</h2>
+      <img src="./images/progress.gif">
+    </div>
   </body>
   <script>
     ipcRenderer.send('test-ipc', null)
@@ -347,7 +352,9 @@
         resetStuff()
       }
 
-      const onStop = () => {}
+      const onStop = () => {
+        $.magnificPopup.close()
+      }
 
       const onError = (message, error) => {
         alert("The URL you provided is not playable.")
@@ -384,6 +391,14 @@
     $("#editStationForm").on("submit",function(e) {
       e.preventDefault()
       ipcRenderer.send('extract-url', {action: "edit", url: $("#stationURL").val() })
+      $.magnificPopup.open({
+        items: {
+          src: '#checkingStream'
+        },
+        removalDelay: 250,
+        showCloseBtn: false,
+        type: 'inline'
+      });
     })
 
     $("#deleteGroup").on("click", function(e) {
@@ -415,6 +430,14 @@
     $("#newStationForm").on("submit",function(e) {
       e.preventDefault()
       ipcRenderer.send('extract-url', {action: "add", url: $("#newStationURL").val() })
+      $.magnificPopup.open({
+        items: {
+          src: '#checkingStream'
+        },
+        removalDelay: 250,
+        showCloseBtn: false,
+        type: 'inline'
+      });
     })
 
     function convertToFancytreeFormat(data) {
