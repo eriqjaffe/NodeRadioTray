@@ -177,7 +177,7 @@ var menuTemplate = [
     icon: path.join(__dirname, '/images/icons8-Stop.png'),
     visible: process.platform == "linux" ? true : false
   },
-  { label: "Volume: "+Math.round(parseFloat(store.get("lastVolume", .5)) * 100)+"%",
+  { label: "Volume: "+Math.round(parseFloat(store.get("lastVolume", 1)) * 100)+"%",
     id: "volumeDisplay",
     icon: path.join(__dirname, '/images/'+Math.round(parseFloat(store.get("lastVolume", .5)) * 100)+"-percent-icon.png"),
     visible: process.platform == "linux" ? true : false
