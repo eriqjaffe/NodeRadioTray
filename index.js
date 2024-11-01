@@ -47,7 +47,7 @@ var darkIcon = (store.get("darkicon") == true) ? true : false;
 setIconTheme(darkIcon);
 
 if (!store.has("notifications")) {
-  store.set("notifications", true)
+  store.set("notifications", false)
 } 
 
 const prefsTemplate = [
@@ -432,7 +432,7 @@ async function playStream(streamName, url) {
     tray.setToolTip("NodeRadioTray");
     tray.setImage(idleIcon);
     const streamUrl = await extractURLfromPlaylist(url);
-    playerWindow.webContents.send("play", { streamName: streamName, url: streamUrl });
+    playerWindow.webContents.send("play", { streamName: streamName, url: streamUrl, volume: store.get("lastVolume") });
     store.set('lastStation', streamName);
     store.set('lastURL', url)
     toggleButtons(true);
