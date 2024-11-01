@@ -11,7 +11,11 @@
     "pack:arm": "electron-packager . --out dist/ --overwrite --platform linux --arch armv7l --icon=build/icon.png",
     "pack:darwin": "electron-packager . --out dist/ --overwrite --platform darwin --icon=build/icon.icns",
     "pack:all": "yarn run pack:win64 && yarn run pack:linux64",
-    "build:win64": "electron-installer-windows --icon ./images/playing.ico --animation ./build/installer.gif --src ./dist/NodeRadioTray-win32-x64/ --dest ./dist/installers/"
+    "build:win64": "electron-installer-windows --icon ./images/playing.ico --animation ./build/installer.gif --src ./dist/NodeRadioTray-win32-x64/ --dest ./dist/installers/",
+    "build:debian": "electron-installer-debian --src=./dist/NodeRadioTray-linux-x64/ --dest dist/installer --arch amd64",
+    "build:redhat": "electron-installer-redhat --src=./dist/NodeRadioTray-linux-x64/ --dest dist/installer --arch amd64",
+    "build:arm": "electron-installer-debian --src=./dist/NodeRadioTray-linux-armv7l/ --dest dist/installer --arch armv7l",
+    "build:darwin": "/usr/libexec/PListBuddy -c 'add LSUIElement string 1' ./dist/NodeRadioTray-darwin-x64/NodeRadioTray.app/Contents/Info.plist && electron-installer-dmg ./dist/NodeRadioTray-darwin-x64/NodeRadioTray.app/ 'NodeRadioTray_${npm_package_version}' --out ./dist/installer/ --icon=./build/icon.icns --title='NodeRadioTray_${npm_package_version}' --overwrite"
   },
   "author": {
     "name": "Eriq Jaffe",
