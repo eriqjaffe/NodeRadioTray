@@ -275,6 +275,7 @@ app.whenReady().then(() => {
     width: 1024,
     height: 800,
     show: false,
+    icon: path.join(__dirname, 'images/playing.ico'),
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -382,6 +383,7 @@ function showAbout() {
     aboutWindow = new BrowserWindow({
       width: 800,
       height: 600,
+      icon: path.join(__dirname, 'images/playing.ico'),
       webPreferences: {
         nodeIntegration: true,
         contextIsolation: false
@@ -410,6 +412,7 @@ function editBookmarksGui() {
     editorWindow = new BrowserWindow({
       width: 800,
       height: 650,
+      icon: path.join(__dirname, 'images/playing.ico'),
       webPreferences: {
         nodeIntegration: true,
         contextIsolation: false
