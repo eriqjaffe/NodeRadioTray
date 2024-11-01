@@ -2,20 +2,19 @@ if(require('electron-squirrel-startup')) return;
 const { app, Menu, Tray, nativeImage, shell, globalShortcut, BrowserWindow, ipcMain, dialog } = require('electron')
 const fs = require('fs');
 const Store = require("electron-store");
-const bass = require("@eriqjaffe/bassaudio-updated");
 const chokidar = require("chokidar");
 const prompt = require('electron-prompt');
 const notifier = require('node-notifier');
 const path = require('path');
 const AutoLaunch = require('auto-launch');
-const ref = require("ref-napi");
-const parser = require("icecast-parser")
-const pkg = require('./package.json');
+const pkg = require('./package.json')
+const parsers = require("playlist-parser");
+const M3U = parsers.M3U;
+const PLS = parsers.PLS;
+const ASX = parsers.ASX
+const log = require('electron-log/main');
 
-const isMac = process.platform === 'darwin'
 const userData = app.getPath('userData');
-const firstSoundCard = (process.platform == "win32") ? 2 : 1;
-const basslib = new bass();
 const store = new Store()
 const AutoLauncher = new AutoLaunch(
   {name: 'NodeRadioTray'}
@@ -25,78 +24,30 @@ const watcher = chokidar.watch([], { awaitWriteFinish: true })
     reloadBookmarks();
 })
 
+log.initialize();
+log.transports.file.fileName = "metadata.log"
+log.eventLogger.startLogging
+
+const errorLog = log.create({ logId: 'errorLog' })
+
 var stream = null;
-var outputDevice = -1;
 var contextMenu = null;
 var idleIcon = null;
 var playingIcon = null;
-var currentOutputDevice = -1;
 
 let tray
-let browserWindow;
-let browserWindow2;
+let editorWindow;
+let aboutWindow;
+let playerWindow;
 let bookmarksArr = []
 
 initializeWatcher();
-
-/* basslib.EnableTags(true);
-var tagsEnabled = basslib.TagsEnabled();
-if (tagsEnabled) {
-  console.log("BASS: Tags enabled");
-} else {
-  console.log("BASS: Tags disabled");
-  //process.exit();
-} */
-
-pluginsLoadResults = basslib.LoadAllPlugins();
-if (pluginsLoadResults === false) {
-  console.error("BASS: Error loading plugins: " + basslib.BASS_ErrorGetCode());
-  //process.exit();
-} else {
-  console.log("BASS: Plugins loaded");
-}
-
-setInterval(function () {
-  if (
-    basslib.BASS_ChannelIsActive(stream) ==
-    basslib.BASS_ChannelIsActiveAttribs.BASS_ACTIVE_PLAYING
-  ) {
-    let radioStation = new parser.Parser({
-      autoUpdate: false,
-      emptyInterval: 5 * 60,
-      errorInterval: 10 * 60,
-      metadataInterval: 1,
-      notifyOnChangeOnly: false,
-      url: store.get("lastURL"),
-      userAgent: 'Custom User Agent',
-    });
-
-    radioStation.on('metadata', (metadata) => {
-      const streamTitle = metadata.get('StreamTitle') ?? 'unknown';
-      if (streamTitle == "unknown") {
-        tray.setToolTip("NodeRadioTray\r\n"+store.get("lastStation"))
-      } else {
-        tray.setToolTip(store.get("lastStation")+"\r\n"+streamTitle)
-      }
-    });
-
-    radioStation.on('empty', () => {
-      tray.setToolTip("NodeRadioTray\r\n"+store.get("lastStation"))
-    })
-
-    radioStation.on('error', () => {
-      tray.setToolTip("NodeRadioTray\r\n"+store.get("lastStation"))
-    })
-  } else {
-    tray.setToolTip('NodeRadioTray')
-  }
-}, 1000);
 
 var darkIcon = (store.get("darkicon") == true) ? true : false;
 setIconTheme(darkIcon);
 
 if (!store.has("notifications")) {
-  store.set("notifications", true)
+  store.set("notifications", false)
 } 
 
 const prefsTemplate = [
@@ -108,11 +59,7 @@ const prefsTemplate = [
       if (stream == null) {
         tray.setImage(idleIcon)
       } else {
-        if (basslib.BASS_ChannelIsActive(stream)) {
-          tray.setImage(playingIcon)
-        } else {
-          tray.setImage(idleIcon)
-        }
+        playerWindow.webContents.send("get-player-status", null)
       }
     },
     type: "checkbox",
@@ -134,6 +81,14 @@ const prefsTemplate = [
     },
     type: "checkbox",
     checked: (store.get("notifications") == true) ? true : false
+  },
+  { 
+    label: 'Log metadata',
+    click: e => {
+      store.set("metadataLog", e.checked)
+    },
+    type: "checkbox",
+    checked: (store.get("metadataLog") == true) ? true : false
   },
   {
     label: 'Use multimedia keys',
@@ -174,12 +129,6 @@ var menuTemplate = [
     submenu: prefsTemplate,
     icon: path.join(__dirname, 'images/icons8-settings.png')
   },
-  { 
-    label: 'Audio Output',
-    submenu: loadCards(),
-    icon: path.join(__dirname, '/images/icons8-audio.png')
-  },
-  
   { 
     label: 'Edit Stations',
     click: e => {
@@ -223,16 +172,15 @@ var menuTemplate = [
     label: "Stop",
     id: "stopButton",
     click: async() => {
-      basslib.BASS_Free();
       toggleButtons(false);
     },
     icon: path.join(__dirname, '/images/icons8-Stop.png'),
-    visible: process.platform == "linux" ? true : false
+    visible: false
   },
-  { label: "Volume: "+Math.round(parseFloat(store.get("lastVolume")) * 100)+"%",
+  { label: "Volume: "+Math.round(parseFloat(store.get("lastVolume", 1)) * 100)+"%",
     id: "volumeDisplay",
-    icon: path.join(__dirname, '/images/'+Math.round(parseFloat(store.get("lastVolume")) * 100)+"-percent-icon.png"),
-    visible: process.platform == "linux" ? true : false
+    icon: path.join(__dirname, '/images/'+Math.round(parseFloat(store.get("lastVolume", .5)) * 100)+"-percent-icon.png"),
+    visible: false
   },
   {
     label: "Volume Up",
@@ -241,7 +189,7 @@ var menuTemplate = [
       changeVolume("up")
     },
     icon: path.join(__dirname, '/images/icons8-thick-arrow-pointing-up-16.png'),
-    visible: process.platform == "linux" ? true : false
+    visible: false
   },
   {
     label: "Volume Down",
@@ -250,27 +198,25 @@ var menuTemplate = [
       changeVolume("down")
     },
     icon: path.join(__dirname, '/images/icons8-thick-arrow-pointing-down-16.png'),
-    visible: process.platform == "linux" ? true : false
+    visible: false
   },
   {
     label: "Next Station",
     id: "nextButton",
     click: async() => {
-      //nextStation();
       changeStation("forward")
     },
     icon: path.join(__dirname, '/images/icons8-Fast Forward.png'),
-    visible: process.platform == "linux" ? true : false
+    visible: false
   },
   {
     label: "Previous Station",
     id: "previousButton",
     click: async() => {
-      //nextStation();
       changeStation("backward")
     },
     icon: path.join(__dirname, '/images/icons8-Rewind.png'),
-    visible: process.platform == "linux" ? true : false
+    visible: false
   },
   { 
     type: 'separator'
@@ -282,6 +228,26 @@ var menuTemplate = [
       showAbout()
     },
     icon: path.join(__dirname, '/images/icons8-about.png')
+  },
+  {
+    label: "Toggle Debugging Window",
+    id: "ToggleDebug",
+    click: async() => {
+      if (playerWindow.isVisible()) {
+        playerWindow.hide()
+      } else {
+        playerWindow.show()
+      }
+    },
+    icon: path.join(__dirname, '/images/icons8-debug.png')
+  },
+  {
+    label: "Open Log Folder",
+    id: "OpenLogFolder",
+    click: async() => {
+      shell.openPath(userData+'/logs/')
+    },
+    icon: path.join(__dirname, '/images/icons8-log.png')
   },
   {
     label: "Exit",
@@ -304,6 +270,25 @@ const createTray = () => {
 
 app.whenReady().then(() => {
   createTray()
+
+  playerWindow = new BrowserWindow({
+    width: 1024,
+    height: 800,
+    show: false,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
+  })
+  playerWindow.setMenu(null)
+  playerWindow.loadFile('player.html')
+  playerWindow.webContents.openDevTools({ mode: 'bottom' })
+
+  playerWindow.on('close', (event) => {
+    event.preventDefault(); // Prevent the window from closing
+    playerWindow.hide(); // Hide the window instead
+  });
+
   if (store.get("autoplay") == true) {
     playStream(store.get('lastStation'), store.get('lastURL'));
   }
@@ -314,7 +299,10 @@ app.on('activate', () => {})
 
 app.on('window-all-closed', () => {})
 
-
+app.on('before-quit', function (evt) {
+  playerWindow.destroy()
+  tray.destroy();
+});
 
 if (process.platform == "darwin") {
   app.dock.hide()
@@ -348,7 +336,7 @@ function loadBookmarks() {
             var stationIcon = path.join(__dirname, '/images/icons8-radio-2.png')
           }
         } catch (error) {
-          console.error(error)
+          errorLog.error(error)
         }
         var station = {
           label: tmp.name,
@@ -373,32 +361,25 @@ function loadBookmarks() {
       }
       stationMenu.push(genre)
     }
-    console.log("Bookmarks loaded")
     return stationMenu;
   } catch (error) {
-    console.error(error)
+    errorLog.error(error)
   }
 }
 
 function reloadBookmarks() {
   menuTemplate[0].submenu = loadBookmarks();
-  menuTemplate[3].submenu = loadCards();
   contextMenu = Menu.buildFromTemplate(menuTemplate)
   tray.setContextMenu(contextMenu)
-  if (
-    basslib.BASS_ChannelIsActive(stream) ==
-    basslib.BASS_ChannelIsActiveAttribs.BASS_ACTIVE_PLAYING
-  ) {
-    toggleButtons(true)
-  }
+  playerWindow.webContents.send("get-player-status", null)
 }
 
 function showAbout() {
-  if (browserWindow) {
-    browserWindow.close()
+  if (editorWindow) {
+    editorWindow.close()
   }
-  if (!browserWindow2) {
-    browserWindow2 = new BrowserWindow({
+  if (!aboutWindow) {
+    aboutWindow = new BrowserWindow({
       width: 800,
       height: 600,
       webPreferences: {
@@ -406,27 +387,27 @@ function showAbout() {
         contextIsolation: false
       }
     })
-    browserWindow2.setMenu(null)
-    browserWindow2.loadFile('about.html')
-    browserWindow2.on('closed', () => {
-      browserWindow2.destroy()
-      browserWindow2 = null
+    aboutWindow.setMenu(null)
+    aboutWindow.loadFile('about.html')
+    aboutWindow.on('closed', () => {
+      aboutWindow.destroy()
+      aboutWindow = null
     })
-    browserWindow2.webContents.setWindowOpenHandler(({ url }) => {
+    aboutWindow.webContents.setWindowOpenHandler(({ url }) => {
       shell.openExternal(url);
       return { action: 'deny' };
     });
   } else {
-    browserWindow2.focus();
+    aboutWindow.focus();
   }
 }
 
 function editBookmarksGui() {
-  if (browserWindow2) {
-    browserWindow2.close()
+  if (aboutWindow) {
+    aboutWindow.close()
   }
-  if (!browserWindow) {
-    browserWindow = new BrowserWindow({
+  if (!editorWindow) {
+    editorWindow = new BrowserWindow({
       width: 800,
       height: 650,
       webPreferences: {
@@ -434,175 +415,31 @@ function editBookmarksGui() {
         contextIsolation: false
       }
     })
-    browserWindow.setMenu(null)
-    browserWindow.loadFile('stationeditor.html');
-    browserWindow.on('close', (event) => {
+    editorWindow.setMenu(null)
+    editorWindow.loadFile('stationeditor.html');
+    //editorWindow.webContents.openDevTools({ mode: 'detach' })
+    editorWindow.on('close', (event) => {
       event.preventDefault()
-      browserWindow.webContents.send('check-tree');
+      editorWindow.webContents.send('check-tree');
     });
   } else {
-    browserWindow.focus();
+    editorWindow.focus();
   }
 }
 
-ipcMain.on('check-tree-response', (event, response) => {
-  if (response == false) {
-    browserWindow.destroy()
-    browserWindow = null;
-  } else {
-    dialog.showMessageBox(null, {
-      type: 'question',
-      message: "The bookmarks appear to have been edited?  Do you want to save your changes?",
-      buttons: ['Yes', 'No'],
-    }).then(result => {
-      if (result.response === 1) {
-        browserWindow.destroy()
-        browserWindow = null;
-      } else {
-        browserWindow.webContents.send('save','dialog')
-      }
-    })
-  }
-});
-
-ipcMain.on('get-app-version', (event, response) => {
-  event.sender.send('get-app-version-response', pkg.version)
-})
-
-function loadCards() {
-  var cards = basslib.getDevices();
-  var cardsMenu = [];
-
-  for (var i = firstSoundCard; i < cards.length; i++) {
-    const cardsArr = [];
-    cardsArr.id = i;
-  /*   cardsArr.name = cards[i].name;
-    cardsArr.typeDigital = cards[i].typeDigital,
-    cardsArr.typeDisplayPort = cards[i].typeDisplayPort,
-    cardsArr.typeHandset = cards[i].typeHandset,
-    cardsArr.typeHdmi = cards[i].typeHdmi,
-    cardsArr.typeHeadPhones = cards[i].typeHeadPhones,
-    cardsArr.typeHeadSet = cards[i].typeHeadSet,
-    cardsArr.typeLine = cards[i].typeLine,
-    cardsArr.typeMask = cards[i].typeMask,
-    cardsArr.typeMicrophone = cards[i].typeMicrophone,
-    cardsArr.typeNetwork = cards[i].typeNetwork,
-    cardsArr.typeSPDIF = cards[i].typeSPDIF,
-    cardsArr.typeSpeakers = cards[i].typeSpeakers */
-    console.log ("current output: "+currentOutputDevice)
-    var card = {
-      label: cards[i].name + " " ,
-      type: 'radio',
-      checked: cardsArr.id == currentOutputDevice ? true : false,
-      click: async => { 
-        outputDevice = parseInt(cardsArr.id);
-        currentOutputDevice = parseInt(cardsArr.id);
-        console.log(currentOutputDevice + " chosen")
-        basslib.BASS_Free();
-        var init = basslib.BASS_Init(
-          outputDevice,
-          44100,
-          basslib.BASS_Initflags.BASS_DEVICE_STEREO
-        );
-        if (init === false) {
-          console.error("error at BASS_Init: " + basslib.BASS_ErrorGetCode());
-          dialog.showMessageBox(null, {
-            type: 'error',
-            message: "error at BASS_Init: " + basslib.BASS_ErrorGetCode(),
-            buttons: ['OK'],
-          }).then(result => {
-            process.exit();
-          })
-        } else {
-          console.log("BASS: Bass initialized on device " + outputDevice);
-        }
-        playStream(store.get("lastStation"), store.get("lastURL"))
-      }
-    }
-    cardsMenu.push(card)
-  }
-  return cardsMenu;
-}
-
-function playStream(streamName, url) {
-  basslib.BASS_Free();
-  tray.setToolTip("NodeRadioTray");
-  tray.setImage(idleIcon);
-  basslib.BASS_SetConfig(15, 0);
-  basslib.BASS_SetConfig(21, 1);
-  var init = basslib.BASS_Init(
-    outputDevice,
-    44100,
-    basslib.BASS_Initflags.BASS_DEVICE_STEREO
-  );
-  if (init === false) {
-    notifier.notify(
-      {
-        title: 'NodeRadioTray',
-        message: 'BASS Init Error: ' + basslib.BASS_ErrorGetCode(),
-        icon: path.join(__dirname, '/images/playing.png'),
-        sound: true,
-        wait: false,
-        timeout: 3
-      });
-    //process.exit();
-  } else {
-    console.log("BASS: Bass initialized on device " + outputDevice);
-  }
-  stream = basslib.BASS_StreamCreateURL(url, 0, 0, null, null);
-  if (basslib.BASS_ErrorGetCode() != basslib.BASS_ErrorCode.BASS_OK) {
-    console.log("BASS: Error opening file:" + basslib.BASS_ErrorGetCode());
-    notifier.notify(
-      {
-        title: 'NodeRadioTray',
-        message: 'Playback Error: ' + basslib.BASS_ErrorGetCode(),
-        icon: path.join(__dirname, '/images/playing.png'),
-        sound: true,
-        wait: false,
-        timeout: 3
-      });
-  }
+async function playStream(streamName, url) {
   try {
-    basslib.BASS_ChannelSetAttribute(
-      stream,
-      basslib.BASS_ChannelAttributes.BASS_ATTRIB_VOL,
-      store.get("lastVolume", 0.5)
-    );
-    var success = basslib.BASS_ChannelPlay(stream, 0);
-    if (!success) {
-      notifier.notify(
-        {
-          title: 'NodeRadioTray',
-          message: 'Playback Error: ' + basslib.BASS_ErrorGetCode(),
-          icon: path.join(__dirname, '/images/playing.png'),
-          sound: true,
-          wait: false,
-          timeout: 3
-        });
-    } else {
-      toggleButtons(true);
-      store.set('lastStation',streamName);
-      store.set('lastURL',url)
-      
-      if (store.get("notifications") == true) {
-        notifier.notify(
-          {
-            title: 'NodeRadioTray',
-            message: 'Now Playing: '+streamName,
-            icon: path.join(__dirname, '/images/playing.png'),
-            sound: true,
-            wait: false,
-            timeout: 3
-          });
-      }
-    }
+    tray.setToolTip("NodeRadioTray");
+    tray.setImage(idleIcon);
+    const streamUrl = await extractURLfromPlaylist(url);
+    playerWindow.webContents.send("play", { streamName: streamName, url: streamUrl, volume: store.get("lastVolume") });
+    store.set('lastStation', streamName);
+    store.set('lastURL', url)
+    toggleButtons(true);
   } catch (error) {
-    console.error(error)
+    toggleButtons(false);
+    errorLog.error(`Error playing stream: ${error.message}`);
   }
-}
-
-function showVolume() {
-  
 }
 
 function toggleButtons(state) {
@@ -622,6 +459,7 @@ function toggleButtons(state) {
     nextButton.visible = true;
     previousButton.visible = true;
     tray.setImage(playingIcon);
+    tray.setContextMenu(contextMenu)
   } else {
     playButton.visible = true;
     stopButton.visible = false;
@@ -632,9 +470,10 @@ function toggleButtons(state) {
     previousButton.visible = false;
     tray.setImage(idleIcon);
     tray.setToolTip("NodeRadioTray");
-    menuTemplate[9].label = "Play "+store.get("lastStation")
+    menuTemplate[8].label = "Play "+store.get("lastStation")
     contextMenu = Menu.buildFromTemplate(menuTemplate)
     tray.setContextMenu(contextMenu)
+    playerWindow.webContents.send("stop", null)
   }
 }
 
@@ -677,60 +516,58 @@ function setIconTheme(checked) {
 function initializeWatcher() {
   if (!fs.existsSync(userData+'/bookmarks.json')) {
     try {
-      console.log("User bookmarks file not found, creating...")
       fs.copyFileSync(path.join(__dirname, '/bookmarks.json'), userData+'/bookmarks.json');
     } catch (error) {
-      console.error(error)
+      errorLog.error(error)
+      .catch(error => {
+        errorLog.error(error)
+      });
     }
   }
   if (!fs.existsSync(userData+'/images')) {
     try {
-      console.log("User images directory not found, creating...")
       fs.mkdirSync(userData+'/images');
     } catch (error) {
-      console.error(error)
+      errorLog.error(error)
+      .catch(error => {
+        errorLog.error(error)
+      });
     }
   }
   watcher.add(userData+'/bookmarks.json',
     { awaitWriteFinish: true })
-    .on('ready', function() {
-      console.log('Watching bookmark file:', watcher.getWatched());
-  });
+    .on('ready', function() {});
 }
 
 function playCustomURL() {
-  prompt({
-    title: 'Custom URL',
-    label: 'URL:',
-    value: '',
-    inputAttrs: {
-        type: 'url'
-    },
-    type: 'input',
-    icon: path.join(__dirname, 'images/playing.png')
-  })
-  .then((r) => {
-      if(r === null) {
-          console.log('user cancelled');
-      } else {
-          playStream('Custom URL', r);
-      }
-  })
-  .catch(console.error);
+  try {
+    prompt({
+      title: 'Custom URL',
+      label: 'URL:',
+      value: '',
+      inputAttrs: {
+          type: 'url'
+      },
+      type: 'input',
+      icon: path.join(__dirname, 'images/playing.png')
+    })
+    .then((r) => {
+        if(r === null) {
+        } else {
+            playStream('Custom URL', r);
+        }
+    })
+  } catch(error) {
+    errorLog.error(`Error playing URL: ${error.message}`);
+  };
 }
 
 function toggleMMKeys(state) {
   if (state == true) {
     globalShortcut.register('MediaPlayPause', () => {
-      if (basslib.BASS_ChannelIsActive(stream)) {
-        basslib.BASS_Free();
-        toggleButtons(false);
-      } else {
-        playStream(store.get('lastStation'), store.get('lastURL'));
-      }
+      playerWindow.webContents.send("mm-get-player-status", null)
     })
     globalShortcut.register('MediaStop', () => {
-      basslib.BASS_Free();
       toggleButtons(false);
     })
     globalShortcut.register('Ctrl+VolumeUp', () => {
@@ -743,86 +580,6 @@ function toggleMMKeys(state) {
     globalShortcut.unregisterAll()
   }
 }
-
-function changeVolume(direction) {
-  var volume = ref.alloc("float");
-  basslib.BASS_ChannelGetAttribute(
-    stream,
-    basslib.BASS_ChannelAttributes.BASS_ATTRIB_VOL,
-    volume
-  );
-  if (direction == "up" && ref.deref(volume) <= 1) {
-    basslib.BASS_ChannelSetAttribute(
-      stream,
-      basslib.BASS_ChannelAttributes.BASS_ATTRIB_VOL,
-      ref.deref(volume) + 0.1
-    );
-  }
-  if (direction == "up" && ref.deref(volume) <= 1 && ref.deref(volume) >= 0.9) {
-    basslib.BASS_ChannelSetAttribute(
-      stream,
-      basslib.BASS_ChannelAttributes.BASS_ATTRIB_VOL,
-      ref.deref(volume) + 0.1
-    );
-  }
-  if (direction == "down" && ref.deref(volume) >= 0) {
-    basslib.BASS_ChannelSetAttribute(
-      stream,
-      basslib.BASS_ChannelAttributes.BASS_ATTRIB_VOL,
-      ref.deref(volume) - 0.1
-    );
-  }
-  if (direction == "down" && ref.deref(volume) <= 0.1) {
-    basslib.BASS_ChannelSetAttribute(
-      stream,
-      basslib.BASS_ChannelAttributes.BASS_ATTRIB_VOL,
-      0
-    );
-  }
-  basslib.BASS_ChannelGetAttribute(
-    stream,
-    basslib.BASS_ChannelAttributes.BASS_ATTRIB_VOL,
-    volume
-  );
-  store.set("lastVolume", ref.deref(volume))
-  menuTemplate[11].label = "Volume: "+Math.round(parseFloat(ref.deref(volume)) * 100)+"%"
-  menuTemplate[11].icon = path.join(__dirname, '/images/'+Math.round(parseFloat(ref.deref(volume)) * 100)+"-percent-icon.png")
-  contextMenu = Menu.buildFromTemplate(menuTemplate)
-  tray.setContextMenu(contextMenu)
-  if (
-    basslib.BASS_ChannelIsActive(stream) ==
-    basslib.BASS_ChannelIsActiveAttribs.BASS_ACTIVE_PLAYING
-  ) {
-    toggleButtons(true)
-  }
-}
-
-ipcMain.on('test-ipc', (event, arg) => {
-  let bookmarks = JSON.parse(fs.readFileSync(userData+'/bookmarks.json'));
-  event.sender.send('get-bookmarks', bookmarks)
-})
-
-ipcMain.on('save-bookmarks', (event, data) => {
-  fs.writeFile(userData+'/bookmarks.json', data.data, function(err) {
-    if(err) {
-      dialog.showMessageBox(null, {
-        type: 'error',
-        message: "An error occurred saving bookmarks:\r\r\n" + err,
-        buttons: ['OK'],
-      }).then(result => {})
-      console.error(err);
-    } else {
-      reloadBookmarks();
-      if (data.source == "dialog") {
-        browserWindow.destroy()
-        browserWindow = null;
-      } else {
-        event.sender.send('save-complete', null)
-      }
-    }
-  });
-  
-})
 
 function changeStation(dir) {
   let index;
@@ -837,3 +594,167 @@ function changeStation(dir) {
   }
   playStream(bookmarksArr[index].name, bookmarksArr[index].url)
 }
+
+function changeVolume(direction) {
+  playerWindow.webContents.send("set-volume", { direction: direction })
+}
+
+async function extractURLfromPlaylist(url) {
+  try {
+    switch (url.toLowerCase().slice(-4)) {
+      case ".pls":
+        const plsResponse = await fetch(url);
+        const plsData = await plsResponse.text();
+        const plsPlaylist = PLS.parse(plsData);
+        return plsPlaylist[0].file;
+      case ".m3u":
+        const m3uResponse = await fetch(url);
+        const m3uData = await m3uResponse.text();
+        const m3uPlaylist = M3U.parse(m3uData);
+        return m3uPlaylist[0].file;
+      case ".asx":
+        const asxResponse = await fetch(url);
+        const asxData = await asxResponse.text();
+        const asxPlaylist = ASX.parse(asxData);
+        return asxPlaylist[0].file;
+      default:
+        return url;
+    }
+  } catch (error) {
+    return url;
+  }
+}
+
+ipcMain.on('extract-url', async (event, data) => {
+  try {
+    let url = await extractURLfromPlaylist(data.url);
+    editorWindow.webContents.send('extract-url-response', { action: data.action, url: url })
+  } catch (error) {
+    console.error("Error extracting URL:", error);
+    editorWindow.webContents.send('extract-url-response', { action: data.action, url: data.url })
+  }
+});
+
+ipcMain.on('reset', (event, data) => {
+  toggleButtons(false)
+  playerWindow.webContents.reloadIgnoringCache()
+})
+
+ipcMain.on('get-player-status-response', (event, data) => {
+  if (data == "playing") {
+    toggleButtons(true)
+  }
+})
+
+ipcMain.on('check-tree-response', (event, response) => {
+  if (response == false) {
+    editorWindow.destroy()
+    editorWindow = null;
+  } else {
+    dialog.showMessageBox(null, {
+      type: 'question',
+      message: "The bookmarks appear to have been edited?  Do you want to save your changes?",
+      buttons: ['Yes', 'No'],
+    }).then(result => {
+      if (result.response === 1) {
+        editorWindow.destroy()
+        editorWindow = null;
+      } else {
+        editorWindow.webContents.send('save','dialog')
+      }
+    })
+  }
+});
+
+ipcMain.on('get-app-version', (event, response) => {
+  event.sender.send('get-app-version-response', pkg.version)
+})
+
+ipcMain.on('set-tooltip', (event, data) => {
+  if (data.playing) {
+    tray.setImage(playingIcon);
+    tray.setToolTip(data.data)
+    if (store.get("metadataLog") == true) {
+      log.info(data.data.replace("\r\n"," - "))
+    }
+    if (store.get("notifications") == true) {
+      notifier.notify(
+        {
+          title: 'NodeRadioTray',
+          message: data.data,
+          icon: path.join(__dirname, 'images/playing.png'), // Absolute path (doesn't work on balloons)
+          sound: false,
+          wait: false
+        }
+      );
+    }
+  } else {
+    tray.setImage(idleIcon);
+    toggleButtons(false)
+  }
+})
+
+ipcMain.on('error-notification', (event, data) => {
+  notifier.notify(
+    {
+      title: 'NodeRadioTray Error',
+      message: data,
+      icon: path.join(__dirname, 'images/playing.png'), // Absolute path (doesn't work on balloons)
+      sound: false,
+      wait: false
+    }
+  );
+  errorLog.error(data)
+})
+
+ipcMain.on('mm-get-player-status-response', (event, data) => {
+  if (data == "playing") {
+    toggleButtons(false)
+  } else {
+    playStream(store.get('lastStation'), store.get('lastURL'));
+  }
+})
+
+ipcMain.on("get-initial-volume", (event, data) => {
+  playerWindow.webContents.send("get-initial-volume-response", { volume: store.get("lastVolume", 1.0) })
+})
+
+ipcMain.on("set-volume-response", (event, data) => {
+  store.set("lastVolume", data.volume)
+  menuTemplate[10].label = "Volume: "+Math.round(parseFloat(data.volume) * 100)+"%"
+  menuTemplate[10].icon = path.join(__dirname, '/images/'+Math.round(parseFloat(data.volume) * 100)+"-percent-icon.png")
+  contextMenu = Menu.buildFromTemplate(menuTemplate)
+  tray.setContextMenu(contextMenu)
+  if (data.status == "playing") {
+    toggleButtons(true)
+  } else {
+    toggleButtons(false)
+  }
+})
+
+ipcMain.on('test-ipc', (event, arg) => {
+  let bookmarks = JSON.parse(fs.readFileSync(userData+'/bookmarks.json'));
+  event.sender.send('get-bookmarks', bookmarks)
+})
+
+ipcMain.on('save-bookmarks', (event, data) => {
+  fs.writeFile(userData+'/bookmarks.json', data.data, function(err) {
+    if(err) {
+      dialog.showMessageBox(null, {
+        type: 'error',
+        message: "An error occurred saving bookmarks:\r\r\n" + err,
+        buttons: ['OK'],
+      }).then(result => {})
+      errorLog.error(err);
+    } else {
+      reloadBookmarks();
+      if (data.source == "dialog") {
+        editorWindow.destroy()
+        editorWindow = null;
+      } else {
+        event.sender.send('save-complete', null)
+      }
+    }
+  });
+  
+})

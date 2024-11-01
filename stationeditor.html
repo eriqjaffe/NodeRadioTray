@@ -10,15 +10,19 @@
     <script type="text/javascript" src="./scripts/jquery.fancytree.dnd5.js"></script>
     <script type="text/javascript" src="./scripts/jquery.contextMenu.js"></script>
     <script type="text/javascript" src="./scripts/jquery.fancytree.contextMenu.js"></script>
+    <script type="text/javascript" src="./scripts/jquery.magnific-popup.js"></script>
+    <script src="./scripts/icecast-metadata-player-1.17.3.main.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
     <link href="./scripts/skin-win8-n/ui.fancytree.min.css" rel="stylesheet">
     <link href="./scripts/jquery.contextMenu.css" rel="stylesheet" type='text/css'/>
+    <link href="./scripts/magnific-popup.css" rel="stylesheet" type='text/css'/>
     <link href="./scripts/style.css" rel="stylesheet" type='text/css'/>
     <script>
         const { ipcRenderer } = require('electron');
         let treeModified = false;
+
     </script>
   </head>
   <body>
@@ -40,10 +44,10 @@
               <td style="text-align: right;">Group Name: </td>
               <td><input type='text' class='editField' name='groupName' id='groupName' value='' required style="width:500px;"></td>
             </tr>
-            <tr>
+            <!--<tr>
               <td style="text-align: right;">Group Icon: </td>
               <td><input type='text' class='editField' name='groupIcon' id='groupIcon' value='' style="width:500px;"></td>
-            </tr>
+            </tr>-->
           </table>
           <input type='submit' id='editGroupSubmit' value='Submit'>
           <input type="button" id="deleteGroup" value="Delete Group">
@@ -62,10 +66,10 @@
               <td style="text-align: right;">Station URL: </td>
               <td><input type='url' class='editField' name='stationURL' type="url" id='stationURL' value='' required style="width:500px;"></td>
             </tr>
-            <tr>
+            <!--<tr>
               <td style="text-align: right;">Station Icon: </td>
               <td><input type='text' class='editField' name='stationIcon' id='stationIcon' value='' style="width:500px;"></td>
-            </tr>
+            </tr>-->
           </table>
           <input type='submit' id='editStationSubmit' value='Submit'>
           <input type="button" id="deleteStation" value="Delete Station">
@@ -80,10 +84,10 @@
               <td style="text-align: right;">Group Name: </td>
               <td><input type='text' class='editField' name='newGroupName' id='newGroupName' value='' required style="width:500px;"></td>
             </tr>
-            <tr>
+            <!--<tr>
               <td style="text-align: right;">Group Icon: </td>
               <td><input type='text' class='editField' name='newGroupIcon' id='newGroupIcon' value='' style="width:500px;"></td>
-            </tr>
+            </tr>-->
           </table>
           <input type='submit' id='newStationSubmit' value='Submit'>
           <input type="button" class="cancelButton" value="Cancel">
@@ -105,17 +109,20 @@
               <td style="text-align: right;">Station Group: </td>
               <td><select name="newStationGroup" id="newStationGroup" style="width:500px;"></select></td>
             </tr>
-            <tr>
+            <!--<tr>
               <td style="text-align: right;">Station Icon: </td>
-              <td><input type='text' class='editField' name='newStationIcon' id='newStationIcon' value='' style="width:500px;"></td>
-            </tr>
+              <td><input type='text' class='editField' name='newStationIcon' id='newStationIcon' value='' style="width:500px; display:none;"></td>
+            </tr>-->
           </table>
           <input type='submit' id='newStationSubmit' value='Submit'>
           <input type="button" class="cancelButton" value="Cancel">
         </form>
       </div>
     </div>
-    
+    <div id="checkingStream" class="white-popup mfp-hide" style="text-align:center;">
+      <h2 style="width:100%;">Checking Stream...</h2>
+      <img src="./images/progress.gif">
+    </div>
   </body>
   <script>
     ipcRenderer.send('test-ipc', null)
@@ -284,6 +291,7 @@
     })
 
     $("#btnAddStation").on("click", function() {
+      
       $("#newStationGroup").empty();
       const tree = $.ui.fancytree.getTree("#tree").getRootNode()
       tree.visit(function(node){
@@ -299,14 +307,14 @@
       $("#newStationDiv").css("display","inline-block")
     })
 
-    $("#btnSave").on("submit",function(e) {
-      console.log(source)
-      convertToOriginalJSONFormat(source)
+    $("#btnSave").on("click",function(e) {
+      convertToOriginalJSONFormat("button")
     });
 
     $("#btnCancel").on("click", function(e) {
-      console.log('cancel')
-      ipcRenderer.send('check-tree-response', false);
+      if (confirm("Are you sure?")) {
+        ipcRenderer.send('check-tree-response', false);
+      }
     })
 
     ipcRenderer.on('check-tree', () => {
@@ -316,6 +324,53 @@
     ipcRenderer.on('save-complete', () => {
       treeModified = false;
       $(".background-change").css("background-color","#f0f0f0")
+    })
+
+    ipcRenderer.on('extract-url-response', (event, data) => {
+      const onPlay = () => {
+        player.stop()
+        let tree = $.ui.fancytree.getTree("#tree");
+        if (data.action == "edit") {
+          let nodeToEdit = tree.getActiveNode();
+          nodeToEdit.setTitle($("#stationName").val())
+          nodeToEdit.data.img = $("#stationIcon").val()
+          nodeToEdit.data.url = $("#stationURL").val()
+          nodeToEdit.parent.sortChildren(null, true)
+          resetStuff()
+        } else if (data.action == "add") {
+          const node = tree.findFirst(function(node) {
+            return node.type == "group" && node.title == $("#newStationGroup").val()
+          })
+          node.addChildren({ title: $("#newStationName").val(), type: "bookmark", url: $("#newStationURL").val(), img: $("#newStationIcon").val() })
+          node.sortChildren(null, true)
+          let station = node.findFirst($("#newStationName").val())
+          node.setExpanded()
+          station.setFocus()
+          station.setActive()
+          station.makeVisible({scrollIntoView: true});
+        }
+        resetStuff()
+      }
+
+      const onStop = () => {
+        $.magnificPopup.close()
+      }
+
+      const onError = (message, error) => {
+        alert("The URL you provided is not playable.")
+        player.stop()
+      }
+
+      const player = new IcecastMetadataPlayer(data.url, {
+        onError,
+        onPlay,
+        onStop,
+        retryTimeout: 0,
+        metadataTypes: ["icy"],
+      });
+
+      player.audioElement.volume = 0;
+      player.play();
     })
 
     $(".cancelButton").on("click",function(e) {
@@ -335,13 +390,15 @@
 
     $("#editStationForm").on("submit",function(e) {
       e.preventDefault()
-      let tree = $.ui.fancytree.getTree("#tree");
-      let nodeToEdit = tree.getActiveNode();
-      nodeToEdit.setTitle($("#stationName").val())
-      nodeToEdit.data.img = $("#stationIcon").val()
-      nodeToEdit.data.url = $("#stationURL").val()
-      nodeToEdit.parent.sortChildren(null, true)
-      resetStuff()
+      ipcRenderer.send('extract-url', {action: "edit", url: $("#stationURL").val() })
+      $.magnificPopup.open({
+        items: {
+          src: '#checkingStream'
+        },
+        removalDelay: 250,
+        showCloseBtn: false,
+        type: 'inline'
+      });
     })
 
     $("#deleteGroup").on("click", function(e) {
@@ -372,18 +429,15 @@
 
     $("#newStationForm").on("submit",function(e) {
       e.preventDefault()
-      const tree = $.ui.fancytree.getTree("#tree")
-      const node = tree.findFirst(function(node) {
-        return node.type == "group" && node.title == $("#newStationGroup").val()
-      })
-      node.addChildren({ title: $("#newStationName").val(), type: "bookmark", url: $("#newStationURL").val(), img: $("#newStationIcon").val() })
-      node.sortChildren(null, true)
-      let station = node.findFirst($("#newStationName").val())
-      node.setExpanded()
-      station.setFocus()
-      station.setActive()
-      station.makeVisible({scrollIntoView: true});
-      resetStuff()
+      ipcRenderer.send('extract-url', {action: "add", url: $("#newStationURL").val() })
+      $.magnificPopup.open({
+        items: {
+          src: '#checkingStream'
+        },
+        removalDelay: 250,
+        showCloseBtn: false,
+        type: 'inline'
+      });
     })
 
     function convertToFancytreeFormat(data) {
@@ -443,7 +497,7 @@
         originalJSONData.push(category);
       });
 
-      console.log(originalJSONData)
+      //alert(originalJSONData)
       ipcRenderer.send('save-bookmarks', { source: source, data: JSON.stringify(originalJSONData, null, 3) })
     }
 
@@ -452,6 +506,37 @@
       $(".footerChild").css("display","none")
       $(".editField").val("")
       $(".editName").html("")
+    }
+
+    function checkStation(url) {
+      console.log
+      let result = false;
+      const onMetadata = (metadata) => {
+        console.log(metadata)
+      }
+
+      const onPlay = () => {
+        console.log('stream is OK')
+        player.stop()
+        result = true;
+      }
+
+      const onError = (message, error) => {
+        console.log('stream is not OK')
+        player.stop()
+        result = false;
+      }
+
+      const player = new IcecastMetadataPlayer(url, {
+        onError,
+        onPlay,
+        retryTimeout: 0,
+        metadataTypes: ["icy"],
+      });
+
+      player.audioElement.volume = 0;
+      player.play();
+      console.log('result in function ',result)
     }
   </script>
 </html>

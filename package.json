@@ -1,7 +1,7 @@
 {
   "name": "NodeRadioTray",
   "version": "0.10.0",
-  "description": "Radio Tray using Node JS",
+  "description": "Radio Tray using Node.js",
   "main": "index.js",
   "scripts": {
     "start": "electron .",
@@ -11,9 +11,7 @@
     "pack:arm": "electron-packager . --out dist/ --overwrite --platform linux --arch armv7l --icon=build/icon.png",
     "pack:darwin": "electron-packager . --out dist/ --overwrite --platform darwin --icon=build/icon.icns",
     "pack:all": "yarn run pack:win64 && yarn run pack:linux64",
-    "build:win64": "electron-installer-windows --icon ./images/playing.ico --animation ./images/installer.gif --src ./dist/NodeRadioTray-win32-x64/ --dest ./dist/installers/" ,
-    "build:linux": ".\\node_modules\\.bin\\electron-builder -l",
-    "build:mac": ".\\node_modules\\.bin\\electron-builder -m"
+    "build:win64": "electron-installer-windows --icon ./images/playing.ico --animation ./build/installer.gif --src ./dist/NodeRadioTray-win32-x64/ --dest ./dist/installers/"
   },
   "author": {
     "name": "Eriq Jaffe",
@@ -22,21 +20,19 @@
   },
   "license": "ISC",
   "dependencies": {
-    "@eriqjaffe/bassaudio-updated": "^2.1.1",
     "auto-launch": "^5.0.5",
     "chokidar": "^3.5.3",
+    "electron-log": "^5.2.0",
     "electron-packager": "^15.4.0",
     "electron-prompt": "^1.7.0",
     "electron-squirrel-startup": "^1.0.0",
     "electron-store": "^8.0.1",
-    "icecast-parser": "^4.0.2",
     "node-gyp": "^8.4.1",
     "node-notifier": "^10.0.0",
-    "ref-napi": "^3.0.3"
+    "playlist-parser": "^0.0.12"
   },
   "devDependencies": {
-    "electron": "^16.0.7",
-    "electron-builder": "^22.14.13",
+    "electron": "^33.0.2",
     "electron-installer-windows": "^3.0.0"
   }
 }
