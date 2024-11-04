@@ -644,10 +644,6 @@ async function extractURLfromPlaylist(url) {
   }
 }
 
-function restoreBookmarks() {
-  
-}
-
 ipcMain.on('extract-url', async (event, data) => {
   try {
     let url = await extractURLfromPlaylist(data.url);
