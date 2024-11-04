@@ -303,10 +303,13 @@ app.whenReady().then(() => {
     event.preventDefault(); // Prevent the window from closing
     playerWindow.hide(); // Hide the window instead
   });
+  
+  playerWindow.webContents.on('did-finish-load', () => {
+    if (store.get("autoplay") == true) {
+      playStream(store.get('lastStation'), store.get('lastURL'));
+    }
+  })
 
-  if (store.get("autoplay") == true) {
-    playStream(store.get('lastStation'), store.get('lastURL'));
-  }
   toggleMMKeys(store.get("mmkeys"))
 })
 
