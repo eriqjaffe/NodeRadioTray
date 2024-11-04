@@ -141,7 +141,7 @@ var menuTemplate = [
     click: e => {
       shell.openPath(userData+'/bookmarks.json');
     },
-    icon: path.join(__dirname, '/images/icons8-maintenance.png')
+    icon: path.join(__dirname, '/images/icons8-edit-text-file.png')
   },
   { 
     label: 'Reload Stations',
@@ -149,6 +149,20 @@ var menuTemplate = [
       reloadBookmarks();
     },
     icon: path.join(__dirname, '/images/icons8-synchronize.png')
+  },
+  { 
+    label: 'Restore Original Station list',
+    click: e => {
+      fs.copyFile(path.join(__dirname, '/bookmarks.json'), userData+'/bookmarks.json', (err) => {
+        if (err) {
+          console.log(err)
+        } else {
+          reloadBookmarks();
+          console.log("file copied successfully")
+        }
+      })
+    },
+    icon: path.join(__dirname, '/images/icons8-restore.png')
   },
   { label: 'Play Custom URL',
     click: e => {
@@ -436,8 +450,10 @@ async function playStream(streamName, url) {
     tray.setImage(idleIcon);
     const streamUrl = await extractURLfromPlaylist(url);
     playerWindow.webContents.send("play", { streamName: streamName, url: streamUrl, volume: store.get("lastVolume") });
-    store.set('lastStation', streamName);
-    store.set('lastURL', url)
+    if (streamName != "Custom URL") {
+      store.set('lastStation', streamName);
+      store.set('lastURL', url)
+    }
     toggleButtons(true);
   } catch (error) {
     toggleButtons(false);
@@ -473,7 +489,7 @@ function toggleButtons(state) {
     previousButton.visible = false;
     tray.setImage(idleIcon);
     tray.setToolTip("NodeRadioTray");
-    menuTemplate[8].label = "Play "+store.get("lastStation")
+    menuTemplate[9].label = "Play "+store.get("lastStation")
     contextMenu = Menu.buildFromTemplate(menuTemplate)
     tray.setContextMenu(contextMenu)
     playerWindow.webContents.send("stop", null)
@@ -628,6 +644,10 @@ async function extractURLfromPlaylist(url) {
   }
 }
 
+function restoreBookmarks() {
+  
+}
+
 ipcMain.on('extract-url', async (event, data) => {
   try {
     let url = await extractURLfromPlaylist(data.url);
@@ -724,8 +744,8 @@ ipcMain.on("get-initial-volume", (event, data) => {
 
 ipcMain.on("set-volume-response", (event, data) => {
   store.set("lastVolume", data.volume)
-  menuTemplate[10].label = "Volume: "+Math.round(parseFloat(data.volume) * 100)+"%"
-  menuTemplate[10].icon = path.join(__dirname, '/images/'+Math.round(parseFloat(data.volume) * 100)+"-percent-icon.png")
+  menuTemplate[11].label = "Volume: "+Math.round(parseFloat(data.volume) * 100)+"%"
+  menuTemplate[11].icon = path.join(__dirname, '/images/'+Math.round(parseFloat(data.volume) * 100)+"-percent-icon.png")
   contextMenu = Menu.buildFromTemplate(menuTemplate)
   tray.setContextMenu(contextMenu)
   if (data.status == "playing") {
