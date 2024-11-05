@@ -9,6 +9,7 @@ const path = require('path');
 const AutoLaunch = require('auto-launch');
 const pkg = require('./package.json')
 const parsers = require("playlist-parser");
+const versionCheck = require('github-version-checker')
 const M3U = parsers.M3U;
 const PLS = parsers.PLS;
 const ASX = parsers.ASX
@@ -29,6 +30,12 @@ log.transports.file.fileName = "metadata.log"
 log.eventLogger.startLogging
 
 const errorLog = log.create({ logId: 'errorLog' })
+
+const updateOptions = {
+	repo: 'NodeRadioTray',
+	owner: 'eriqjaffe',
+	currentVersion: pkg.version
+};
 
 var stream = null;
 var contextMenu = null;
@@ -112,6 +119,14 @@ const prefsTemplate = [
     },
     type: "checkbox",
     checked: (store.get("autorun") == true) ? true : false
+  },
+  {
+    label: 'Check for updates on startup',
+    click: e => {
+      store.set("checkForUpdates", e.checked)
+    },
+    type: "checkbox",
+    checked: (store.get("checkForUpdates") == true) ? true : false
   }
 ]
 
@@ -283,6 +298,28 @@ const createTray = () => {
 }
 
 app.whenReady().then(() => {
+  if (store.get("checkForUpdates") == true) {
+    versionCheck(updateOptions, function (error, update) {
+      if (error) {
+        errorLog.error(error.message)
+      }
+      if (update) {
+        dialog.showMessageBox(null, {
+          type: 'info',
+          message: update.name +" is now available.\r\n\r\nClick 'OK' to close NodeRadioTray and go to the download page.",
+          buttons: ['OK', 'Cancel'],
+        }).then(result => {
+          if (result.response === 0) {
+            shell.openExternal(update.url)
+            app.quit();
+          } 
+        })
+      } 
+    });
+  } else {
+    console.log("Not checking for updates")
+  }
+
   createTray()
 
   playerWindow = new BrowserWindow({
@@ -778,5 +815,15 @@ ipcMain.on('save-bookmarks', (event, data) => {
       }
     }
   });
-  
+})
+
+ipcMain.on('check-for-update', (event, arg) => {
+	versionCheck(updateOptions, function (error, update) {
+		if (error) {
+      errorLog.error(error.message)
+		}
+		if (update) {
+      aboutWindow.webContents.send('update-available',{update: true, currentVersion: pkg.version, newVersion: update.name, url: update.url})
+		} 
+	});
 })
