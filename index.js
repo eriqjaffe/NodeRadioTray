@@ -316,8 +316,6 @@ app.whenReady().then(() => {
         })
       } 
     });
-  } else {
-    console.log("Not checking for updates")
   }
 
   createTray()
