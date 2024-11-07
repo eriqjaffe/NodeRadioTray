@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <title>About NodeRadioTray</title>
+    
+    <script>
+      if (typeof module === "object") {
+        window.module = module;
+        module = undefined;
+      }
+      const { ipcRenderer } = require('electron');
+    </script>
+    <script type="text/javascript" src="./scripts/jquery-1.11.3.min.js"></script>
+    <style>
+        html, body {
+            margin: 5px!important;
+            padding: 5px!important;
+        }
+
+        ::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+    <link href="./scripts/style.css" rel="stylesheet" type='text/css'/>
+    
+  </head>
+  <body>
+    <h1>NodeRadioTray</h1>
+    <h4 id="info"></h4>
+    <p style="text-align: justify;">NodeRadioTray is a simple, cross-platform internet radio player that sits in the system tray, hence the name.  It is heavily influenced by a Linux application called <a href="https://radiotray.sourceforge.net/" target="_blank">RadioTray</a>, originally written by Carlos Ribiero.</p>
+    <p style="text-align: justify;">The original implimentation of this was <a href="https://github.com/eriqjaffe/WinRadioTray" target="_blank">WinRadioTray</a> which, while functional, has some quirks and bugs that I've never been able to sort out, and I have never been entirely comfortable working with C# anyways. Also it's Windows-only which is fine as far as it goes, but after discovering Node.js and Electron I decided to rework it as a cross-platform app.</p>
+    <p>This software predominantly makes use of the following:
+        <ul>
+            <li><a href="https://nodejs.org/en/about" target="_blank">Node.js</a> (hence the name).</li>
+            <li><a href="https://www.electronjs.org/" target="_blank"">Electron</a></li>
+            <li><a href="https://www.npmjs.com/package/icecast-metadata-player" target="_blank">icecast-metadata-player</a> for audio playback and metadata retrieval.</li>
+            <li>Icons from <a href="https://icons8.com/" target="_blank">Icons8</a>.</li>
+        </ul>
+    </p>
+    <p style="text-align: justify;">If you have any questions, feel free to report an issue on the <a href="https://github.com/eriqjaffe/noderadiotray" target="_blank">project's GitHub page</a>.</p>
+    <p style="text-align:center; font-style:italic;" id="update"></p>
+  </body>
+  <script>
+    ipcRenderer.send("get-app-version", null)
+
+    ipcRenderer.on("get-app-version-response", (event, data) => {
+      $("#info").text("Version "+data)
+    })
+
+    ipcRenderer.send("check-for-update", null)
+
+    ipcRenderer.on('update-available', (event, data) => {
+      if (data.update == true) {
+        $("#update").html("Version "+data.newVersion+" is available.<br/>Click <a href='"+data.url+"' target='_blank'>here</a> to go to the download page.")
+      }
+    })
+  </script>
+</html>

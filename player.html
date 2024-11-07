@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="UTF-8" />
+  <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+  <title>NodeRadioTray Debugging Window</title>
+  <script>
+    if (typeof module === "object") {
+      window.module = module;
+      module = undefined;
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+  <script type="text/javascript" src="./scripts/jquery-1.11.3.min.js"></script>
+  <script src="./scripts/icecast-metadata-player-1.17.3.main.min.js"></script>
+  <script>
+    const { ipcRenderer } = require("electron");
+    let player;
+    let volume = 1.0;
+  </script>
+  <style>
+    body {
+        font-family: "Outfit", sans-serif;
+        background-color: #f0f0f0;
+        font-size: 0.8em;
+    }
+
+    .leftCell {
+        text-align: right;
+        padding-right: 10px;
+    }
+
+    .warn {
+        color: #DAA520;
+    }
+
+    .error {
+        color: red;
+    }
+
+    .ok {
+        color: green;
+    }
+  </style>
+</head>
+<html>
+  <body>
+    <div style="width:40%; height: 450px; float:left; position:absolute;">
+        <table>
+        <tr>
+            <td class="leftCell">Player State:</td>
+            <td id="playerState">stopped</td>
+        </tr>
+        <tr>
+            <td class="leftCell">Current Station:</td>
+            <td class="display" id="currentStation"></td>
+        </tr>
+        <tr>
+            <td class="leftCell">Current URL:</td>
+            <td class="display" id="currentURL"></td>
+        </tr>
+        <tr>
+            <td class="leftCell">StreamTitle:</td>
+            <td class="display" id="StreamTitle"></td>
+        </tr>
+        <tr>
+            <td class="leftCell">playbackMethod:</td>
+            <td class="display" id="playbackMethod"></td>
+        </tr>
+        <tr>
+            <td class="leftCell">bitDepth:</td>
+            <td class="display" id="bitDepth"></td>
+        </tr>
+        <tr>
+            <td class="leftCell">bitRate:</td>
+            <td class="display" id="bitRate"></td>
+        </tr>
+        <tr>
+            <td class="leftCell">channelMode:</td>
+            <td class="display" id="channelMode"></td>
+        </tr>
+        <tr>
+            <td class="leftCell">channels:</td>
+            <td class="display" id="channels"></td>
+        </tr>
+        <tr>
+            <td class="leftCell">emphasis:</td>
+            <td class="display" id="emphasis"></td>
+        </tr>
+        <tr>
+            <td class="leftCell">framePadding:</td>
+            <td class="display" id="framePadding"></td>
+        </tr>
+        <tr>
+            <td class="leftCell">isCopyrighted:</td>
+            <td class="display" id="isCopyrighted"></td>
+        </tr>
+        <tr>
+            <td class="leftCell">isOriginal:</td>
+            <td class="display" id="isOriginal"></td>
+        </tr>
+        <tr>
+            <td class="leftCell">isPrivate:</td>
+            <td class="display" id="isPrivate"></td>
+        </tr>
+        <tr>
+            <td class="leftCell">layer:</td>
+            <td class="display" id="layer"></td>
+        </tr>
+        <tr>
+            <td class="leftCell">modeExtension:</td>
+            <td class="display" id="modeExtension"></td>
+        </tr>
+        <tr>
+            <td class="leftCell">mpegVersion:</td>
+            <td class="display" id="mpegVersion"></td>
+        </tr>
+        <tr>
+            <td class="leftCell">protection:</td>
+            <td class="display" id="protection"></td>
+        </tr>
+        <tr>
+            <td class="leftCell">sampleRate</td>
+            <td class="display" id="sampleRate"></td>
+        </tr>
+        </table>
+    </div>
+    <div id="logWindow" style="width:59%; height: 450px; float:right; position:relative;"></div>
+  </body>
+  <script>
+    ipcRenderer.on("play", (event, data) => {
+      if (player != undefined || player != null) {
+        player.stop();
+      }
+
+      const onMetadata = (metadata) => {
+        $("#playerState").html(player.state);
+        $("#currentStation").html(data.streamName);
+        $("#currentURL").html(player.endpoint);
+        $("#StreamTitle").html(metadata.StreamTitle);
+        $("#playbackMethod").html(player.playbackMethod);
+        if (metadata.StreamTitle != undefined) {
+          ipcRenderer.send("set-tooltip", {
+            playing: true,
+            data: data.streamName + "\r\n" + metadata.StreamTitle,
+          });
+        } else {
+          ipcRenderer.send("set-tooltip", {
+            playing: true,
+            data: data.streamName,
+          });
+        }
+      };
+
+      const onCodecUpdate = (data) => {
+        $("#channelMode").html(data.channelMode);
+        $("#Channels").html(data.channels);
+        $("#bitRate").html(data.bitrate);
+        $("#bitDepth").html(data.bitDepth);
+        $("#channelMode").html(data.channelMode);
+        $("#channels").html(data.channels);
+        $("#emphasis").html(data.emphasis);
+        $("#framePadding").html(data.framePadding);
+        $("#isCopyrighted").html(data.isCopyrighted ? "true" : "false");
+        $("#isOriginal").html(data.isOriginal ? "true" : "false");
+        $("#isPrivate").html(data.isPrivate ? "true" : "false");
+        $("#layer").html(data.layer);
+        $("#modeExtension").html(data.modeExtension);
+        $("#mpegVersion").html(data.mpegVersion);
+        $("#protection").html(data.protection);
+        $("#sampleRate").html(data.sampleRate);
+      };
+
+      const onWarn = (message) => {
+        console.log(message);
+        $("#logWindow").append("<span class='warn'>"+new Date().toISOString()+": "+message+"</span><br/>")
+      };
+
+      const onError = (message, error) => {
+        player.stop();
+        ipcRenderer.send("set-tooltip", { playing: false });
+        //ipcRenderer.send('reset', null)
+        $("#logWindow").append("<span class='error'>"+new Date().toISOString()+": "+message+"</span><br/>")
+        ipcRenderer.send("error-notification", message);
+      };
+
+      const onRetryTimeout = (message, error) => {
+        console.log("retry timeout", error);
+      };
+
+      const onStream = (message) => {
+        $("#playerState").html(player.state);
+      };
+
+      const onStreamEnd = (message) => {
+        $("#playerState").html(player.state);
+      };
+
+      const onStop = (message) => {
+        $("#playerState").html(player.state);
+        $(".display").html("");
+        $("#logWindow").append("<span class='ok'>"+new Date().toISOString()+": Stream stopped</span><br/>")
+      };
+
+      const onPlay = (message) => {
+        $("#playerState").html(player.state);
+        $("#logWindow").append("<span class='ok'>"+new Date().toISOString()+": Playing "+data.streamName+"</span><br/>")
+      };
+
+      player = new IcecastMetadataPlayer(data.url, {
+        onMetadata,
+        onCodecUpdate,
+        onWarn,
+        onError,
+        onRetryTimeout,
+        onStream,
+        onStreamEnd,
+        onStop,
+        onPlay,
+        retryTimeout: 0,
+        enableLogging: true,
+        metadataTypes: ["icy"],
+      });
+
+      player.audioElement.volume = data.volume;
+      player.play();
+    });
+
+    ipcRenderer.send("get-initial-volume", null);
+
+    ipcRenderer.on("get-initial-volume-response", (event, data) => {
+      volume = parseFloat(data.volume);
+    });
+
+    ipcRenderer.on("set-volume", (event, data) => {
+      if (player != undefined || player != null) {
+        let vol = player.audioElement.volume;
+        console.log("current volume", vol);
+        if (data.direction == "up" && vol < 1) {
+          vol = vol + 0.1;
+        }
+        if (data.direction == "down" && vol > 0) {
+          vol = vol - 0.1;
+        }
+        console.log("new volume", vol);
+        player.audioElement.volume = vol;
+        ipcRenderer.send("set-volume-response", {
+          volume: vol,
+          status: player.state,
+        });
+      } else {
+        if (data.direction == "up" && volume < 1) {
+          volume = volume + 0.1;
+        }
+        if (data.direction == "down" && volume > 0) {
+          volume = volume - 0.1;
+        }
+        ipcRenderer.send("set-volume-response", {
+          volume: volume,
+          status: "stopped",
+        });
+      }
+    });
+
+    ipcRenderer.on("stop", (event, data) => {
+      if (player != undefined || player != null) {
+        player.stop();
+      }
+    });
+
+    ipcRenderer.on("get-player-status", (event, data) => {
+      if (player != undefined) {
+        ipcRenderer.send("get-player-status-response", player.state);
+      } else {
+        ipcRenderer.send("get-player-status-response", "stopped");
+      }
+    });
+
+    ipcRenderer.on("mm-get-player-status", (event, data) => {
+      console.log(player);
+      console.log(player.state);
+      if (player != undefined) {
+        ipcRenderer.send("mm-get-player-status-response", player.state);
+      } else {
+        ipcRenderer.send("mm-get-player-status-response", "stopped");
+      }
+    });
+  </script>
+</html>

@@ -39,15 +39,10 @@
    {
       "name": "Classical",
       "img": "",
-      "bookmark": [       
-         {
-            "name": "CINEMIX",
-            "url": "http://cinemix.us/cine.asx",
-            "img": ""
-         },
+      "bookmark": [
          {
             "name": "Classic FM",
-            "url": "http://media-ice.musicradio.com/ClassicFMMP3.m3u",
+            "url": "http://media-ice.musicradio.com/ClassicFMMP3",
             "img": ""
          },
          {
@@ -60,7 +55,7 @@
             "url": "http://www.ibiblio.org/wcpe/wcpe.pls",
             "img": ""
          },
-       {
+         {
             "name": "WFMT",
             "url": "https://wfmt.streamguys1.com/main-mp3",
             "img": ""
@@ -99,33 +94,27 @@
          }
       ]
    },
-  {
-     "name": "Hip Hop / Rap",
-     "img": "",
-     "bookmark": [
-        {
-           "name": "Streetz 94.5",
-           "url": "http://104.6.216.93:8000/Streetz",
-           "img": ""
-        },
-        {
-           "name": "Hot 108",
-           "url": "https://live.powerhitz.com/hot108?esPlayer&cb=925951.mp3",
-           "img": ""
-        },
-        {
-           "name": "Hot 97",
-           "url": "https://24283.live.streamtheworld.com/WQHTFMAAC.aac",
-           "img": ""
-        }
-        ,
-        {
-           "name": "DilemaRadio",
-           "url": "https://dilemaradiolive.radioca.st/stream",
-           "img": ""
-        }
-     ]
-  },
+   {
+      "name": "Hip Hop / Rap",
+      "img": "",
+      "bookmark": [
+         {
+            "name": "DilemaRadio",
+            "url": "https://dilemaradiolive.radioca.st/stream",
+            "img": ""
+         },
+         {
+            "name": "Hot 108",
+            "url": "https://live.powerhitz.com/hot108?esPlayer&cb=925951.mp3",
+            "img": ""
+         },
+         {
+            "name": "Streetz 94.5",
+            "url": "http://104.6.216.93:8000/Streetz",
+            "img": ""
+         }
+      ]
+   },
    {
       "name": "Holiday",
       "img": "",
@@ -137,7 +126,7 @@
          },
          {
             "name": "Christmas Oldies Radio",
-            "url": "http://www.outpostradio.com/christmasoldies/play.m3u",
+            "url": "https://outpostradio.com/listen/rcxmas",
             "img": ""
          },
          {
@@ -167,27 +156,21 @@
             "img": ""
          },
          {
-            "name": "Swing Street Radio",
-            "url": "http://s6.voscast.com:11312",
+            "name": "Swing City Radio",
+            "url": "https://das-edge11-live365-dal03.cdnstream.com/a03438",
             "img": ""
          },
+		 {
+			 "name": "Swing Street Radio",
+			 "url": "https://s6.voscast.com/cdn/?k=67213f3748ac7&m=;stream1730232730720/1",
+			 "img": ""
+		 },
          {
             "name": "WKHR",
             "url": "http://ice64.securenetsystems.net/WKHR",
             "img": ""
          }
       ]
-   },
-   {
-      "name": "Latin",
-      "img": "",
-      "bookmark": [
-          {
-           "name": "Top Latino Radio",
-           "url": "http://online.radiodifusion.net:8020/listen.pls",
-           "img": ""
-           }
-       ]
    },
    {
       "name": "Old Time Radio",
@@ -205,12 +188,12 @@
          },
          {
             "name": "Yesterday USA Blue",
-            "url": "http://streaming.radio.co:80/sa37b728bf/listen",
+            "url": "https://classicairwaves.com:8050/radio.mp3",
             "img": ""
          },
          {
             "name": "Yesterday USA Red",
-            "url": "http://streaming.radio.co:80/sf5708c004/listen",
+            "url": "https://classicairwaves.com:8060/yusa_red.mp3",
             "img": ""
          }
       ]
@@ -221,7 +204,7 @@
       "bookmark": [
          {
             "name": ".977 - 50s 60s Hits",
-            "url": "http://19353.live.streamtheworld.com/977_OLDIES_SC",
+            "url": "https://17573.live.streamtheworld.com/977_OLDIES_SC",
             "img": ""
          },
          {
@@ -247,29 +230,24 @@
          },
          {
             "name": "Indie Pop Rocks!",
-            "url": "https://somafm.com/indiepop130.pls",
+            "url": "https://ice1.somafm.com/indiepop-128-aac",
             "img": ""
          },
          {
             "name": "KCRW",
-            "url": "https://kcrw.streamguys1.com/kcrw_192k_mp3_on_air",
+            "url": "https://streams.kcrw.com/kcrw_mp3?aw_0_1st.playerid=KCRW_Website",
             "img": ""
          },
          {
             "name": "KEXP",
-            "url": "http://live-mp3-128.kexp.org:8000/listen.pls",
+            "url": "https://kexp-mp3-128.streamguys1.com/kexp128.mp3",
             "img": ""
          },
-       {
-          "name": "KROQ",
-          "url": "https://24973.live.streamtheworld.com/KROQFMAAC_SC",
-          "img": ""
-       },
          {
             "name": "MOD Pizza",
             "url": "http://stream.customchannels.net/mod_pizza_96.mp3",
             "img": ""
-         },      
+         },
          {
             "name": "PopTron",
             "url": "http://somafm.com/poptron.pls",
@@ -281,11 +259,6 @@
             "img": ""
          },
          {
-            "name": "RadioNOPE",
-            "url": "http://radionope-ice.streamguys1.com/live",
-            "img": ""
-         },
-         {
             "name": "The Current",
             "url": "https://current.stream.publicradio.org/kcmp.mp3",
             "img": ""
@@ -293,11 +266,6 @@
          {
             "name": "WFMU Rock 'n' Soul Ichiban",
             "url": "http://wfmu.org/wfmu_rock.pls",
-            "img": ""
-         },
-         {
-            "name": "WXRT",
-            "url": "https://24423.live.streamtheworld.com/WXRTFMAAC_SC",
             "img": ""
          }
       ]
@@ -319,11 +287,6 @@
          {
             "name": "Drone Zone",
             "url": "http://somafm.com/dronezone.pls",
-            "img": ""
-         },
-         {
-            "name": "New Dance Radio",
-            "url": "http://jbstream.net/tunein.php/blackoutworm/playlist.asx",
             "img": ""
          },
          {
