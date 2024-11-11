@@ -762,6 +762,29 @@ ipcMain.on('set-tooltip', (event, data) => {
   }
 })
 
+ipcMain.on('get-icon-file', (event, data) => {
+  const options = {
+		defaultPath: store.get("uploadImagePath", app.getPath('pictures')),
+		properties: ['openFile'],
+		filters: [
+			{ name: 'Images', extensions: ['jpg', 'png'] }
+		]
+	}
+	dialog.showOpenDialog(null, options).then(result => {
+		  if(!result.canceled) {
+        console.log(result.filePaths[0])
+        try {
+          fs.copyFileSync(result.filePaths[0], path.join(iconFolder,path.basename(result.filePaths[0])))
+          editorWindow.webContents.send("get-icon-file-response", path.basename(result.filePaths[0]))
+        } catch (err) {
+          console.log(err)
+        }
+      } else {
+        
+      }
+  })
+})
+
 function findImageByName(targetName, bookmarks) {
   for (const category of bookmarks) {
       for (const bookmark of category.bookmark) {
