@@ -15,6 +15,7 @@ const ASX = parsers.ASX
 const log = require('electron-log/main');
 
 const userData = app.getPath('userData');
+const iconFolder = path.join(userData,"icons")
 const store = new Store()
 const AutoLauncher = new AutoLaunch(
   {name: 'NodeRadioTray'}
@@ -29,6 +30,10 @@ log.transports.file.fileName = "metadata.log"
 log.eventLogger.startLogging
 
 const errorLog = log.create({ logId: 'errorLog' })
+
+if (!fs.existsSync(iconFolder)) {
+  fs.mkdirSync(iconFolder);
+}
 
 var stream = null;
 var contextMenu = null;
@@ -335,7 +340,8 @@ function loadBookmarks() {
       genre.bookmark.forEach(station => {
           bookmarksArr.push({
               name: station.name,
-              url: station.url
+              url: station.url,
+              icon: station.img
           });
       });
     });
@@ -348,8 +354,8 @@ function loadBookmarks() {
         tmp.url = obj.bookmark[j].url
         tmp.img = obj.bookmark[j].img
         try {
-          if (tmp.img.length > 0 && fs.existsSync(userData+'/images/'+tmp.img)) {
-            var stationIcon = nativeImage.createFromPath(userData+'/images/'+tmp.img).resize({width:16})
+          if (tmp.img.length > 0 && fs.existsSync(userData+'/icons/'+tmp.img)) {
+            var stationIcon = nativeImage.createFromPath(userData+'/icons/'+tmp.img).resize({width:16})
           } else {
             var stationIcon = path.join(__dirname, '/images/icons8-radio-2.png')
           }
@@ -693,18 +699,23 @@ ipcMain.on('get-app-version', (event, response) => {
 })
 
 ipcMain.on('set-tooltip', (event, data) => {
+  console.log(data)
   if (data.playing) {
     tray.setImage(playingIcon);
     tray.setToolTip(data.data)
     if (store.get("metadataLog") == true) {
       log.info(data.data.replace("\r\n"," - "))
     }
-    if (store.get("notifications") == true) {
+    if (store.get("notifications") == false) {
+      let bookmarks = JSON.parse(fs.readFileSync(userData+'/bookmarks.json'));
+      let iconImage = findImageByName(data.streamName, bookmarks)
+      let icon = (iconImage == null) ? path.join(__dirname, 'images/playing.png') : path.join(userData,'icons',iconImage)
+      console.log(icon)
       notifier.notify(
         {
           title: 'NodeRadioTray',
           message: data.data,
-          icon: path.join(__dirname, 'images/playing.png'), // Absolute path (doesn't work on balloons)
+          icon: icon, // Absolute path (doesn't work on balloons)
           sound: false,
           wait: false
         }
@@ -715,6 +726,17 @@ ipcMain.on('set-tooltip', (event, data) => {
     toggleButtons(false)
   }
 })
+
+function findImageByName(targetName, bookmarks) {
+  for (const category of bookmarks) {
+      for (const bookmark of category.bookmark) {
+          if (bookmark.name === targetName) {
+              return bookmark.img || null;
+          }
+      }
+  }
+  return "no image"; // Return null if the name is not found
+}
 
 ipcMain.on('error-notification', (event, data) => {
   notifier.notify(
