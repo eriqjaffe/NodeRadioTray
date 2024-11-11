@@ -69,7 +69,8 @@
             <tr>
               <td style="text-align: right;">Station Icon: </td>
               <td>
-                <input type='text' class='editField' name='stationIcon' id='stationIcon' value='' readonly style="width:500px;">
+                <input type='text' class='editField' name='stationIcon' id='stationIcon' value='' readonly style="width:408px;">
+                <input type="button" id="editDeleteIcon" value="Clear Image">
                 <input type='file' name='stationIconFile' id='stationIconFile' accept="image/png, image/jpeg" style="display:none;">
               </td>
             </tr>
@@ -325,8 +326,8 @@
       //$("#stationIconFile").click()
     })
 
-    $("#stationIconFile").on("change",function(e) {
-      //ipcRenderer.send('copy-icon-file', {path: file: e.target.files[0].name})
+    $("#editDeleteIcon").on("click", function(e) {
+      $("#stationIcon").val("")
     })
 
     ipcRenderer.on('get-icon-file-response', (event, arg) => {
