@@ -1,6 +1,6 @@
 {
   "name": "NodeRadioTray",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "Radio Tray using Node.js",
   "main": "index.js",
   "scripts": {
@@ -17,7 +17,6 @@
     "build:arm": "electron-installer-debian --src=./dist/NodeRadioTray-linux-armv7l/ --dest dist/installer --arch armv7l",
     "build:darwinOld": "/usr/libexec/PListBuddy -c 'add LSUIElement string 1' ./dist/NodeRadioTray-darwin-x64/NodeRadioTray.app/Contents/Info.plist && electron-installer-dmg ./dist/NodeRadioTray-darwin-x64/NodeRadioTray.app/ 'NodeRadioTray_' --out ./dist/installer/ --icon=./build/icon.icns --title='NodeRadioTray_' --overwrite",
     "build:darwin": "VERSION=$(node -p \"require('./package.json').version\") && /usr/libexec/PListBuddy -c 'add LSUIElement string 1' ./dist/NodeRadioTray-darwin-x64/NodeRadioTray.app/Contents/Info.plist && electron-installer-dmg ./dist/NodeRadioTray-darwin-x64/NodeRadioTray.app/ \"NodeRadioTray_${VERSION}\" --out ./dist/installer/ --icon=./build/icon.icns --title=\"NodeRadioTray_${VERSION}\" --overwrite"
-
   },
   "author": {
     "name": "Eriq Jaffe",
@@ -33,6 +32,7 @@
     "electron-prompt": "^1.7.0",
     "electron-squirrel-startup": "^1.0.0",
     "electron-store": "^8.0.1",
+    "github-version-checker": "2.3.0",
     "node-gyp": "^8.4.1",
     "node-notifier": "^10.0.0",
     "playlist-parser": "^0.0.12"

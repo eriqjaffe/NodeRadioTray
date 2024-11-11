@@ -43,12 +43,21 @@
         </ul>
     </p>
     <p style="text-align: justify;">If you have any questions, feel free to report an issue on the <a href="https://github.com/eriqjaffe/noderadiotray" target="_blank">project's GitHub page</a>.</p>
+    <p style="text-align:center; font-style:italic;" id="update"></p>
   </body>
   <script>
     ipcRenderer.send("get-app-version", null)
 
     ipcRenderer.on("get-app-version-response", (event, data) => {
       $("#info").text("Version "+data)
+    })
+
+    ipcRenderer.send("check-for-update", null)
+
+    ipcRenderer.on('update-available', (event, data) => {
+      if (data.update == true) {
+        $("#update").html("Version "+data.newVersion+" is available.<br/>Click <a href='"+data.url+"' target='_blank'>here</a> to go to the download page.")
+      }
     })
   </script>
 </html>

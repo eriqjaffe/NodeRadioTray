@@ -969,6 +969,19 @@ get-stream@^5.1.0:
   dependencies:
     pump "^3.0.0"
 
+github-graphql-client@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/github-graphql-client/-/github-graphql-client-1.0.0.tgz#d5acacc31bb9f6b77e5c502812e90c844f727bca"
+  integrity sha512-/yPfpH1wfhLvvvUvNVbkzAJld2wzF6Uanknkkky1guR249dJTyt5Qjf1iJqU1M8yYlJCATpACaLDhR3tG1EFuA==
+
+github-version-checker@2.3.0:
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/github-version-checker/-/github-version-checker-2.3.0.tgz#ef4de98e8dbca975b095bdeac859a7b9e00bb08f"
+  integrity sha512-JAAB8Q/U+HkZHpBail8c28wS6zgWV3k1kK7FiWzMFW5NyVt74K1hZffoJgFHXZpFdZl/VIQm8K2wdl/C1CA/DA==
+  dependencies:
+    github-graphql-client "^1.0.0"
+    semver "^7.3.5"
+
 glob-parent@~5.1.2:
   version "5.1.2"
   resolved "https://registry.yarnpkg.com/glob-parent/-/glob-parent-5.1.2.tgz#869832c58034fe68a4093c17dc15e8340d8401c4"
