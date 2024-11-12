@@ -405,8 +405,8 @@ function loadBookmarks() {
         stations.push(station)
       }
       try {
-        if (obj.img.length > 0 && fs.existsSync(userData+'/images/'+obj.img)) {
-          var genreIcon = nativeImage.createFromPath(userData+'/images/'+obj.img).resize({width:16})
+        if (obj.img.length > 0 && fs.existsSync(userData+'/icons/'+obj.img)) {
+          var genreIcon = nativeImage.createFromPath(userData+'/icons/'+obj.img).resize({width:16})
         } else {
           var genreIcon = path.join(__dirname, '/images/icons8-radio-2.png')
         }
@@ -478,7 +478,7 @@ function editBookmarksGui() {
     })
     editorWindow.setMenu(null)
     editorWindow.loadFile('stationeditor.html');
-    //editorWindow.webContents.openDevTools({ mode: 'detach' })
+    editorWindow.webContents.openDevTools({ mode: 'detach' })
     editorWindow.on('close', (event) => {
       event.preventDefault()
       editorWindow.webContents.send('check-tree');
@@ -775,7 +775,7 @@ ipcMain.on('get-icon-file', (event, data) => {
         console.log(result.filePaths[0])
         try {
           fs.copyFileSync(result.filePaths[0], path.join(iconFolder,path.basename(result.filePaths[0])))
-          editorWindow.webContents.send("get-icon-file-response", path.basename(result.filePaths[0]))
+          editorWindow.webContents.send("get-icon-file-response", {id: data, image: path.basename(result.filePaths[0])})
         } catch (err) {
           console.log(err)
         }
