@@ -1,5 +1,5 @@
 if(require('electron-squirrel-startup')) return;
-const { app, Menu, Tray, nativeImage, shell, globalShortcut, BrowserWindow, ipcMain, dialog } = require('electron')
+const { app, Menu, Tray, nativeImage, shell, globalShortcut, BrowserWindow, ipcMain, dialog, screen } = require('electron')
 const fs = require('fs');
 const Store = require("electron-store");
 const chokidar = require("chokidar");
@@ -51,6 +51,7 @@ let tray
 let editorWindow;
 let aboutWindow;
 let playerWindow;
+let tooltipWindow;
 let bookmarksArr = []
 
 initializeWatcher();
@@ -300,7 +301,36 @@ const createTray = () => {
   tray.on("click", function(e) {
     tray.popUpContextMenu(contextMenu)
   })
+
+  tray.on('mouse-enter', function(e) {
+    positionTooltipWindow();
+    tooltipWindow.show()
+  })
+
+  tray.on('mouse-leave', function(e) {
+    tooltipWindow.hide()
+  })
 }
+
+const positionTooltipWindow = () => {
+  const trayBounds = tray.getBounds();  // Gets the position of the tray icon
+  const display = screen.getDisplayNearestPoint({ x: trayBounds.x, y: trayBounds.y });
+  const displayBounds = display.bounds;
+
+  let x = trayBounds.x + trayBounds.width / 2 - tooltipWindow.getBounds().width / 2;
+  let y;
+
+  // Check if tray icon is in the upper half or lower half of the screen
+  if (trayBounds.y < displayBounds.height / 2) {
+    // Position below the tray icon
+    y = trayBounds.y + trayBounds.height + 5;  // A slight offset
+  } else {
+    // Position above the tray icon
+    y = trayBounds.y - tooltipWindow.getBounds().height - 5;  // A slight offset
+  }
+
+  tooltipWindow.setPosition(Math.round(x), Math.round(y));
+};
 
 app.whenReady().then(() => {
   if (store.get("checkForUpdates") == true) {
@@ -324,6 +354,18 @@ app.whenReady().then(() => {
   }
 
   createTray()
+
+  tooltipWindow = new BrowserWindow({
+    width: 300,
+    height: 300,
+    show: false,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
+  })
+  tooltipWindow.setMenu(null)
+  tooltipWindow.loadFile('about.html')
 
   playerWindow = new BrowserWindow({
     width: 1024,
