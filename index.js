@@ -865,7 +865,7 @@ ipcMain.on('get-app-version', (event, response) => {
 })
 
 ipcMain.on('set-tooltip', (event, data) => {
-  console.log(data)
+  //console.log(data)
   let bookmarks = JSON.parse(fs.readFileSync(userData+'/bookmarks.json'));
   let iconImage = findImageByName(data.streamName, bookmarks)
   let defaultImage = path.join(__dirname, 'images/playing.png')
