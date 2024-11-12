@@ -432,7 +432,7 @@ app.whenReady().then(() => {
   });
   tooltipWindow.setMenu(null)
   tooltipWindow.loadFile('tooltip.html')
-  tooltipWindow.webContents.openDevTools({ mode: 'detach' })
+  //tooltipWindow.webContents.openDevTools({ mode: 'detach' })
   tooltipWindow.webContents.on('did-finish-load', () => {
     tooltipWindow.webContents.send('set-theme', {dark: darkIcon, initial: true })
     tooltipWindow.webContents.executeJavaScript(`
