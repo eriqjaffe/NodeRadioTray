@@ -857,8 +857,6 @@ ipcMain.on('set-tooltip', (event, data) => {
       log.info(data.data.replace("\r\n"," - "))
     }
     if (store.get("notifications") == true) {
-      
-      console.log(icon)
       notifier.notify(
         {
           title: 'NodeRadioTray',
