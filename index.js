@@ -57,7 +57,6 @@ let bookmarksArr = []
 initializeWatcher();
 
 var darkIcon = (store.get("darkicon") == true) ? true : false;
-setIconTheme(darkIcon);
 
 if (!store.has("notifications")) {
   store.set("notifications", false)
@@ -69,6 +68,7 @@ const prefsTemplate = [
     click: e => {
       store.set("darkicon", e.checked)
       setIconTheme(e.checked)
+      tooltipWindow.webContents.send('set-theme', e.checked)
       if (stream == null) {
         tray.setImage(idleIcon)
       } else {
@@ -366,6 +366,7 @@ const positionTooltipWindow = () => {
 };
 
 app.whenReady().then(() => {
+  setIconTheme(darkIcon);
   if (store.get("checkForUpdates") == true) {
     versionCheck(updateOptions, function (error, update) {
       if (error) {
@@ -405,8 +406,9 @@ app.whenReady().then(() => {
   });
   tooltipWindow.setMenu(null)
   tooltipWindow.loadFile('tooltip.html')
-  //tooltipWindow.webContents.openDevTools({ mode: 'detach' })
+  tooltipWindow.webContents.openDevTools({ mode: 'detach' })
   tooltipWindow.webContents.on('did-finish-load', () => {
+    tooltipWindow.webContents.send('set-theme', darkIcon)
     tooltipWindow.webContents.executeJavaScript(`
       let div = document.getElementById('textDiv');
       div.offsetWidth;
