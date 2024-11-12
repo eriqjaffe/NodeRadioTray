@@ -1,5 +1,5 @@
 if(require('electron-squirrel-startup')) return;
-const { app, Menu, Tray, nativeImage, shell, globalShortcut, BrowserWindow, ipcMain, dialog, screen } = require('electron')
+const { nativeTheme, app, Menu, Tray, nativeImage, shell, globalShortcut, BrowserWindow, ipcMain, dialog, screen } = require('electron')
 const fs = require('fs');
 const Store = require("electron-store");
 const chokidar = require("chokidar");
@@ -366,7 +366,11 @@ const positionTooltipWindow = () => {
 };
 
 app.whenReady().then(() => {
-  setIconTheme(darkIcon);
+  if (process.platform == "darwin") {
+    setIconTheme(nativeTheme.shouldUseDarkColors)
+  } else {
+    setIconTheme(darkIcon);
+  }
   if (store.get("checkForUpdates") == true) {
     versionCheck(updateOptions, function (error, update) {
       if (error) {
@@ -837,17 +841,23 @@ ipcMain.on('get-app-version', (event, response) => {
 
 ipcMain.on('set-tooltip', (event, data) => {
   console.log(data)
-  tooltipWindow.webContents.send('tooltip-update', data)
+  let bookmarks = JSON.parse(fs.readFileSync(userData+'/bookmarks.json'));
+  let iconImage = findImageByName(data.streamName, bookmarks)
+  let defaultImage = path.join(__dirname, 'images/playing.png')
+  if (darkIcon == false) {
+    defaultImage = path.join(__dirname, 'images/playing_white.png')
+  }
+  let icon = (iconImage == null) ? defaultImage : path.join(userData,'icons',iconImage)
+  tooltipWindow.webContents.send('tooltip-update', {playing: data.playing, data: data.data, streamName: data.streamName, image: icon})
   if (data.playing) {
     tray.setImage(playingIcon);
     //tray.setTooltip(data.data)
+    
     if (store.get("metadataLog") == true) {
       log.info(data.data.replace("\r\n"," - "))
     }
     if (store.get("notifications") == true) {
-      let bookmarks = JSON.parse(fs.readFileSync(userData+'/bookmarks.json'));
-      let iconImage = findImageByName(data.streamName, bookmarks)
-      let icon = (iconImage == null) ? path.join(__dirname, 'images/playing.png') : path.join(userData,'icons',iconImage)
+      
       console.log(icon)
       notifier.notify(
         {
@@ -860,6 +870,7 @@ ipcMain.on('set-tooltip', (event, data) => {
       );
     }
   } else {
+    tooltipWindow.webContents.send('tooltip-update', { playing: false })
     tray.setImage(idleIcon);
     toggleButtons(false)
   }
