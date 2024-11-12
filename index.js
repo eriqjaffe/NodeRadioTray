@@ -69,7 +69,8 @@ const prefsTemplate = [
     click: e => {
       store.set("darkicon", e.checked)
       setIconTheme(e.checked)
-      tooltipWindow.webContents.send('set-theme', e.checked)
+      tooltipWindow.webContents.send('set-theme', { dark: e.checked, initial: false })
+      console.log(stream)
       if (stream == null) {
         tray.setImage(idleIcon)
       } else {
@@ -433,7 +434,7 @@ app.whenReady().then(() => {
   tooltipWindow.loadFile('tooltip.html')
   tooltipWindow.webContents.openDevTools({ mode: 'detach' })
   tooltipWindow.webContents.on('did-finish-load', () => {
-    tooltipWindow.webContents.send('set-theme', darkIcon)
+    tooltipWindow.webContents.send('set-theme', {dark: darkIcon, initial: true })
     tooltipWindow.webContents.executeJavaScript(`
       let div = document.getElementById('textDiv');
       div.offsetWidth;
@@ -865,7 +866,7 @@ ipcMain.on('get-app-version', (event, response) => {
 })
 
 ipcMain.on('set-tooltip', (event, data) => {
-  //console.log(data)
+  console.log(data)
   let bookmarks = JSON.parse(fs.readFileSync(userData+'/bookmarks.json'));
   let iconImage = findImageByName(data.streamName, bookmarks)
   let defaultImage = path.join(__dirname, 'images/playing.png')
@@ -928,14 +929,17 @@ ipcMain.on('get-icon-file', (event, data) => {
 })
 
 function findImageByName(targetName, bookmarks) {
+  console.log(targetName)
   for (const category of bookmarks) {
       for (const bookmark of category.bookmark) {
+         
           if (bookmark.name === targetName) {
+            console.log(bookmark.name)
               return bookmark.img || null;
           }
       }
   }
-  return "no image"; // Return null if the name is not found
+  return null; // Return null if the name is not found
 }
 
 function onMouseEnter() {
