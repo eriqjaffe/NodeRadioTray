@@ -95,7 +95,7 @@
     });
 
     ipcRenderer.on("set-theme", (event, data) => {
-      console.log(data)
+      //console.log(data)
       if (data.dark == true) {
         $("html").css("background-color", "#f0f0f0");
         $("body").css("background-color", "#f0f0f0");
@@ -108,14 +108,14 @@
         //$("#stationIcon").attr("src", "images/playing_white.png");
       }
       if (data.initial == true) {
-        console.log('initial load')
+        //console.log('initial load')
         if (data.dark == true) {
           $("#stationIcon").attr("src", "images/playing.png");
         } else {
           $("#stationIcon").attr("src", "images/playing_white.png");
         }
       } else {
-        console.log('switched')
+        //console.log('switched')
         switch ($("#stationIcon").attr("src")) {
           case ("images/playing.png"):
             $("#stationIcon").attr("src", "images/playing_white.png");
