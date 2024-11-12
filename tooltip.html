@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <title>About NodeRadioTray</title>
+    
+    <script>
+      if (typeof module === "object") {
+        window.module = module;
+        module = undefined;
+      }
+      const { ipcRenderer } = require('electron');
+    </script>
+    <script type="text/javascript" src="./scripts/jquery-1.11.3.min.js"></script>
+    <style>
+        html, body {
+            margin: 2px!important;
+            padding: 2px!important;
+            background-color: yellow!important;
+            font-size: .95em;
+        }
+
+        ::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+    <link href="./scripts/style.css" rel="stylesheet" type='text/css'/>
+    
+  </head>
+  <body>
+    <div id="artDiv" style="height:58px; width:58px; position:absolute; float:left; display:flex; align-items:center; justify-content:center;">
+    <img src="images/playing.png" style="max-width:45px; max-height:45px;">
+    </div>
+    <div id="textDiv" style="height:58px; position:relative; float:right; display:flex; flex-direction:column; justify-content:center; min-width:216px;">
+        <div style="font-weight:bold; white-space:nowrap; min-width:216px;">NodeRadioTray</div>
+        <div id="streamTitle" style="display:none; white-space:nowrap; min-width:216px; padding-right:4px;"></div>
+    </div>         
+  </body>
+  <script>
+    ipcRenderer.on('tooltip-update', (event, data) => {
+        console.log(data)
+        if (data.playing == true) {
+            $("#streamTitle").html(data.data.replace("\r\n","<br>"))
+            $("#streamTitle").css("display","block")
+            ipcRenderer.send('set-tooltip-width', $("#streamTitle").width())
+        }
+    })
+  </script>
+</html>

@@ -295,7 +295,7 @@ const createTray = () => {
   tray = new Tray(idleIcon)
   
   contextMenu = Menu.buildFromTemplate(menuTemplate)
-  tray.setToolTip('NodeRadioTray')
+  //tray.setTooltip('NodeRadioTray')
   tray.setContextMenu(contextMenu)
 
   tray.on("click", function(e) {
@@ -304,13 +304,46 @@ const createTray = () => {
 
   tray.on('mouse-enter', function(e) {
     positionTooltipWindow();
-    tooltipWindow.show()
+    fadeIn(tooltipWindow);
   })
 
   tray.on('mouse-leave', function(e) {
-    tooltipWindow.hide()
+    fadeOut(tooltipWindow)
   })
 }
+
+const fadeIn = (window, duration = 250) => {
+  let opacity = 0;
+  window.setOpacity(opacity);
+  window.show();
+
+  const increment = 1 / (duration / 10);
+  const fadeInterval = setInterval(() => {
+    opacity += increment;
+    if (opacity >= 1) {
+      window.setOpacity(1);
+      clearInterval(fadeInterval);
+    } else {
+      window.setOpacity(opacity);
+    }
+  }, 10);
+};
+
+// Fade-out function
+const fadeOut = (window, duration = 250) => {
+  let opacity = 1;
+  const decrement = 1 / (duration / 10);
+  const fadeInterval = setInterval(() => {
+    opacity -= decrement;
+    if (opacity <= 0) {
+      window.setOpacity(0);
+      window.hide();
+      clearInterval(fadeInterval);
+    } else {
+      window.setOpacity(opacity);
+    }
+  }, 10);
+};
 
 const positionTooltipWindow = () => {
   const trayBounds = tray.getBounds();  // Gets the position of the tray icon
@@ -357,20 +390,38 @@ app.whenReady().then(() => {
 
   tooltipWindow = new BrowserWindow({
     width: 300,
-    height: 300,
+    hasShadow: false,
+    height: 75,
     show: false,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    opacity: 0,
     webPreferences: {
       nodeIntegration: true,
-      contextIsolation: false
+      contextIsolation: false,
     }
-  })
+  });
   tooltipWindow.setMenu(null)
-  tooltipWindow.loadFile('about.html')
+  tooltipWindow.loadFile('tooltip.html')
+  //tooltipWindow.webContents.openDevTools({ mode: 'detach' })
+  tooltipWindow.webContents.on('did-finish-load', () => {
+    tooltipWindow.webContents.executeJavaScript(`
+      let div = document.getElementById('textDiv');
+      div.offsetWidth;
+    `).then(width => {
+      // Set a minimum width if needed, to prevent excessive shrinking
+      const minWidth = 216;
+      tooltipWindow.setSize(Math.max(width, minWidth)+86, tooltipWindow.getBounds().height);
+    });
+  });
 
   playerWindow = new BrowserWindow({
     width: 1024,
     height: 800,
     show: false,
+    skipTaskbar: true,
     icon: path.join(__dirname, 'images/playing.ico'),
     webPreferences: {
       nodeIntegration: true,
@@ -483,6 +534,7 @@ function showAbout() {
     aboutWindow = new BrowserWindow({
       width: 800,
       height: 600,
+      skipTaskbar: true,
       icon: path.join(__dirname, 'images/playing.ico'),
       webPreferences: {
         nodeIntegration: true,
@@ -513,6 +565,7 @@ function editBookmarksGui() {
       width: 800,
       height: 650,
       icon: path.join(__dirname, 'images/playing.ico'),
+      skipTaskbar: true,
       webPreferences: {
         nodeIntegration: true,
         contextIsolation: false
@@ -532,7 +585,7 @@ function editBookmarksGui() {
 
 async function playStream(streamName, url) {
   try {
-    tray.setToolTip("NodeRadioTray");
+    //tray.setTooltip("NodeRadioTray");
     tray.setImage(idleIcon);
     const streamUrl = await extractURLfromPlaylist(url);
     playerWindow.webContents.send("play", { streamName: streamName, url: streamUrl, volume: store.get("lastVolume") });
@@ -574,7 +627,7 @@ function toggleButtons(state) {
     nextButton.visible = false;
     previousButton.visible = false;
     tray.setImage(idleIcon);
-    tray.setToolTip("NodeRadioTray");
+    //tray.setTooltip("NodeRadioTray");
     menuTemplate[9].label = "Play "+store.get("lastStation")
     contextMenu = Menu.buildFromTemplate(menuTemplate)
     tray.setContextMenu(contextMenu)
@@ -730,6 +783,11 @@ async function extractURLfromPlaylist(url) {
   }
 }
 
+ipcMain.on('set-tooltip-width', (event, width) => {
+  const minWidth = 216;
+  tooltipWindow.setSize(Math.max(width, minWidth)+86, tooltipWindow.getBounds().height);
+});
+
 ipcMain.on('extract-url', async (event, data) => {
   try {
     let url = await extractURLfromPlaylist(data.url);
@@ -777,13 +835,14 @@ ipcMain.on('get-app-version', (event, response) => {
 
 ipcMain.on('set-tooltip', (event, data) => {
   console.log(data)
+  tooltipWindow.webContents.send('tooltip-update', data)
   if (data.playing) {
     tray.setImage(playingIcon);
-    tray.setToolTip(data.data)
+    //tray.setTooltip(data.data)
     if (store.get("metadataLog") == true) {
       log.info(data.data.replace("\r\n"," - "))
     }
-    if (store.get("notifications") == false) {
+    if (store.get("notifications") == true) {
       let bookmarks = JSON.parse(fs.readFileSync(userData+'/bookmarks.json'));
       let iconImage = findImageByName(data.streamName, bookmarks)
       let icon = (iconImage == null) ? path.join(__dirname, 'images/playing.png') : path.join(userData,'icons',iconImage)
