@@ -57,6 +57,7 @@ let bookmarksArr = []
 initializeWatcher();
 
 var darkIcon = (store.get("darkicon") == true) ? true : false;
+var htmlToolTip = (store.get("html_tooltip") == true) ? true : false;
 
 if (!store.has("notifications")) {
   store.set("notifications", false)
@@ -78,6 +79,20 @@ const prefsTemplate = [
     type: "checkbox",
     checked: (store.get("darkicon") == true) ? true : false,
     visible: (process.platform == "darwin" ? false : true)
+  },
+  {
+    label: 'Use HTML tooltip',
+    click: e => {
+      store.set("html_tooltip", e.checked)
+      if (e.checked) {
+        enableFakeTooltip()
+      } else {
+        //tray.setToolTip('NodeRadioTray')
+        disableFakeTooltip()
+      }
+    },
+    type: "checkbox",
+    checked: (store.get("html_tooltip") == true) ? true : false
   },
   {
     label: 'Auto play last station on startup',
@@ -295,21 +310,27 @@ const createTray = () => {
   tray = new Tray(idleIcon)
   
   contextMenu = Menu.buildFromTemplate(menuTemplate)
-  //tray.setTooltip('NodeRadioTray')
+  //console.log(store.get("html_tooltip"))
+  if (!htmlToolTip) {
+    tray.setToolTip('NodeRadioTray')
+  }
   tray.setContextMenu(contextMenu)
 
   tray.on("click", function(e) {
     tray.popUpContextMenu(contextMenu)
   })
 
-  tray.on('mouse-enter', function(e) {
-    positionTooltipWindow();
-    fadeIn(tooltipWindow);
-  })
+  if (htmlToolTip) {
+    tray.on('mouse-enter', function(e) {
+      positionTooltipWindow();
+      fadeIn(tooltipWindow);
+    })
+  
+    tray.on('mouse-leave', function(e) {
+      fadeOut(tooltipWindow)
+    })
+  }
 
-  tray.on('mouse-leave', function(e) {
-    fadeOut(tooltipWindow)
-  })
 }
 
 const fadeIn = (window, duration = 250) => {
@@ -591,7 +612,9 @@ function editBookmarksGui() {
 
 async function playStream(streamName, url) {
   try {
-    //tray.setTooltip("NodeRadioTray");
+    if (!htmlToolTip) {
+      tray.setToolTip("NodeRadioTray");
+    }
     tray.setImage(idleIcon);
     const streamUrl = await extractURLfromPlaylist(url);
     playerWindow.webContents.send("play", { streamName: streamName, url: streamUrl, volume: store.get("lastVolume") });
@@ -633,7 +656,9 @@ function toggleButtons(state) {
     nextButton.visible = false;
     previousButton.visible = false;
     tray.setImage(idleIcon);
-    //tray.setTooltip("NodeRadioTray");
+    if (!htmlToolTip) {
+      tray.setToolTip("NodeRadioTray");
+    }
     menuTemplate[9].label = "Play "+store.get("lastStation")
     contextMenu = Menu.buildFromTemplate(menuTemplate)
     tray.setContextMenu(contextMenu)
@@ -848,11 +873,14 @@ ipcMain.on('set-tooltip', (event, data) => {
     defaultImage = path.join(__dirname, 'images/playing_white.png')
   }
   let icon = (iconImage == null) ? defaultImage : path.join(userData,'icons',iconImage)
-  tooltipWindow.webContents.send('tooltip-update', {playing: data.playing, data: data.data, streamName: data.streamName, image: icon})
+  
   if (data.playing) {
     tray.setImage(playingIcon);
-    //tray.setTooltip(data.data)
-    
+    if (!htmlToolTip) {
+      tray.setToolTip(data.data)
+    } else {
+      tooltipWindow.webContents.send('tooltip-update', {playing: data.playing, data: data.data, streamName: data.streamName, image: icon})
+    }
     if (store.get("metadataLog") == true) {
       log.info(data.data.replace("\r\n"," - "))
     }
@@ -868,7 +896,9 @@ ipcMain.on('set-tooltip', (event, data) => {
       );
     }
   } else {
-    tooltipWindow.webContents.send('tooltip-update', { playing: false })
+    if (htmlToolTip) {
+      tooltipWindow.webContents.send('tooltip-update', { playing: false })
+    }
     tray.setImage(idleIcon);
     toggleButtons(false)
   }
@@ -906,6 +936,27 @@ function findImageByName(targetName, bookmarks) {
       }
   }
   return "no image"; // Return null if the name is not found
+}
+
+function onMouseEnter() {
+  positionTooltipWindow();
+  fadeIn(tooltipWindow);
+}
+
+function onMouseLeave() {
+  fadeOut(tooltipWindow);
+}
+
+function enableFakeTooltip() {
+  tray.setToolTip('')
+  tray.on('mouse-enter', onMouseEnter);
+  tray.on('mouse-leave', onMouseLeave);
+}
+
+function disableFakeTooltip() {
+  tray.setToolTip('NodeRadioTray')
+  tray.removeListener('mouse-enter', onMouseEnter);
+  tray.removeListener('mouse-leave', onMouseLeave);
 }
 
 ipcMain.on('error-notification', (event, data) => {
