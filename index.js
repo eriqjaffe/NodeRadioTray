@@ -82,17 +82,38 @@ const prefsTemplate = [
     visible: (process.platform == "darwin" ? false : true)
   },
   {
-    label: 'Use HTML tooltip (will restart app)',
+    label: 'Use HTML tooltip',
     click: e => {
-      store.set("html_tooltip", e.checked)
-      if (e.checked) {
-        enableFakeTooltip()
+      if (store.get("suppress-tooltip-confirmation") === true) {
+        store.set("html_tooltip", e.checked)
+        if (e.checked) {
+          enableFakeTooltip()
+        } else {
+          //tray.setToolTip('NodeRadioTray')
+          disableFakeTooltip()
+        }
+        app.quit();
+        app.relaunch();
       } else {
-        //tray.setToolTip('NodeRadioTray')
-        disableFakeTooltip()
-      }
-      app.quit();
-      app.relaunch();
+        dialog.showMessageBox(null, {
+          type: 'question',
+          message: "This will cause NodeRadioTray to restart",
+          buttons: ['OK'],
+          checkboxLabel: 'Don\'t show this again',
+          checkboxChecked: false
+        }).then(result => {
+          store.set("html_tooltip", e.checked)
+          store.set("suppress-tooltip-confirmation", result.checkboxChecked)
+          if (e.checked) {
+            enableFakeTooltip()
+          } else {
+            //tray.setToolTip('NodeRadioTray')
+            disableFakeTooltip()
+          }
+          app.quit();
+          app.relaunch();
+        })
+      }     
     },
     type: "checkbox",
     checked: (store.get("html_tooltip") == true) ? true : false
