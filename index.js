@@ -82,7 +82,7 @@ const prefsTemplate = [
     visible: (process.platform == "darwin" ? false : true)
   },
   {
-    label: 'Use HTML tooltip',
+    label: 'Use HTML tooltip (will restart app)',
     click: e => {
       store.set("html_tooltip", e.checked)
       if (e.checked) {
@@ -91,6 +91,8 @@ const prefsTemplate = [
         //tray.setToolTip('NodeRadioTray')
         disableFakeTooltip()
       }
+      app.quit();
+      app.relaunch();
     },
     type: "checkbox",
     checked: (store.get("html_tooltip") == true) ? true : false
@@ -416,7 +418,7 @@ app.whenReady().then(() => {
   createTray()
 
   tooltipWindow = new BrowserWindow({
-    width: 300,
+    //width: auto,
     hasShadow: false,
     height: 75,
     show: false,
@@ -432,8 +434,9 @@ app.whenReady().then(() => {
   });
   tooltipWindow.setMenu(null)
   tooltipWindow.loadFile('tooltip.html')
-  //tooltipWindow.webContents.openDevTools({ mode: 'detach' })
-  tooltipWindow.webContents.on('did-finish-load', () => {
+  
+/*   tooltipWindow.webContents.on('did-finish-load', () => {
+    //tooltipWindow.webContents.openDevTools({ mode: 'detach' })
     tooltipWindow.webContents.send('set-theme', {dark: darkIcon, initial: true })
     tooltipWindow.webContents.executeJavaScript(`
       let div = document.getElementById('textDiv');
@@ -443,7 +446,7 @@ app.whenReady().then(() => {
       const minWidth = 216;
       tooltipWindow.setSize(Math.max(width, minWidth)+86, tooltipWindow.getBounds().height);
     });
-  });
+  }); */
 
   playerWindow = new BrowserWindow({
     width: 1024,
@@ -601,7 +604,7 @@ function editBookmarksGui() {
     })
     editorWindow.setMenu(null)
     editorWindow.loadFile('stationeditor.html');
-    editorWindow.webContents.openDevTools({ mode: 'detach' })
+    //editorWindow.webContents.openDevTools({ mode: 'detach' })
     editorWindow.on('close', (event) => {
       event.preventDefault()
       editorWindow.webContents.send('check-tree');
@@ -816,8 +819,7 @@ async function extractURLfromPlaylist(url) {
 }
 
 ipcMain.on('set-tooltip-width', (event, width) => {
-  const minWidth = 216;
-  tooltipWindow.setSize(Math.max(width, minWidth)+86, tooltipWindow.getBounds().height);
+  tooltipWindow.setSize(width, tooltipWindow.getBounds().height);
 });
 
 ipcMain.on('extract-url', async (event, data) => {
