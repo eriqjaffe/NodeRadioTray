@@ -24,6 +24,7 @@
         font-family: "Outfit", sans-serif;
         background-color: #f0f0f0;
         font-size: 0.8em;
+        overflow: hidden;
     }
 
     .leftCell {
@@ -124,6 +125,11 @@
             <td class="leftCell">sampleRate</td>
             <td class="display" id="sampleRate"></td>
         </tr>
+        <tr>
+            <td colspan="2" style="text-align: center; padding-top:5px;">
+              <input type="button" id="toggleDevTools" value="Open Dev Console">
+            </td>
+        </tr>
         </table>
     </div>
     <div id="logWindow" style="width:59%; height: 450px; float:right; position:relative;"></div>
@@ -137,7 +143,6 @@
       }
 
       const onMetadata = (metadata) => {
-        console.log(metadata)
         $("#playerState").html(player.state);
         $("#currentStation").html(data.streamName);
         $("#currentURL").html(player.endpoint);
@@ -248,7 +253,6 @@
 
     ipcRenderer.on("get-initial-volume-response", (event, data) => {
       volume = parseFloat(data.volume);
-      console.log("config stored volume ", volume)
     });
 
     ipcRenderer.on("set-volume", (event, data) => {
@@ -278,13 +282,10 @@
         });
       }
       volume = player.audioElement.volume;
-      console.log("renderer stored volume ", volume)
     });
 
     ipcRenderer.on("toggle-mute", (event, arg) => {
-      console.log("hello world")
       if (player != undefined || player != null) {
-        console.log(player.audioElement.volume)
         if (player.audioElement.volume == 0) {
           player.audioElement.volume = volume
           ipcRenderer.send("set-volume-response", {
@@ -330,13 +331,19 @@
     });
 
     ipcRenderer.on("mm-get-player-status", (event, data) => {
-      console.log(player);
-      console.log(player.state);
       if (player != undefined) {
         ipcRenderer.send("mm-get-player-status-response", player.state);
       } else {
         ipcRenderer.send("mm-get-player-status-response", "stopped");
       }
     });
+
+    ipcRenderer.on('dev-tool-state', (event, data) => {
+      $("#toggleDevTools").val(data)
+    })
+
+    $("#toggleDevTools").on("click", function(e) {
+      ipcRenderer.send('toggle-dev-tools', null)
+    })
   </script>
 </html>

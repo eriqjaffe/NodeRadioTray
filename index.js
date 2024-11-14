@@ -36,15 +36,10 @@ The following options are also available if NodeRadioTray is currently running:
 if (!gotTheLock) {
   app.quit();
 } else {
-  console.log("got the lock")
   app.on('second-instance', (event, commandLine, workingDirectory) => {
     const validCommands = ['-S', '-P', '-U', '-D', '-M', '-N', '-R', '--stop', '--play', '--volup', '--voldown', '--mute', '--next', '--prev'];
     const foundCommands = commandLine.filter(arg => validCommands.includes(arg));
-    if (foundCommands.length > 1) {
-      console.log(`Multiple commands detected (${foundCommands.join(', ')}). Only the first command will be executed.`);
-    }
     const command = foundCommands[0];
-    console.log("Received "+command+" argument in running instance");
     switch(command) {
       case '-S':
         toggleButtons(false);
@@ -146,7 +141,6 @@ const prefsTemplate = [
       store.set("darkicon", e.checked)
       setIconTheme(e.checked)
       tooltipWindow.webContents.send('set-theme', { dark: e.checked, initial: false })
-      console.log(stream)
       if (stream == null) {
         tray.setImage(idleIcon)
       } else {
@@ -291,10 +285,10 @@ var menuTemplate = [
     click: e => {
       fs.copyFile(path.join(__dirname, '/bookmarks.json'), userData+'/bookmarks.json', (err) => {
         if (err) {
-          console.log(err)
+          errorLog.error(err)
         } else {
           reloadBookmarks();
-          console.log("file copied successfully")
+          errorLog.info("Bookmarks restored successfully")
         }
       })
     },
@@ -423,7 +417,6 @@ const createTray = () => {
   tray = new Tray(idleIcon)
   
   contextMenu = Menu.buildFromTemplate(menuTemplate)
-  //console.log(store.get("html_tooltip"))
   if (!htmlToolTip) {
     tray.setToolTip('NodeRadioTray')
   }
@@ -595,7 +588,7 @@ app.whenReady().then(() => {
 
   playerWindow = new BrowserWindow({
     width: 1024,
-    height: 800,
+    height: 480,
     show: false,
     skipTaskbar: true,
     icon: path.join(__dirname, 'images/playing.ico'),
@@ -606,7 +599,7 @@ app.whenReady().then(() => {
   })
   playerWindow.setMenu(null)
   playerWindow.loadFile('player.html')
-  playerWindow.webContents.openDevTools({ mode: 'bottom' })
+  //playerWindow.webContents.openDevTools({ mode: 'bottom' })
   //playerWindow.show()
 
   playerWindow.on('close', (event) => {
@@ -625,9 +618,6 @@ app.whenReady().then(() => {
   const args = process.argv;
   const validCommands = ['-H', '--help', '-P', '--play'];
   const foundCommands = args.filter(arg => validCommands.includes(arg));
-  if (foundCommands.length > 1) {
-    console.log(`Multiple commands detected (${foundCommands.join(', ')}). Only the first command will be executed.`);
-  }
   const command = foundCommands[0];
   switch (command) {
     case "-H":
@@ -637,10 +627,8 @@ app.whenReady().then(() => {
       console.log(helpInfo)
       break
     case "--P":
-      console.log(store.get('lastStation'))
       playStream(store.get('lastStation'), store.get('lastURL'))
     case "--play":
-      console.log(store.get('lastStation'))
       playStream(store.get('lastStation'), store.get('lastURL'))
   }
 })
@@ -989,6 +977,28 @@ async function extractURLfromPlaylist(url) {
   }
 }
 
+ipcMain.on('toggle-dev-tools', (event, arg) => {
+  if (playerWindow.webContents.isDevToolsOpened()) {
+    playerWindow.webContents.closeDevTools();
+    playerWindow.setSize(1024, 480);
+    playerWindow.webContents.send('dev-tool-state', "Open Dev Console")
+  } else {
+    playerWindow.setSize(1024, 780);
+    playerWindow.webContents.openDevTools({ mode: 'bottom' });
+    playerWindow.webContents.send('dev-tool-state', "Close Dev Console")
+  }
+  centerPlayerWindow(playerWindow.getBounds().height)
+})
+
+function centerPlayerWindow(height) {
+  const currentWindowBounds = playerWindow.getBounds();
+  const currentDisplay = screen.getDisplayNearestPoint({ x: currentWindowBounds.x, y: currentWindowBounds.y });
+  const { width: displayWidth, height: displayHeight } = currentDisplay.workAreaSize;
+  const newX = Math.round(currentDisplay.workArea.x + (displayWidth - 1024) / 2);
+  const newY = Math.round(currentDisplay.workArea.y + (displayHeight - height) / 2);
+  playerWindow.setPosition(newX, newY);
+}
+
 ipcMain.on('set-tooltip-width', (event, width) => {
   tooltipWindow.setSize(width, tooltipWindow.getBounds().height);
 });
@@ -1089,12 +1099,11 @@ ipcMain.on('get-icon-file', (event, data) => {
 	}
 	dialog.showOpenDialog(null, options).then(result => {
 		  if(!result.canceled) {
-        console.log(result.filePaths[0])
         try {
           fs.copyFileSync(result.filePaths[0], path.join(iconFolder,path.basename(result.filePaths[0])))
           editorWindow.webContents.send("get-icon-file-response", {id: data, image: path.basename(result.filePaths[0])})
         } catch (err) {
-          console.log(err)
+          errorLog.error(err)
         }
       } else {
         
@@ -1103,13 +1112,10 @@ ipcMain.on('get-icon-file', (event, data) => {
 })
 
 function findImageByName(targetName, bookmarks) {
-  console.log(targetName)
   for (const category of bookmarks) {
       for (const bookmark of category.bookmark) {
-         
           if (bookmark.name === targetName) {
-            console.log(bookmark.name)
-              return bookmark.img || null;
+            return bookmark.img || null;
           }
       }
   }
