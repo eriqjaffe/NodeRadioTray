@@ -53,6 +53,7 @@ let aboutWindow;
 let playerWindow;
 let tooltipWindow;
 let bookmarksArr = []
+let currentStreamData;
 
 initializeWatcher();
 
@@ -292,6 +293,19 @@ var menuTemplate = [
     icon: path.join(__dirname, '/images/icons8-Rewind.png'),
     visible: false
   },
+  {
+    label: "Google This Track",
+    id: "googleIt",
+    click: async() => {
+      let foo = currentStreamData.data.split("\r\n")
+      let parts = foo[1].trim().split(" - ");
+      let left = `"${parts[0].trim().replace(/ /g, "+")}"`;
+      let right = `"${parts[1].trim().replace(/ /g, "+").replace(/ /g, "_")}"`;
+      shell.openExternal(`https://www.google.com/search?q=${left}+${right}`)
+    },
+    icon: path.join(__dirname, '/images/icons8-google.png'),
+    visible: false
+  },
   { 
     type: 'separator'
   },
@@ -483,6 +497,7 @@ app.whenReady().then(() => {
   playerWindow.setMenu(null)
   playerWindow.loadFile('player.html')
   playerWindow.webContents.openDevTools({ mode: 'bottom' })
+  playerWindow.show()
 
   playerWindow.on('close', (event) => {
     event.preventDefault(); // Prevent the window from closing
@@ -662,6 +677,7 @@ function toggleButtons(state) {
   volDownButton = contextMenu.getMenuItemById('volumeDown')
   nextButton = contextMenu.getMenuItemById('nextButton')
   previousButton = contextMenu.getMenuItemById('previousButton')
+  googleIt =  contextMenu.getMenuItemById('googleIt')
   if (state == true) {
     playButton.visible = false;
     stopButton.visible = true;
@@ -670,6 +686,7 @@ function toggleButtons(state) {
     volDownButton.visible = true;
     nextButton.visible = true;
     previousButton.visible = true;
+    googleIt.visible = true;
     tray.setImage(playingIcon);
     tray.setContextMenu(contextMenu)
   } else {
@@ -680,6 +697,7 @@ function toggleButtons(state) {
     volDownButton.visible = false;
     nextButton.visible = false;
     previousButton.visible = false;
+    googleIt.visible = false;
     tray.setImage(idleIcon);
     if (!htmlToolTip) {
       tray.setToolTip("NodeRadioTray");
@@ -889,7 +907,7 @@ ipcMain.on('get-app-version', (event, response) => {
 })
 
 ipcMain.on('set-tooltip', (event, data) => {
-  console.log(data)
+  currentStreamData = data;
   let bookmarks = JSON.parse(fs.readFileSync(userData+'/bookmarks.json'));
   let iconImage = findImageByName(data.streamName, bookmarks)
   let defaultImage = path.join(__dirname, 'images/playing.png')
@@ -899,6 +917,7 @@ ipcMain.on('set-tooltip', (event, data) => {
   let icon = (iconImage == null) ? defaultImage : path.join(userData,'icons',iconImage)
   
   if (data.playing) {
+    toggleButtons(true)
     tray.setImage(playingIcon);
     if (!htmlToolTip) {
       tray.setToolTip(data.data)

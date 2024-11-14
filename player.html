@@ -131,10 +131,13 @@
   <script>
     ipcRenderer.on("play", (event, data) => {
       if (player != undefined || player != null) {
-        player.stop();
+        //console.log("stopping...")
+        //player.stop();
+        player.detachAudioElement()
       }
 
       const onMetadata = (metadata) => {
+        console.log(metadata)
         $("#playerState").html(player.state);
         $("#currentStation").html(data.streamName);
         $("#currentURL").html(player.endpoint);
@@ -206,12 +209,17 @@
         ipcRenderer.send('set-tooltip', { playing: false })
       };
 
+      const onLoad = (message) => {
+        console.log(message)
+      }
+
       const onPlay = (message) => {
         $("#playerState").html(player.state);
         $("#logWindow").append("<span class='ok'>"+new Date().toISOString()+": Playing "+data.streamName+"</span><br/>")
       };
 
       player = new IcecastMetadataPlayer(data.url, {
+        onLoad,
         onMetadata,
         onCodecUpdate,
         onWarn,
@@ -226,9 +234,15 @@
         metadataTypes: ["icy"],
       });
 
-      player.audioElement.volume = data.volume;
-      player.play();
+      sleep(500).then(() => {
+        player.audioElement.volume = data.volume;
+        player.play();
+      }); 
     });
+
+    function sleep (time) {
+      return new Promise((resolve) => setTimeout(resolve, time));
+    }
 
     ipcRenderer.send("get-initial-volume", null);
 
