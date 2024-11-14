@@ -15,8 +15,81 @@ const PLS = parsers.PLS;
 const ASX = parsers.ASX
 const log = require('electron-log/main');
 
+const gotTheLock = app.requestSingleInstanceLock();
 const userData = app.getPath('userData');
 const iconFolder = path.join(userData,"icons")
+
+const helpInfo = `
+Options:
+  -P, --play      Begins playing the last played station
+  -S, --stop      Stops playback
+  -U, --volup     Raises the stream's volume
+  -D, --voldown   Lowers the streams' volume
+  -M, --mute      Mutes the stream
+  -N, --next      Switches to the next station in the bookmark file
+  -R, --prev      Switches to the previous station in the bookmark file
+  -H, --help      Displays this information
+`;
+
+if (!gotTheLock) {
+  app.quit();
+} else {
+  console.log("got the lock")
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    const validCommands = ['-S', '-P', '-U', '-D', '-M', '-N', '-R', '--stop', '--play', '--volup', '--voldown', '--mute', '--next', '--prev'];
+    const foundCommands = commandLine.filter(arg => validCommands.includes(arg));
+    if (foundCommands.length > 1) {
+      console.log(`Multiple commands detected (${foundCommands.join(', ')}). Only the first command will be executed.`);
+    }
+    const command = foundCommands[0];
+    console.log("Received "+command+" argument in running instance");
+    switch(command) {
+      case '-S':
+        toggleButtons(false);
+        break;
+      case '-P':
+        playStream(store.get('lastStation'), store.get('lastURL'));
+        break;
+      case '-N':
+        changeStation("forward")
+        break;
+      case '-R':
+        changeStation('backward')
+        break;
+      case '-U':
+        changeVolume('up')
+        break;
+      case '-D':
+        changeVolume('down')
+        break;
+      case '-M':
+        playerWindow.webContents.send('toggle-mute', null)
+        break;
+      case '--stop':
+        toggleButtons(false);
+        break;
+      case '--play':
+        playStream(store.get('lastStation'), store.get('lastURL'));
+        break;
+      case '--next':
+        changeStation("forward")
+        break;
+      case '--prev':
+        changeStation('backward')
+        break;
+      case '--volup':
+        changeVolume('up')
+        break;
+      case '--voldown':
+        changeVolume('down')
+        break;
+      case '--mute':
+        playerWindow.webContents.send('toggle-mute', null)
+        break;
+    }
+  });
+}
+
 const store = new Store()
 const AutoLauncher = new AutoLaunch(
   {name: 'NodeRadioTray'}
@@ -395,11 +468,15 @@ const fadeOut = (window, duration = 250) => {
   const fadeInterval = setInterval(() => {
     opacity -= decrement;
     if (opacity <= 0) {
-      window.setOpacity(0);
-      window.hide();
-      clearInterval(fadeInterval);
+      if (window) {
+        window.setOpacity(0);
+        window.hide();
+        clearInterval(fadeInterval);
+      }
     } else {
-      window.setOpacity(opacity);
+      if (window) {
+        window.setOpacity(opacity);
+      }
     }
   }, 10);
 };
@@ -425,6 +502,26 @@ const positionTooltipWindow = () => {
 };
 
 app.whenReady().then(() => {
+  const args = process.argv;
+  const validCommands = ['-H', '--help'];
+  const foundCommands = args.filter(arg => validCommands.includes(arg));
+  if (foundCommands.length > 1) {
+    console.log(`Multiple commands detected (${foundCommands.join(', ')}). Only the first command will be executed.`);
+  }
+  const command = foundCommands[0];
+  switch (command) {
+    case "-H":
+      console.log(helpInfo);
+      break;
+    case "--help":
+      console.log(helpInfo)
+      break
+  }
+  /* if (args.includes('--help') || args.includes(
+  )) {
+    console.log("First instance: Displaying help information in the console...");
+    console.log(helpInfo);  // Directly log help info to the console
+  } */
   if (process.platform == "darwin") {
     setIconTheme(nativeTheme.shouldUseDarkColors)
   } else {
@@ -497,7 +594,7 @@ app.whenReady().then(() => {
   playerWindow.setMenu(null)
   playerWindow.loadFile('player.html')
   playerWindow.webContents.openDevTools({ mode: 'bottom' })
-  playerWindow.show()
+  //playerWindow.show()
 
   playerWindow.on('close', (event) => {
     event.preventDefault(); // Prevent the window from closing

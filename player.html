@@ -248,19 +248,18 @@
 
     ipcRenderer.on("get-initial-volume-response", (event, data) => {
       volume = parseFloat(data.volume);
+      console.log("config stored volume ", volume)
     });
 
     ipcRenderer.on("set-volume", (event, data) => {
       if (player != undefined || player != null) {
         let vol = player.audioElement.volume;
-        console.log("current volume", vol);
         if (data.direction == "up" && vol < 1) {
           vol = vol + 0.1;
         }
         if (data.direction == "down" && vol > 0) {
           vol = vol - 0.1;
         }
-        console.log("new volume", vol);
         player.audioElement.volume = vol;
         ipcRenderer.send("set-volume-response", {
           volume: vol,
@@ -278,7 +277,43 @@
           status: "stopped",
         });
       }
+      volume = player.audioElement.volume;
+      console.log("renderer stored volume ", volume)
     });
+
+    ipcRenderer.on("toggle-mute", (event, arg) => {
+      console.log("hello world")
+      if (player != undefined || player != null) {
+        console.log(player.audioElement.volume)
+        if (player.audioElement.volume == 0) {
+          player.audioElement.volume = volume
+          ipcRenderer.send("set-volume-response", {
+            volume: volume,
+            status: player.state,
+          });
+        } else {
+          player.audioElement.volume = 0
+          ipcRenderer.send("set-volume-response", {
+            volume: 0,
+            status: player.state,
+          });
+        }
+      } else {
+        if (player.audioElement.volume == 0) {
+          player.audioElement.volume = volume
+          ipcRenderer.send("set-volume-response", {
+            volume: volume,
+            status: "stopped",
+          });
+        } else {
+          player.audioElement.volume = 0
+          ipcRenderer.send("set-volume-response", {
+            volume: 0,
+            status: "stopped",
+          });
+        }
+      }
+    })
 
     ipcRenderer.on("stop", (event, data) => {
       if (player != undefined || player != null) {
