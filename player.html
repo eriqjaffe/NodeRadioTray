@@ -184,6 +184,7 @@
         //ipcRenderer.send('reset', null)
         $("#logWindow").append("<span class='error'>"+new Date().toISOString()+": "+message+"</span><br/>")
         ipcRenderer.send("error-notification", message);
+        ipcRenderer.send('set-tooltip', { playing: false })
       };
 
       const onRetryTimeout = (message, error) => {
