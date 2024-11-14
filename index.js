@@ -921,7 +921,7 @@ ipcMain.on('set-tooltip', (event, data) => {
     }
   } else {
     if (htmlToolTip) {
-      tooltipWindow.webContents.send('tooltip-update', { playing: false })
+      tooltipWindow.webContents.send('tooltip-update', { playing: false, image: playingIcon })
     }
     tray.setImage(idleIcon);
     toggleButtons(false)

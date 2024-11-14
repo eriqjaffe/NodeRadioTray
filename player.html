@@ -202,6 +202,7 @@
         $("#playerState").html(player.state);
         $(".display").html("");
         $("#logWindow").append("<span class='ok'>"+new Date().toISOString()+": Stream stopped</span><br/>")
+        ipcRenderer.send('set-tooltip', { playing: false })
       };
 
       const onPlay = (message) => {

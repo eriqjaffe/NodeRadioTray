@@ -94,11 +94,12 @@
       } else {
         $("#streamTitle").html("");
         $("#streamTitle").css("display", "none");
-        if ($("html").css("background-color") == "rgb(240, 240, 240)") {
+        $("#stationIcon").attr("src", data.image.replace(".ico", ".png"));
+        /* if ($("html").css("background-color") == "rgb(240, 240, 240)") {
           $("#stationIcon").attr("src", "images/playing.png");
         } else {
           $("#stationIcon").attr("src", "images/playing_white.png");
-        }
+        } */
       }
     });
 
