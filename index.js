@@ -22,13 +22,15 @@ const iconFolder = path.join(userData,"icons")
 const helpInfo = `
 Options:
   -P, --play      Begins playing the last played station
+  -H, --help      Displays this information
+
+The following options are also available if NodeRadioTray is currently running:
   -S, --stop      Stops playback
   -U, --volup     Raises the stream's volume
   -D, --voldown   Lowers the streams' volume
   -M, --mute      Mutes the stream
   -N, --next      Switches to the next station in the bookmark file
   -R, --prev      Switches to the previous station in the bookmark file
-  -H, --help      Displays this information
 `;
 
 if (!gotTheLock) {
@@ -444,7 +446,7 @@ const createTray = () => {
 
 }
 
-const fadeIn = (window, duration = 250) => {
+/* const fadeIn = (window, duration = 250) => {
   let opacity = 0;
   window.setOpacity(opacity);
   window.show();
@@ -479,6 +481,50 @@ const fadeOut = (window, duration = 250) => {
       }
     }
   }, 10);
+}; */
+
+const fadeIn = (window, duration = 250) => {
+  if (!window || window.isDestroyed()) return; // Check if the window exists and is not destroyed
+  let opacity = 0;
+  window.setOpacity(opacity);
+  window.show();
+
+  const increment = 1 / (duration / 10);
+  const fadeInterval = setInterval(() => {
+    if (window.isDestroyed()) {
+      clearInterval(fadeInterval);
+      return;
+    }
+
+    opacity += increment;
+    if (opacity >= 1) {
+      window.setOpacity(1);
+      clearInterval(fadeInterval);
+    } else {
+      window.setOpacity(opacity);
+    }
+  }, 10);
+};
+
+const fadeOut = (window, duration = 250) => {
+  if (!window || window.isDestroyed()) return; // Check if the window exists and is not destroyed
+  let opacity = 1;
+  const decrement = 1 / (duration / 10);
+  const fadeInterval = setInterval(() => {
+    if (window.isDestroyed()) {
+      clearInterval(fadeInterval);
+      return;
+    }
+
+    opacity -= decrement;
+    if (opacity <= 0) {
+      window.setOpacity(0);
+      window.hide();
+      clearInterval(fadeInterval);
+    } else {
+      window.setOpacity(opacity);
+    }
+  }, 10);
 };
 
 const positionTooltipWindow = () => {
@@ -502,26 +548,6 @@ const positionTooltipWindow = () => {
 };
 
 app.whenReady().then(() => {
-  const args = process.argv;
-  const validCommands = ['-H', '--help'];
-  const foundCommands = args.filter(arg => validCommands.includes(arg));
-  if (foundCommands.length > 1) {
-    console.log(`Multiple commands detected (${foundCommands.join(', ')}). Only the first command will be executed.`);
-  }
-  const command = foundCommands[0];
-  switch (command) {
-    case "-H":
-      console.log(helpInfo);
-      break;
-    case "--help":
-      console.log(helpInfo)
-      break
-  }
-  /* if (args.includes('--help') || args.includes(
-  )) {
-    console.log("First instance: Displaying help information in the console...");
-    console.log(helpInfo);  // Directly log help info to the console
-  } */
   if (process.platform == "darwin") {
     setIconTheme(nativeTheme.shouldUseDarkColors)
   } else {
@@ -566,19 +592,6 @@ app.whenReady().then(() => {
   });
   tooltipWindow.setMenu(null)
   tooltipWindow.loadFile('tooltip.html')
-  
-/*   tooltipWindow.webContents.on('did-finish-load', () => {
-    //tooltipWindow.webContents.openDevTools({ mode: 'detach' })
-    tooltipWindow.webContents.send('set-theme', {dark: darkIcon, initial: true })
-    tooltipWindow.webContents.executeJavaScript(`
-      let div = document.getElementById('textDiv');
-      div.offsetWidth;
-    `).then(width => {
-      // Set a minimum width if needed, to prevent excessive shrinking
-      const minWidth = 216;
-      tooltipWindow.setSize(Math.max(width, minWidth)+86, tooltipWindow.getBounds().height);
-    });
-  }); */
 
   playerWindow = new BrowserWindow({
     width: 1024,
@@ -608,6 +621,28 @@ app.whenReady().then(() => {
   })
 
   toggleMMKeys(store.get("mmkeys"))
+
+  const args = process.argv;
+  const validCommands = ['-H', '--help', '-P', '--play'];
+  const foundCommands = args.filter(arg => validCommands.includes(arg));
+  if (foundCommands.length > 1) {
+    console.log(`Multiple commands detected (${foundCommands.join(', ')}). Only the first command will be executed.`);
+  }
+  const command = foundCommands[0];
+  switch (command) {
+    case "-H":
+      console.log(helpInfo);
+      break;
+    case "--help":
+      console.log(helpInfo)
+      break
+    case "--P":
+      console.log(store.get('lastStation'))
+      playStream(store.get('lastStation'), store.get('lastURL'))
+    case "--play":
+      console.log(store.get('lastStation'))
+      playStream(store.get('lastStation'), store.get('lastURL'))
+  }
 })
 
 app.on('activate', () => {})
