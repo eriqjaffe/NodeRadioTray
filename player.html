@@ -19,6 +19,7 @@
     let player;
     let volume = 1.0;
     let audioOuput = "default"
+    let deviceChangeTimeout;
   </script>
   <style>
     body {
@@ -139,8 +140,6 @@
   <script>
     ipcRenderer.on("play", (event, data) => {
       if (player != undefined || player != null) {
-        //console.log("stopping...")
-        //player.stop();
         player.detachAudioElement()
       }
 
@@ -184,7 +183,6 @@
       };
 
       const onWarn = (message) => {
-        console.log(message);
         $("#logWindow").append("<span class='warn'>"+new Date().toISOString()+": "+message+"</span><br/>")
       };
 
@@ -198,7 +196,7 @@
       };
 
       const onRetryTimeout = (message, error) => {
-        console.log("retry timeout", error);
+        $("#logWindow").append("<span class='error'>"+new Date().toISOString()+": "+error+"</span><br/>")
       };
 
       const onStream = (message) => {
@@ -216,9 +214,7 @@
         ipcRenderer.send('set-tooltip', { playing: false })
       };
 
-      const onLoad = (message) => {
-        console.log(message)
-      }
+      const onLoad = (message) => {}
 
       const onPlay = (message) => {
         $("#playerState").html(player.state);
@@ -358,13 +354,11 @@
       if (typeof audioElement.setSinkId !== "undefined") {
           try {
               await audioElement.setSinkId(deviceId);
-              console.log(`Audio output routed to device: ${deviceId}`);
+              $("#logWindow").append("<span class='ok'>"+new Date().toISOString()+`: Audio output routed to device: ${deviceId}</span><br/>`)
           } catch (error) {
-              console.error(`Error setting sink ID: ${error}`);
+              $("#logWindow").append("<span class='error'>"+new Date().toISOString()+`: Error setting sink ID: ${error}</span><br/>`)
           }
-      } else {
-          console.error("Browser does not support output device selection.");
-      }
+      } 
     } 
 
     async function sendAudioDevices() {
@@ -372,6 +366,12 @@
       const audioOutputDevices = devices.filter(device => device.kind === "audiooutput");
       ipcRenderer.send("audio-devices-list", JSON.stringify(audioOutputDevices));
     }
+
     sendAudioDevices();
+
+    navigator.mediaDevices.ondevicechange = async () => {
+      $("#logWindow").append("<span class='ok'>"+new Date().toISOString()+`: Audio outputs have changed</span><br/>`)
+      await sendAudioDevices();  // Re-fetch the list of audio output devices
+    };
   </script>
 </html>
