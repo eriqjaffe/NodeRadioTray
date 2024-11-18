@@ -1,5 +1,5 @@
 if(require('electron-squirrel-startup')) return;
-const { app, Menu, Tray, nativeImage, shell, globalShortcut, BrowserWindow, ipcMain, dialog } = require('electron')
+const { nativeTheme, app, Menu, Tray, nativeImage, shell, globalShortcut, BrowserWindow, ipcMain, dialog, screen } = require('electron')
 const fs = require('fs');
 const Store = require("electron-store");
 const chokidar = require("chokidar");
@@ -15,8 +15,78 @@ const PLS = parsers.PLS;
 const ASX = parsers.ASX
 const log = require('electron-log/main');
 
+const gotTheLock = app.requestSingleInstanceLock();
 const userData = app.getPath('userData');
 const iconFolder = path.join(userData,"icons")
+
+const helpInfo = `
+Options:
+  -P, --play      Begins playing the last played station
+  -H, --help      Displays this information
+
+The following options are also available if NodeRadioTray is currently running:
+  -S, --stop      Stops playback
+  -U, --volup     Raises the stream's volume
+  -D, --voldown   Lowers the streams' volume
+  -M, --mute      Mutes the stream
+  -N, --next      Switches to the next station in the bookmark file
+  -R, --prev      Switches to the previous station in the bookmark file
+`;
+
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    const validCommands = ['-S', '-P', '-U', '-D', '-M', '-N', '-R', '--stop', '--play', '--volup', '--voldown', '--mute', '--next', '--prev'];
+    const foundCommands = commandLine.filter(arg => validCommands.includes(arg));
+    const command = foundCommands[0];
+    switch(command) {
+      case '-S':
+        toggleButtons(false);
+        break;
+      case '-P':
+        playStream(store.get('lastStation'), store.get('lastURL'));
+        break;
+      case '-N':
+        changeStation("forward")
+        break;
+      case '-R':
+        changeStation('backward')
+        break;
+      case '-U':
+        changeVolume('up')
+        break;
+      case '-D':
+        changeVolume('down')
+        break;
+      case '-M':
+        playerWindow.webContents.send('toggle-mute', null)
+        break;
+      case '--stop':
+        toggleButtons(false);
+        break;
+      case '--play':
+        playStream(store.get('lastStation'), store.get('lastURL'));
+        break;
+      case '--next':
+        changeStation("forward")
+        break;
+      case '--prev':
+        changeStation('backward')
+        break;
+      case '--volup':
+        changeVolume('up')
+        break;
+      case '--voldown':
+        changeVolume('down')
+        break;
+      case '--mute':
+        playerWindow.webContents.send('toggle-mute', null)
+        break;
+    }
+  });
+}
+
 const store = new Store()
 const AutoLauncher = new AutoLaunch(
   {name: 'NodeRadioTray'}
@@ -51,12 +121,14 @@ let tray
 let editorWindow;
 let aboutWindow;
 let playerWindow;
+let tooltipWindow;
 let bookmarksArr = []
+let currentStreamData;
 
 initializeWatcher();
 
 var darkIcon = (store.get("darkicon") == true) ? true : false;
-setIconTheme(darkIcon);
+var htmlToolTip = (store.get("html_tooltip") == true) ? true : false;
 
 if (!store.has("notifications")) {
   store.set("notifications", false)
@@ -68,6 +140,7 @@ const prefsTemplate = [
     click: e => {
       store.set("darkicon", e.checked)
       setIconTheme(e.checked)
+      tooltipWindow.webContents.send('set-theme', { dark: e.checked, initial: false })
       if (stream == null) {
         tray.setImage(idleIcon)
       } else {
@@ -77,6 +150,43 @@ const prefsTemplate = [
     type: "checkbox",
     checked: (store.get("darkicon") == true) ? true : false,
     visible: (process.platform == "darwin" ? false : true)
+  },
+  {
+    label: 'Use HTML tooltip',
+    click: e => {
+      if (store.get("suppress-tooltip-confirmation") === true) {
+        store.set("html_tooltip", e.checked)
+        if (e.checked) {
+          enableFakeTooltip()
+        } else {
+          //tray.setToolTip('NodeRadioTray')
+          disableFakeTooltip()
+        }
+        app.quit();
+        app.relaunch();
+      } else {
+        dialog.showMessageBox(null, {
+          type: 'question',
+          message: "This will cause NodeRadioTray to restart",
+          buttons: ['OK'],
+          checkboxLabel: 'Don\'t show this again',
+          checkboxChecked: false
+        }).then(result => {
+          store.set("html_tooltip", e.checked)
+          store.set("suppress-tooltip-confirmation", result.checkboxChecked)
+          if (e.checked) {
+            enableFakeTooltip()
+          } else {
+            //tray.setToolTip('NodeRadioTray')
+            disableFakeTooltip()
+          }
+          app.quit();
+          app.relaunch();
+        })
+      }     
+    },
+    type: "checkbox",
+    checked: (store.get("html_tooltip") == true) ? true : false
   },
   {
     label: 'Auto play last station on startup',
@@ -175,10 +285,10 @@ var menuTemplate = [
     click: e => {
       fs.copyFile(path.join(__dirname, '/bookmarks.json'), userData+'/bookmarks.json', (err) => {
         if (err) {
-          console.log(err)
+          errorLog.error(err)
         } else {
           reloadBookmarks();
-          console.log("file copied successfully")
+          errorLog.info("Bookmarks restored successfully")
         }
       })
     },
@@ -252,6 +362,19 @@ var menuTemplate = [
     icon: path.join(__dirname, '/images/icons8-Rewind.png'),
     visible: false
   },
+  {
+    label: "Google This Track",
+    id: "googleIt",
+    click: async() => {
+      let foo = currentStreamData.data.split("\r\n")
+      let parts = foo[1].trim().split(" - ");
+      let left = `"${parts[0].trim().replace(/ /g, "+")}"`;
+      let right = `"${parts[1].trim().replace(/ /g, "+").replace(/ /g, "_")}"`;
+      shell.openExternal(`https://www.google.com/search?q=${left}+${right}`)
+    },
+    icon: path.join(__dirname, '/images/icons8-google.png'),
+    visible: false
+  },
   { 
     type: 'separator'
   },
@@ -294,15 +417,135 @@ const createTray = () => {
   tray = new Tray(idleIcon)
   
   contextMenu = Menu.buildFromTemplate(menuTemplate)
-  tray.setToolTip('NodeRadioTray')
+  if (!htmlToolTip) {
+    tray.setToolTip('NodeRadioTray')
+  }
   tray.setContextMenu(contextMenu)
 
   tray.on("click", function(e) {
     tray.popUpContextMenu(contextMenu)
   })
+
+  if (htmlToolTip) {
+    tray.on('mouse-enter', function(e) {
+      positionTooltipWindow();
+      fadeIn(tooltipWindow);
+    })
+  
+    tray.on('mouse-leave', function(e) {
+      fadeOut(tooltipWindow)
+    })
+  }
+
 }
 
+/* const fadeIn = (window, duration = 250) => {
+  let opacity = 0;
+  window.setOpacity(opacity);
+  window.show();
+
+  const increment = 1 / (duration / 10);
+  const fadeInterval = setInterval(() => {
+    opacity += increment;
+    if (opacity >= 1) {
+      window.setOpacity(1);
+      clearInterval(fadeInterval);
+    } else {
+      window.setOpacity(opacity);
+    }
+  }, 10);
+};
+
+// Fade-out function
+const fadeOut = (window, duration = 250) => {
+  let opacity = 1;
+  const decrement = 1 / (duration / 10);
+  const fadeInterval = setInterval(() => {
+    opacity -= decrement;
+    if (opacity <= 0) {
+      if (window) {
+        window.setOpacity(0);
+        window.hide();
+        clearInterval(fadeInterval);
+      }
+    } else {
+      if (window) {
+        window.setOpacity(opacity);
+      }
+    }
+  }, 10);
+}; */
+
+const fadeIn = (window, duration = 250) => {
+  if (!window || window.isDestroyed()) return; // Check if the window exists and is not destroyed
+  let opacity = 0;
+  window.setOpacity(opacity);
+  window.show();
+
+  const increment = 1 / (duration / 10);
+  const fadeInterval = setInterval(() => {
+    if (window.isDestroyed()) {
+      clearInterval(fadeInterval);
+      return;
+    }
+
+    opacity += increment;
+    if (opacity >= 1) {
+      window.setOpacity(1);
+      clearInterval(fadeInterval);
+    } else {
+      window.setOpacity(opacity);
+    }
+  }, 10);
+};
+
+const fadeOut = (window, duration = 250) => {
+  if (!window || window.isDestroyed()) return; // Check if the window exists and is not destroyed
+  let opacity = 1;
+  const decrement = 1 / (duration / 10);
+  const fadeInterval = setInterval(() => {
+    if (window.isDestroyed()) {
+      clearInterval(fadeInterval);
+      return;
+    }
+
+    opacity -= decrement;
+    if (opacity <= 0) {
+      window.setOpacity(0);
+      window.hide();
+      clearInterval(fadeInterval);
+    } else {
+      window.setOpacity(opacity);
+    }
+  }, 10);
+};
+
+const positionTooltipWindow = () => {
+  const trayBounds = tray.getBounds();  // Gets the position of the tray icon
+  const display = screen.getDisplayNearestPoint({ x: trayBounds.x, y: trayBounds.y });
+  const displayBounds = display.bounds;
+
+  let x = trayBounds.x + trayBounds.width / 2 - tooltipWindow.getBounds().width / 2;
+  let y;
+
+  // Check if tray icon is in the upper half or lower half of the screen
+  if (trayBounds.y < displayBounds.height / 2) {
+    // Position below the tray icon
+    y = trayBounds.y + trayBounds.height + 5;  // A slight offset
+  } else {
+    // Position above the tray icon
+    y = trayBounds.y - tooltipWindow.getBounds().height - 5;  // A slight offset
+  }
+
+  tooltipWindow.setPosition(Math.round(x), Math.round(y));
+};
+
 app.whenReady().then(() => {
+  if (process.platform == "darwin") {
+    setIconTheme(nativeTheme.shouldUseDarkColors)
+  } else {
+    setIconTheme(darkIcon);
+  }
   if (store.get("checkForUpdates") == true) {
     versionCheck(updateOptions, function (error, update) {
       if (error) {
@@ -325,10 +568,29 @@ app.whenReady().then(() => {
 
   createTray()
 
+  tooltipWindow = new BrowserWindow({
+    //width: auto,
+    hasShadow: false,
+    height: 75,
+    show: false,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    opacity: 0,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+    }
+  });
+  tooltipWindow.setMenu(null)
+  tooltipWindow.loadFile('tooltip.html')
+
   playerWindow = new BrowserWindow({
     width: 1024,
-    height: 800,
+    height: 480,
     show: false,
+    skipTaskbar: true,
     icon: path.join(__dirname, 'images/playing.ico'),
     webPreferences: {
       nodeIntegration: true,
@@ -337,7 +599,8 @@ app.whenReady().then(() => {
   })
   playerWindow.setMenu(null)
   playerWindow.loadFile('player.html')
-  playerWindow.webContents.openDevTools({ mode: 'bottom' })
+  //playerWindow.webContents.openDevTools({ mode: 'bottom' })
+  //playerWindow.show()
 
   playerWindow.on('close', (event) => {
     event.preventDefault(); // Prevent the window from closing
@@ -351,6 +614,23 @@ app.whenReady().then(() => {
   })
 
   toggleMMKeys(store.get("mmkeys"))
+
+  const args = process.argv;
+  const validCommands = ['-H', '--help', '-P', '--play'];
+  const foundCommands = args.filter(arg => validCommands.includes(arg));
+  const command = foundCommands[0];
+  switch (command) {
+    case "-H":
+      console.log(helpInfo);
+      break;
+    case "--help":
+      console.log(helpInfo)
+      break
+    case "--P":
+      playStream(store.get('lastStation'), store.get('lastURL'))
+    case "--play":
+      playStream(store.get('lastStation'), store.get('lastURL'))
+  }
 })
 
 app.on('activate', () => {})
@@ -441,6 +721,7 @@ function showAbout() {
     aboutWindow = new BrowserWindow({
       width: 800,
       height: 600,
+      skipTaskbar: true,
       icon: path.join(__dirname, 'images/playing.ico'),
       webPreferences: {
         nodeIntegration: true,
@@ -471,6 +752,7 @@ function editBookmarksGui() {
       width: 800,
       height: 650,
       icon: path.join(__dirname, 'images/playing.ico'),
+      skipTaskbar: true,
       webPreferences: {
         nodeIntegration: true,
         contextIsolation: false
@@ -478,7 +760,7 @@ function editBookmarksGui() {
     })
     editorWindow.setMenu(null)
     editorWindow.loadFile('stationeditor.html');
-    editorWindow.webContents.openDevTools({ mode: 'detach' })
+    //editorWindow.webContents.openDevTools({ mode: 'detach' })
     editorWindow.on('close', (event) => {
       event.preventDefault()
       editorWindow.webContents.send('check-tree');
@@ -490,7 +772,9 @@ function editBookmarksGui() {
 
 async function playStream(streamName, url) {
   try {
-    tray.setToolTip("NodeRadioTray");
+    if (!htmlToolTip) {
+      tray.setToolTip("NodeRadioTray");
+    }
     tray.setImage(idleIcon);
     const streamUrl = await extractURLfromPlaylist(url);
     playerWindow.webContents.send("play", { streamName: streamName, url: streamUrl, volume: store.get("lastVolume") });
@@ -513,6 +797,7 @@ function toggleButtons(state) {
   volDownButton = contextMenu.getMenuItemById('volumeDown')
   nextButton = contextMenu.getMenuItemById('nextButton')
   previousButton = contextMenu.getMenuItemById('previousButton')
+  googleIt =  contextMenu.getMenuItemById('googleIt')
   if (state == true) {
     playButton.visible = false;
     stopButton.visible = true;
@@ -521,6 +806,7 @@ function toggleButtons(state) {
     volDownButton.visible = true;
     nextButton.visible = true;
     previousButton.visible = true;
+    googleIt.visible = true;
     tray.setImage(playingIcon);
     tray.setContextMenu(contextMenu)
   } else {
@@ -531,8 +817,11 @@ function toggleButtons(state) {
     volDownButton.visible = false;
     nextButton.visible = false;
     previousButton.visible = false;
+    googleIt.visible = false;
     tray.setImage(idleIcon);
-    tray.setToolTip("NodeRadioTray");
+    if (!htmlToolTip) {
+      tray.setToolTip("NodeRadioTray");
+    }
     menuTemplate[9].label = "Play "+store.get("lastStation")
     contextMenu = Menu.buildFromTemplate(menuTemplate)
     tray.setContextMenu(contextMenu)
@@ -688,6 +977,32 @@ async function extractURLfromPlaylist(url) {
   }
 }
 
+ipcMain.on('toggle-dev-tools', (event, arg) => {
+  if (playerWindow.webContents.isDevToolsOpened()) {
+    playerWindow.webContents.closeDevTools();
+    playerWindow.setSize(1024, 480);
+    playerWindow.webContents.send('dev-tool-state', "Open Dev Console")
+  } else {
+    playerWindow.setSize(1024, 780);
+    playerWindow.webContents.openDevTools({ mode: 'bottom' });
+    playerWindow.webContents.send('dev-tool-state', "Close Dev Console")
+  }
+  centerPlayerWindow(playerWindow.getBounds().height)
+})
+
+function centerPlayerWindow(height) {
+  const currentWindowBounds = playerWindow.getBounds();
+  const currentDisplay = screen.getDisplayNearestPoint({ x: currentWindowBounds.x, y: currentWindowBounds.y });
+  const { width: displayWidth, height: displayHeight } = currentDisplay.workAreaSize;
+  const newX = Math.round(currentDisplay.workArea.x + (displayWidth - 1024) / 2);
+  const newY = Math.round(currentDisplay.workArea.y + (displayHeight - height) / 2);
+  playerWindow.setPosition(newX, newY);
+}
+
+ipcMain.on('set-tooltip-width', (event, width) => {
+  tooltipWindow.setSize(width, tooltipWindow.getBounds().height);
+});
+
 ipcMain.on('extract-url', async (event, data) => {
   try {
     let url = await extractURLfromPlaylist(data.url);
@@ -734,18 +1049,27 @@ ipcMain.on('get-app-version', (event, response) => {
 })
 
 ipcMain.on('set-tooltip', (event, data) => {
-  console.log(data)
+  currentStreamData = data;
+  let bookmarks = JSON.parse(fs.readFileSync(userData+'/bookmarks.json'));
+  let iconImage = findImageByName(data.streamName, bookmarks)
+  let defaultImage = path.join(__dirname, 'images/playing.png')
+  if (darkIcon == false) {
+    defaultImage = path.join(__dirname, 'images/playing_white.png')
+  }
+  let icon = (iconImage == null) ? defaultImage : path.join(userData,'icons',iconImage)
+  
   if (data.playing) {
+    toggleButtons(true)
     tray.setImage(playingIcon);
-    tray.setToolTip(data.data)
+    if (!htmlToolTip) {
+      tray.setToolTip(data.data)
+    } else {
+      tooltipWindow.webContents.send('tooltip-update', {playing: data.playing, data: data.data, streamName: data.streamName, image: icon})
+    }
     if (store.get("metadataLog") == true) {
       log.info(data.data.replace("\r\n"," - "))
     }
-    if (store.get("notifications") == false) {
-      let bookmarks = JSON.parse(fs.readFileSync(userData+'/bookmarks.json'));
-      let iconImage = findImageByName(data.streamName, bookmarks)
-      let icon = (iconImage == null) ? path.join(__dirname, 'images/playing.png') : path.join(userData,'icons',iconImage)
-      console.log(icon)
+    if (store.get("notifications") == true) {
       notifier.notify(
         {
           title: 'NodeRadioTray',
@@ -757,6 +1081,9 @@ ipcMain.on('set-tooltip', (event, data) => {
       );
     }
   } else {
+    if (htmlToolTip) {
+      tooltipWindow.webContents.send('tooltip-update', { playing: false, image: playingIcon })
+    }
     tray.setImage(idleIcon);
     toggleButtons(false)
   }
@@ -772,12 +1099,11 @@ ipcMain.on('get-icon-file', (event, data) => {
 	}
 	dialog.showOpenDialog(null, options).then(result => {
 		  if(!result.canceled) {
-        console.log(result.filePaths[0])
         try {
           fs.copyFileSync(result.filePaths[0], path.join(iconFolder,path.basename(result.filePaths[0])))
           editorWindow.webContents.send("get-icon-file-response", {id: data, image: path.basename(result.filePaths[0])})
         } catch (err) {
-          console.log(err)
+          errorLog.error(err)
         }
       } else {
         
@@ -789,11 +1115,32 @@ function findImageByName(targetName, bookmarks) {
   for (const category of bookmarks) {
       for (const bookmark of category.bookmark) {
           if (bookmark.name === targetName) {
-              return bookmark.img || null;
+            return bookmark.img || null;
           }
       }
   }
-  return "no image"; // Return null if the name is not found
+  return null; // Return null if the name is not found
+}
+
+function onMouseEnter() {
+  positionTooltipWindow();
+  fadeIn(tooltipWindow);
+}
+
+function onMouseLeave() {
+  fadeOut(tooltipWindow);
+}
+
+function enableFakeTooltip() {
+  tray.setToolTip('')
+  tray.on('mouse-enter', onMouseEnter);
+  tray.on('mouse-leave', onMouseLeave);
+}
+
+function disableFakeTooltip() {
+  tray.setToolTip('NodeRadioTray')
+  tray.removeListener('mouse-enter', onMouseEnter);
+  tray.removeListener('mouse-leave', onMouseLeave);
 }
 
 ipcMain.on('error-notification', (event, data) => {

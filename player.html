@@ -24,6 +24,7 @@
         font-family: "Outfit", sans-serif;
         background-color: #f0f0f0;
         font-size: 0.8em;
+        overflow: hidden;
     }
 
     .leftCell {
@@ -124,6 +125,11 @@
             <td class="leftCell">sampleRate</td>
             <td class="display" id="sampleRate"></td>
         </tr>
+        <tr>
+            <td colspan="2" style="text-align: center; padding-top:5px;">
+              <input type="button" id="toggleDevTools" value="Open Dev Console">
+            </td>
+        </tr>
         </table>
     </div>
     <div id="logWindow" style="width:59%; height: 450px; float:right; position:relative;"></div>
@@ -131,7 +137,9 @@
   <script>
     ipcRenderer.on("play", (event, data) => {
       if (player != undefined || player != null) {
-        player.stop();
+        //console.log("stopping...")
+        //player.stop();
+        player.detachAudioElement()
       }
 
       const onMetadata = (metadata) => {
@@ -150,7 +158,6 @@
           ipcRenderer.send("set-tooltip", {
             playing: true,
             data: data.streamName,
-            streamName: data.streamName
           });
         }
       };
@@ -185,6 +192,7 @@
         //ipcRenderer.send('reset', null)
         $("#logWindow").append("<span class='error'>"+new Date().toISOString()+": "+message+"</span><br/>")
         ipcRenderer.send("error-notification", message);
+        ipcRenderer.send('set-tooltip', { playing: false })
       };
 
       const onRetryTimeout = (message, error) => {
@@ -203,7 +211,12 @@
         $("#playerState").html(player.state);
         $(".display").html("");
         $("#logWindow").append("<span class='ok'>"+new Date().toISOString()+": Stream stopped</span><br/>")
+        ipcRenderer.send('set-tooltip', { playing: false })
       };
+
+      const onLoad = (message) => {
+        console.log(message)
+      }
 
       const onPlay = (message) => {
         $("#playerState").html(player.state);
@@ -211,6 +224,7 @@
       };
 
       player = new IcecastMetadataPlayer(data.url, {
+        onLoad,
         onMetadata,
         onCodecUpdate,
         onWarn,
@@ -225,9 +239,15 @@
         metadataTypes: ["icy"],
       });
 
-      player.audioElement.volume = data.volume;
-      player.play();
+      sleep(500).then(() => {
+        player.audioElement.volume = data.volume;
+        player.play();
+      }); 
     });
+
+    function sleep (time) {
+      return new Promise((resolve) => setTimeout(resolve, time));
+    }
 
     ipcRenderer.send("get-initial-volume", null);
 
@@ -238,14 +258,12 @@
     ipcRenderer.on("set-volume", (event, data) => {
       if (player != undefined || player != null) {
         let vol = player.audioElement.volume;
-        console.log("current volume", vol);
         if (data.direction == "up" && vol < 1) {
           vol = vol + 0.1;
         }
         if (data.direction == "down" && vol > 0) {
           vol = vol - 0.1;
         }
-        console.log("new volume", vol);
         player.audioElement.volume = vol;
         ipcRenderer.send("set-volume-response", {
           volume: vol,
@@ -263,7 +281,40 @@
           status: "stopped",
         });
       }
+      volume = player.audioElement.volume;
     });
+
+    ipcRenderer.on("toggle-mute", (event, arg) => {
+      if (player != undefined || player != null) {
+        if (player.audioElement.volume == 0) {
+          player.audioElement.volume = volume
+          ipcRenderer.send("set-volume-response", {
+            volume: volume,
+            status: player.state,
+          });
+        } else {
+          player.audioElement.volume = 0
+          ipcRenderer.send("set-volume-response", {
+            volume: 0,
+            status: player.state,
+          });
+        }
+      } else {
+        if (player.audioElement.volume == 0) {
+          player.audioElement.volume = volume
+          ipcRenderer.send("set-volume-response", {
+            volume: volume,
+            status: "stopped",
+          });
+        } else {
+          player.audioElement.volume = 0
+          ipcRenderer.send("set-volume-response", {
+            volume: 0,
+            status: "stopped",
+          });
+        }
+      }
+    })
 
     ipcRenderer.on("stop", (event, data) => {
       if (player != undefined || player != null) {
@@ -280,13 +331,19 @@
     });
 
     ipcRenderer.on("mm-get-player-status", (event, data) => {
-      console.log(player);
-      console.log(player.state);
       if (player != undefined) {
         ipcRenderer.send("mm-get-player-status-response", player.state);
       } else {
         ipcRenderer.send("mm-get-player-status-response", "stopped");
       }
     });
+
+    ipcRenderer.on('dev-tool-state', (event, data) => {
+      $("#toggleDevTools").val(data)
+    })
+
+    $("#toggleDevTools").on("click", function(e) {
+      ipcRenderer.send('toggle-dev-tools', null)
+    })
   </script>
 </html>
