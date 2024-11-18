@@ -305,7 +305,8 @@ var menuTemplate = [
     id: 'devicesMenu',
     label: 'Audio Outputs',
     submenu: [],
-    icon: path.join(__dirname, 'images/icons8-speaker.png')
+    icon: path.join(__dirname, 'images/icons8-speaker.png'),
+    visible: true
   },
   { 
     type: 'separator'
@@ -986,26 +987,13 @@ async function extractURLfromPlaylist(url) {
 
 ipcMain.on("audio-devices-list", (event, devices) => {
   const parsedDevices = JSON.parse(devices);
-  const labels = parsedDevices.map(device => device.label || "Unknown Device");
-  /* const submenuItems = labels.map((label, index) => ({
-      label: label || `Device ${index + 1}`, // Fallback for empty labels
-      type: 'radio', // Optional: Use 'radio' for exclusive selection
-      click: () => {
-          console.log(`Selected audio output: ${label}`);
-          playerWindow.webContents.send('change-audio-output', label)
-          // Handle the audio routing logic here
-      }
-  })); */
   const submenuItems = parsedDevices.map((device, index) => ({
     label: device.label || `Device ${index + 1}`, // Fallback for empty labels
     type: 'radio', // Use 'radio' for mutually exclusive selection
     click: () => {
-        console.log(`Selected audio output: ${device.deviceId}`);
         playerWindow.webContents.send('change-audio-output', device.deviceId);
-        // Handle the audio routing logic here
     }
   }));
-  console.log(submenuItems)
   menuTemplate[8].submenu = submenuItems
   contextMenu = Menu.buildFromTemplate(menuTemplate)
   tray.setContextMenu(contextMenu)

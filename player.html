@@ -133,6 +133,7 @@
         </tr>
         </table>
     </div>
+    <audio id="audioElement"></audio>
     <div id="logWindow" style="width:59%; height: 450px; float:right; position:relative;"></div>
   </body>
   <script>
@@ -236,6 +237,7 @@
         onStop,
         onPlay,
         retryTimeout: 0,
+        audioElement: document.getElementById('audioElement'),
         enableLogging: true,
         metadataTypes: ["icy"],
       });
@@ -345,19 +347,34 @@
 
     ipcRenderer.on('change-audio-output', (event, data) => {
       console.log(data)
-      //const audioElement = document.querySelector("audio");
-      if (player) {
+      setAudioOutputDevice(data)
+      /* if (player) {
+        console.log(audioElement)
         console.log(player.audioElement)
         console.log("i'd change it to "+data)
       } else {
         console.log("no active player")
         console.log("but i'd change it to "+data)
-      }
+      } */
     })
 
     $("#toggleDevTools").on("click", function(e) {
       ipcRenderer.send('toggle-dev-tools', null)
     })
+
+    async function setAudioOutputDevice(deviceId) {
+      const audioElement = document.querySelector("audio");
+      if (typeof audioElement.setSinkId !== "undefined") {
+          try {
+              await audioElement.setSinkId(deviceId);
+              console.log(`Audio output routed to device: ${deviceId}`);
+          } catch (error) {
+              console.error(`Error setting sink ID: ${error}`);
+          }
+      } else {
+          console.error("Browser does not support output device selection.");
+      }
+    } 
 
     async function sendAudioDevices() {
       const devices = await navigator.mediaDevices.enumerateDevices();
