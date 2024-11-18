@@ -894,6 +894,16 @@ function initializeWatcher() {
       });
     }
   }
+  if (!fs.existsSync(userData+'/tooltip.css')) {
+    try {
+      fs.copyFileSync(path.join(__dirname, '/scripts/tooltip.css'), userData+'/tooltip.css');
+    } catch (error) {
+      errorLog.error(error)
+      .catch(error => {
+        errorLog.error(error)
+      });
+    }
+  }
   watcher.add(userData+'/bookmarks.json',
     { awaitWriteFinish: true })
     .on('ready', function() {});
@@ -984,6 +994,10 @@ async function extractURLfromPlaylist(url) {
     return url;
   }
 }
+ipcMain.handle('get-css-path', () => {
+  const userDataPath = app.getPath('userData');
+  return path.join(userData, 'tooltip.css'); // assuming the file is named 'styles.css'
+});
 
 ipcMain.on("audio-devices-list", (event, devices) => {
   const defaultDevice = store.get('defaultAudioDevice', "default")

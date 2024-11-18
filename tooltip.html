@@ -11,57 +11,6 @@
     const { ipcRenderer } = require("electron");
   </script>
   <script type="text/javascript" src="./scripts/jquery-1.11.3.min.js"></script>
-  
-  <style>
-    body {
-      margin: 0;
-      padding: 2px;
-      background-color: #f0f0f0;
-      font-size: 0.95em;
-      box-sizing: border-box;
-      border: 1px solid lightgray;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh; /* Centers content vertically within the tooltip window */
-      font-family: "Outfit", sans-serif;
-      overflow: hidden;
-    }
-
-    #artDiv {
-      height: 58px;
-      width: 58px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    #textDiv {
-      height: 58px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      min-width: 216px;
-      padding-left: 6px;
-    }
-
-    #stationIcon {
-      max-width: 50px;
-      max-height: 50px;
-    }
-
-    #textDiv div {
-      white-space: nowrap;
-      box-sizing: border-box
-    }
-
-    #streamTitle {
-      display: none;
-      width: auto;
-      white-space: nowrap;
-      box-sizing: border-box
-    }
-  </style>
 </head>
 <body>
   <div id="artDiv">
@@ -85,6 +34,17 @@
     observer.observe(observed, { childList: true, subtree: true, characterData: true });
 
     resizeTooltip();
+
+    async function loadCSS() {
+      const cssPath = await ipcRenderer.invoke('get-css-path');
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = cssPath;  // Use the received path to the CSS file
+      document.head.appendChild(link);  // Dynamically add the CSS to the page
+      ipcRenderer.send("set-tooltip-width", 302);
+    }
+
+    loadCSS();
 
     ipcRenderer.on("tooltip-update", (event, data) => {
       if (data.playing == true) {
