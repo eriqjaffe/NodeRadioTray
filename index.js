@@ -124,6 +124,7 @@ let playerWindow;
 let tooltipWindow;
 let bookmarksArr = []
 let currentStreamData;
+let audioDevices = [];
 
 initializeWatcher();
 
@@ -299,6 +300,12 @@ var menuTemplate = [
       playCustomURL();
     },
     icon: path.join(__dirname, '/images/icons8-add-link.png')
+  },
+  { 
+    id: 'devicesMenu',
+    label: 'Audio Outputs',
+    submenu: [],
+    icon: path.join(__dirname, 'images/icons8-speaker.png')
   },
   { 
     type: 'separator'
@@ -822,7 +829,7 @@ function toggleButtons(state) {
     if (!htmlToolTip) {
       tray.setToolTip("NodeRadioTray");
     }
-    menuTemplate[9].label = "Play "+store.get("lastStation")
+    menuTemplate[10].label = "Play "+store.get("lastStation")
     contextMenu = Menu.buildFromTemplate(menuTemplate)
     tray.setContextMenu(contextMenu)
     playerWindow.webContents.send("stop", null)
@@ -976,6 +983,25 @@ async function extractURLfromPlaylist(url) {
     return url;
   }
 }
+
+ipcMain.on("audio-devices-list", (event, devices) => {
+  const parsedDevices = JSON.parse(devices);
+  const labels = parsedDevices.map(device => device.label || "Unknown Device");
+  const submenuItems = labels.map((label, index) => ({
+      label: label || `Device ${index + 1}`, // Fallback for empty labels
+      type: 'radio', // Optional: Use 'radio' for exclusive selection
+      click: () => {
+          console.log(`Selected audio output: ${label}`);
+          playerWindow.webContents.send('change-audio-output', label)
+          // Handle the audio routing logic here
+      }
+  }));
+  console.log(submenuItems)
+  menuTemplate[8].submenu = submenuItems
+  contextMenu = Menu.buildFromTemplate(menuTemplate)
+  tray.setContextMenu(contextMenu)
+  playerWindow.webContents.send("get-player-status", null)
+});
 
 ipcMain.on('toggle-dev-tools', (event, arg) => {
   if (playerWindow.webContents.isDevToolsOpened()) {
@@ -1170,8 +1196,8 @@ ipcMain.on("get-initial-volume", (event, data) => {
 
 ipcMain.on("set-volume-response", (event, data) => {
   store.set("lastVolume", data.volume)
-  menuTemplate[11].label = "Volume: "+Math.round(parseFloat(data.volume) * 100)+"%"
-  menuTemplate[11].icon = path.join(__dirname, '/images/'+Math.round(parseFloat(data.volume) * 100)+"-percent-icon.png")
+  menuTemplate[12].label = "Volume: "+Math.round(parseFloat(data.volume) * 100)+"%"
+  menuTemplate[12].icon = path.join(__dirname, '/images/'+Math.round(parseFloat(data.volume) * 100)+"-percent-icon.png")
   contextMenu = Menu.buildFromTemplate(menuTemplate)
   tray.setContextMenu(contextMenu)
   if (data.status == "playing") {
