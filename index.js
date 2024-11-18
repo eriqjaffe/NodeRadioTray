@@ -987,7 +987,7 @@ async function extractURLfromPlaylist(url) {
 ipcMain.on("audio-devices-list", (event, devices) => {
   const parsedDevices = JSON.parse(devices);
   const labels = parsedDevices.map(device => device.label || "Unknown Device");
-  const submenuItems = labels.map((label, index) => ({
+  /* const submenuItems = labels.map((label, index) => ({
       label: label || `Device ${index + 1}`, // Fallback for empty labels
       type: 'radio', // Optional: Use 'radio' for exclusive selection
       click: () => {
@@ -995,6 +995,15 @@ ipcMain.on("audio-devices-list", (event, devices) => {
           playerWindow.webContents.send('change-audio-output', label)
           // Handle the audio routing logic here
       }
+  })); */
+  const submenuItems = parsedDevices.map((device, index) => ({
+    label: device.label || `Device ${index + 1}`, // Fallback for empty labels
+    type: 'radio', // Use 'radio' for mutually exclusive selection
+    click: () => {
+        console.log(`Selected audio output: ${device.deviceId}`);
+        playerWindow.webContents.send('change-audio-output', device.deviceId);
+        // Handle the audio routing logic here
+    }
   }));
   console.log(submenuItems)
   menuTemplate[8].submenu = submenuItems

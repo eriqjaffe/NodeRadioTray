@@ -18,6 +18,7 @@
     const { ipcRenderer } = require("electron");
     let player;
     let volume = 1.0;
+    let audioOuput = "default"
   </script>
   <style>
     body {
@@ -344,6 +345,14 @@
 
     ipcRenderer.on('change-audio-output', (event, data) => {
       console.log(data)
+      //const audioElement = document.querySelector("audio");
+      if (player) {
+        console.log(player.audioElement)
+        console.log("i'd change it to "+data)
+      } else {
+        console.log("no active player")
+        console.log("but i'd change it to "+data)
+      }
     })
 
     $("#toggleDevTools").on("click", function(e) {
