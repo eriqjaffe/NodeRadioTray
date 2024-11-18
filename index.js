@@ -986,17 +986,22 @@ async function extractURLfromPlaylist(url) {
 }
 
 ipcMain.on("audio-devices-list", (event, devices) => {
+  const defaultDevice = store.get('defaultAudioDevice', "default")
   const parsedDevices = JSON.parse(devices);
   const submenuItems = parsedDevices.map((device, index) => ({
     label: device.label || `Device ${index + 1}`, // Fallback for empty labels
     type: 'radio', // Use 'radio' for mutually exclusive selection
+    checked: device.deviceId === defaultDevice,
     click: () => {
-        playerWindow.webContents.send('change-audio-output', device.deviceId);
+      store.set('defaultAudioDevice', device.deviceId)
+      playerWindow.webContents.send('change-audio-output', device.deviceId);
     }
   }));
   menuTemplate[8].submenu = submenuItems
   contextMenu = Menu.buildFromTemplate(menuTemplate)
   tray.setContextMenu(contextMenu)
+  const selectedItem = menuTemplate[8].submenu.find(item => item.checked)
+  selectedItem.click()
   playerWindow.webContents.send("get-player-status", null)
 });
 

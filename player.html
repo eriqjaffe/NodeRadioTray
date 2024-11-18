@@ -346,16 +346,7 @@
     })
 
     ipcRenderer.on('change-audio-output', (event, data) => {
-      console.log(data)
       setAudioOutputDevice(data)
-      /* if (player) {
-        console.log(audioElement)
-        console.log(player.audioElement)
-        console.log("i'd change it to "+data)
-      } else {
-        console.log("no active player")
-        console.log("but i'd change it to "+data)
-      } */
     })
 
     $("#toggleDevTools").on("click", function(e) {
@@ -379,10 +370,8 @@
     async function sendAudioDevices() {
       const devices = await navigator.mediaDevices.enumerateDevices();
       const audioOutputDevices = devices.filter(device => device.kind === "audiooutput");
-
       ipcRenderer.send("audio-devices-list", JSON.stringify(audioOutputDevices));
     }
-
     sendAudioDevices();
   </script>
 </html>
