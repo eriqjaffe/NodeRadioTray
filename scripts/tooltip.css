@@ -11,7 +11,7 @@ body {
     height: 100vh; /* Centers content vertically within the tooltip window */
     font-family: "Outfit", sans-serif;
     overflow: hidden;
-    border-radius: 10px;
+    /*border-radius: 10px;*/
   }
 
   #artDiv {
