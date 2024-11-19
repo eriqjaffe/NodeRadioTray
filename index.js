@@ -34,8 +34,9 @@ The following options are also available if NodeRadioTray is currently running:
 `;
 
 if (!gotTheLock) {
-  console.log("Cache errors below can be ignored")
-  app.quit(); 
+  app.on('ready', () => {
+    process.exit(0);
+  });
 } else {
   app.on('second-instance', (event, commandLine, workingDirectory) => {
     const validCommands = ['-S', '-P', '-U', '-D', '-M', '-N', '-R', '--stop', '--play', '--volup', '--voldown', '--mute', '--next', '--prev'];
@@ -433,6 +434,9 @@ const createTray = () => {
 
   tray.on("click", function(e) {
     tray.popUpContextMenu(contextMenu)
+    if (htmlToolTip) {
+      fadeOut(tooltipWindow)
+    }
   })
 
   if (htmlToolTip) {
