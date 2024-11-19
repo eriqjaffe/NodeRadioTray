@@ -35,17 +35,6 @@
 
     resizeTooltip();
 
-/*     async function loadCSS() {
-      const cssPath = await ipcRenderer.invoke('get-css-path');
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = cssPath;  // Use the received path to the CSS file
-      document.head.appendChild(link);  // Dynamically add the CSS to the page
-      ipcRenderer.send("set-tooltip-width", 302);
-    } */
-
-    //loadCSS();
-
     ipcRenderer.on("tooltip-update", (event, data) => {
       if (data.playing == true) {
         $("#streamTitle").html(data.data.replace("\r\n", "<br>"));
@@ -55,11 +44,6 @@
         $("#streamTitle").html("");
         $("#streamTitle").css("display", "none");
         $("#stationIcon").attr("src", data.image.replace(".ico", ".png"));
-        /* if ($("html").css("background-color") == "rgb(240, 240, 240)") {
-          $("#stationIcon").attr("src", "images/playing.png");
-        } else {
-          $("#stationIcon").attr("src", "images/playing_white.png");
-        } */
       }
     });
 
