@@ -126,7 +126,7 @@ let playerWindow;
 let tooltipWindow;
 let bookmarksArr = []
 let currentStreamData;
-let audioDevices = [];
+let lastStationImage = path.join(__dirname, '/images/playing.png')
 
 initializeWatcher();
 
@@ -559,6 +559,7 @@ app.whenReady().then(() => {
   } else {
     setIconTheme(darkIcon);
   }
+  lastStationImage = (darkIcon == true) ? path.join(__dirname, '/images/playing.png') : path.join(__dirname, '/images/playing_white.png')
   if (store.get("checkForUpdates") == true) {
     versionCheck(updateOptions, function (error, update) {
       if (error) {
@@ -791,6 +792,13 @@ async function playStream(streamName, url) {
     tray.setImage(idleIcon);
     const streamUrl = await extractURLfromPlaylist(url);
     playerWindow.webContents.send("play", { streamName: streamName, url: streamUrl, volume: store.get("lastVolume") });
+    let bookmarks = JSON.parse(fs.readFileSync(userData+'/bookmarks.json'));
+    let iconImage = findImageByName(streamName, bookmarks)
+    let defaultImage = path.join(__dirname, 'images/playing.png')
+    if (darkIcon == false) {
+      defaultImage = path.join(__dirname, 'images/playing_white.png')
+    }
+    lastStationImage = (iconImage == null) ? defaultImage : path.join(userData,'icons',iconImage)
     if (streamName != "Custom URL") {
       store.set('lastStation', streamName);
       store.set('lastURL', url)
@@ -1082,22 +1090,14 @@ ipcMain.on('get-app-version', (event, response) => {
 })
 
 ipcMain.on('set-tooltip', (event, data) => {
-  currentStreamData = data;
-  let bookmarks = JSON.parse(fs.readFileSync(userData+'/bookmarks.json'));
-  let iconImage = findImageByName(data.streamName, bookmarks)
-  let defaultImage = path.join(__dirname, 'images/playing.png')
-  if (darkIcon == false) {
-    defaultImage = path.join(__dirname, 'images/playing_white.png')
-  }
-  let icon = (iconImage == null) ? defaultImage : path.join(userData,'icons',iconImage)
-  
+  currentStreamData = data; 
   if (data.playing) {
     toggleButtons(true)
     tray.setImage(playingIcon);
     if (!htmlToolTip) {
       tray.setToolTip(data.data)
     } else {
-      tooltipWindow.webContents.send('tooltip-update', {playing: data.playing, data: data.data, streamName: data.streamName, image: icon})
+      tooltipWindow.webContents.send('tooltip-update', {playing: data.playing, data: data.data, streamName: data.streamName, image: lastStationImage})
     }
     if (store.get("metadataLog") == true) {
       log.info(data.data.replace("\r\n"," - "))
