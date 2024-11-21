@@ -14,7 +14,6 @@ const M3U = parsers.M3U;
 const PLS = parsers.PLS;
 const ASX = parsers.ASX
 const log = require('electron-log/main');
-
 const gotTheLock = app.requestSingleInstanceLock();
 const userData = app.getPath('userData');
 const iconFolder = path.join(userData,"icons")
@@ -415,6 +414,24 @@ var menuTemplate = [
       shell.openPath(userData+'/logs/')
     },
     icon: path.join(__dirname, '/images/icons8-log.png')
+  },
+  { 
+    label: "Play a Random Station!",
+    id: "FindSomeStations",
+    click: async() => {
+      ()
+    },
+    icon: path.join(__dirname, '/images/icons8-random-16.png'),
+    visible: false
+  },
+  { 
+    label: "Bookmark This Station",
+    id: "bookmark",
+    click: async() => {
+      bookmarkStation()
+    },
+    icon: path.join(__dirname, '/images/icons8-random-16.png'),
+    visible: false
   },
   {
     label: "Exit",
@@ -1002,6 +1019,27 @@ async function extractURLfromPlaylist(url) {
   } catch (error) {
     return url;
   }
+}
+
+async function randomStations() {
+  const RadioBrowser = require('radio-browser')
+  let filter = {
+    limit: 500,
+    by: 'tag',  
+    order: 'random',       // search in tag
+    searchterm: 'punk' // term in tag
+  }
+  await RadioBrowser.getRandomHost()
+  RadioBrowser.searchStations(filter)
+      .then(data => {
+        let station = data[Math.floor(Math.random()*data.length)]
+        playStream(station.name, station.url_resolved)
+      })
+      .catch(error => console.error(error))
+}
+
+function bookmarkStation() {
+  // tbd
 }
 
 ipcMain.on("audio-devices-list", (event, devices) => {

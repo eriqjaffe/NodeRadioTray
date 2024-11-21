@@ -1808,6 +1808,11 @@ quick-lru@^5.1.1:
   resolved "https://registry.yarnpkg.com/quick-lru/-/quick-lru-5.1.1.tgz#366493e6b3e42a3a6885e2e99d18f80fb7a8c932"
   integrity sha512-WuyALRjWPDGtt/wzJiadO5AXY+8hZ80hVpe6MyivgraREW751X3SbhRvG3eLKOYN+8VEvqLcf3wdnt44Z4S4SA==
 
+radio-browser@^2.2.3:
+  version "2.2.3"
+  resolved "https://registry.yarnpkg.com/radio-browser/-/radio-browser-2.2.3.tgz#2bc85f9ec7cf7aee0b03e0dff2788f0b3d21deb2"
+  integrity sha512-nfBHaCvnAdo/HX5mli7hOeo069+6qhhHt7u7PHmArnYfnQqTFsT1i6JLNvPkkIIfavlHtmU+dKFIAP8asxiriQ==
+
 rcedit@^3.0.1:
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/rcedit/-/rcedit-3.0.1.tgz#ae21b43e49c075f4d84df1929832a12c302f3c90"
