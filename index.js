@@ -949,6 +949,12 @@ function toggleMMKeys(state) {
     globalShortcut.register('Ctrl+VolumeDown', () => {
       changeVolume("down")
     })
+    globalShortcut.register('MediaNextTrack', () => {
+      changeStation("forward")
+    })
+    globalShortcut.register('MediaPreviousTrack', () => {
+      changeStation("backward")
+    })
   } else {
     globalShortcut.unregisterAll()
   }
