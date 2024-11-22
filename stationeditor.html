@@ -137,9 +137,9 @@
     </div>
   </body>
   <script>
-    ipcRenderer.send('test-ipc', null)
+    ipcRenderer.send('get-bookmarks', null)
 
-    ipcRenderer.on('get-bookmarks', (event, response) => {
+    ipcRenderer.on('get-bookmarks-response', (event, response) => {
       $("#tree").fancytree({
         extensions: ["dnd5"],
         source: convertToFancytreeFormat(response),

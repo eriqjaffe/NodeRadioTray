@@ -1351,9 +1351,9 @@ ipcMain.on("set-volume-response", (event, data) => {
   }
 })
 
-ipcMain.on('test-ipc', (event, arg) => {
+ipcMain.on('get-bookmarks', (event, arg) => {
   let bookmarks = JSON.parse(fs.readFileSync(userData+'/bookmarks.json'));
-  event.sender.send('get-bookmarks', bookmarks)
+  event.sender.send('get-bookmarks-response', bookmarks)
 })
 
 ipcMain.on('save-bookmarks', (event, data) => {
