@@ -46,7 +46,7 @@ if (!gotTheLock) {
         toggleButtons(false);
         break;
       case '-P':
-        playStream(store.get('lastStation'), store.get('lastURL'));
+        playStream(store.get('lastStation'), store.get('lastURL'), true);
         break;
       case '-N':
         changeStation("forward")
@@ -67,7 +67,7 @@ if (!gotTheLock) {
         toggleButtons(false);
         break;
       case '--play':
-        playStream(store.get('lastStation'), store.get('lastURL'));
+        playStream(store.get('lastStation'), store.get('lastURL'), true);
         break;
       case '--next':
         changeStation("forward")
@@ -316,7 +316,7 @@ var menuTemplate = [
     label: "Play "+store.get("lastStation"),
     id: "playButton",
     click: async() => {
-      playStream(store.get('lastStation'), store.get('lastURL'));
+      playStream(store.get('lastStation'), store.get('lastURL'), true);
     },
     icon: path.join(__dirname, '/images/icons8-Play.png'),
     visible: true
@@ -419,10 +419,10 @@ var menuTemplate = [
     label: "Play a Random Station!",
     id: "FindSomeStations",
     click: async() => {
-      ()
+      randomStation()
     },
     icon: path.join(__dirname, '/images/icons8-random-16.png'),
-    visible: false
+    visible: true
   },
   { 
     label: "Bookmark This Station",
@@ -430,7 +430,7 @@ var menuTemplate = [
     click: async() => {
       bookmarkStation()
     },
-    icon: path.join(__dirname, '/images/icons8-random-16.png'),
+    icon: path.join(__dirname, '/images/icons8-bookmark-16.png'),
     visible: false
   },
   {
@@ -640,7 +640,7 @@ app.whenReady().then(() => {
   
   playerWindow.webContents.on('did-finish-load', () => {
     if (store.get("autoplay") == true) {
-      playStream(store.get('lastStation'), store.get('lastURL'));
+      playStream(store.get('lastStation'), store.get('lastURL'), true);
     }
   })
 
@@ -658,9 +658,9 @@ app.whenReady().then(() => {
       console.log(helpInfo)
       break
     case "--P":
-      playStream(store.get('lastStation'), store.get('lastURL'))
+      playStream(store.get('lastStation'), store.get('lastURL'), true)
     case "--play":
-      playStream(store.get('lastStation'), store.get('lastURL'))
+      playStream(store.get('lastStation'), store.get('lastURL'), true)
   }
 })
 
@@ -710,7 +710,7 @@ function loadBookmarks() {
         }
         var station = {
           label: tmp.name,
-          click: async => { playStream(tmp.name, tmp.url)},
+          click: async => { playStream(tmp.name, tmp.url, true)},
           icon: stationIcon
         }
         stations.push(station)
@@ -801,7 +801,7 @@ function editBookmarksGui() {
   }
 }
 
-async function playStream(streamName, url) {
+async function playStream(streamName, url, fromBookmark) {
   try {
     if (!htmlToolTip) {
       tray.setToolTip("NodeRadioTray");
@@ -816,9 +816,15 @@ async function playStream(streamName, url) {
       defaultImage = path.join(__dirname, 'images/playing_white.png')
     }
     lastStationImage = (iconImage == null) ? defaultImage : path.join(userData,'icons',iconImage)
-    if (streamName != "Custom URL") {
+    bookmarkButton = contextMenu.getMenuItemById('bookmark');
+    if (fromBookmark) {
       store.set('lastStation', streamName);
       store.set('lastURL', url)
+      bookmarkButton.visible = false;
+    } else {
+      if (streamName != undefined || streamName != null) {
+        bookmarkButton.visible = true;
+      }
     }
     toggleButtons(true);
   } catch (error) {
@@ -944,7 +950,7 @@ function playCustomURL() {
     .then((r) => {
         if(r === null) {
         } else {
-            playStream('Custom URL', r);
+            playStream('Custom URL', r, false);
         }
     })
   } catch(error) {
@@ -988,7 +994,7 @@ function changeStation(dir) {
   } else {
     index = (currentIndex - 1 + bookmarksArr.length) % bookmarksArr.length;
   }
-  playStream(bookmarksArr[index].name, bookmarksArr[index].url)
+  playStream(bookmarksArr[index].name, bookmarksArr[index].url, true)
 }
 
 function changeVolume(direction) {
@@ -1021,7 +1027,7 @@ async function extractURLfromPlaylist(url) {
   }
 }
 
-async function randomStations() {
+async function randomStation() {
   const RadioBrowser = require('radio-browser')
   let filter = {
     limit: 500,
@@ -1033,13 +1039,59 @@ async function randomStations() {
   RadioBrowser.searchStations(filter)
       .then(data => {
         let station = data[Math.floor(Math.random()*data.length)]
-        playStream(station.name, station.url_resolved)
+        playStream(station.name, station.url_resolved, false)
       })
       .catch(error => console.error(error))
 }
 
 function bookmarkStation() {
-  // tbd
+  let bookmarks = JSON.parse(fs.readFileSync(userData+'/bookmarks.json'));
+  const selectOptions = bookmarks.reduce((acc, item) => {
+    acc[item.name] = item.name;
+    return acc;
+  }, {});
+  prompt({
+    title: 'Bookmark A Station',
+    label: 'Genre:',
+    selectOptions: selectOptions,
+    type: 'select',
+    icon: path.join(__dirname, 'images/playing.png')
+  })
+  .then((r) => {
+      if(r === null) {
+      } else {
+        const group = bookmarks.find(category => category.name === r)
+        const bookmarkExists = group.bookmark.some(bookmark => bookmark.name === currentStreamData.streamName);
+        if (bookmarkExists) {
+          dialog.showMessageBox(null, {
+            type: 'question',
+            message: "You already have a bookmarked station called \""+currentStreamData.streamName+"\" in \""+r+".\"\r\n\r\nDo you want to add this bookmark anyways?",
+            buttons: ['Yes', 'No'],
+          }).then(result => {
+            if (result.response === 0) {
+              group.bookmark.push({name: currentStreamData.streamName, url: currentStreamData.url, img: "" })
+              group.bookmark.sort((a, b) => a.name.localeCompare(b.name));
+              fs.writeFile(userData+'/bookmarks.json', JSON.stringify(bookmarks, null, 3), function(err) {
+                if(err) {
+                  dialog.showMessageBox(null, {
+                    type: 'error',
+                    message: "An error occurred saving bookmarks:\r\r\n" + err,
+                    buttons: ['OK'],
+                  }).then(result => {})
+                  errorLog.error(err);
+                } else {
+                  store.set("lastStation", currentStreamData.streamName)
+                  store.set("lastURL", currentStreamData.url)
+                  bookmarkButton = contextMenu.getMenuItemById('bookmark');
+                  bookmarkButton.visible = false;
+                  reloadBookmarks();
+                }
+              });
+            }
+          })
+        }  
+      }
+  })
 }
 
 ipcMain.on("audio-devices-list", (event, devices) => {
@@ -1237,7 +1289,7 @@ ipcMain.on('mm-get-player-status-response', (event, data) => {
   if (data == "playing") {
     toggleButtons(false)
   } else {
-    playStream(store.get('lastStation'), store.get('lastURL'));
+    playStream(store.get('lastStation'), store.get('lastURL'), true);
   }
 })
 

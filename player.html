@@ -153,7 +153,8 @@
           ipcRenderer.send("set-tooltip", {
             playing: true,
             data: data.streamName + "\r\n" + metadata.StreamTitle,
-            streamName: data.streamName
+            streamName: data.streamName,
+            url: data.url
           });
         } else {
           ipcRenderer.send("set-tooltip", {
