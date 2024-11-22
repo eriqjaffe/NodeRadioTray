@@ -944,8 +944,10 @@ function playCustomURL() {
       inputAttrs: {
           type: 'url'
       },
+      height: 175,
       type: 'input',
-      icon: path.join(__dirname, 'images/playing.png')
+      customStylesheet: path.join(__dirname, 'scripts','style.css'),
+      icon: path.join(__dirname, 'images','playing.png')
     })
     .then((r) => {
         if(r === null) {
@@ -1044,7 +1046,25 @@ async function randomStation() {
       .catch(error => console.error(error))
 }
 
-function bookmarkStation() {
+async function bookmarkStation() {
+  let name = currentStreamData.streamName
+  if (currentStreamData.streamName === "Custom URL") {
+    await prompt({
+      title: 'Custom URL',
+      label: 'Please Enter a Name for the Stream:',
+      value: '',
+      type: 'input',
+      inputAttrs: {
+        required: true
+      },
+      height: 175,
+      customStylesheet: path.join(__dirname, 'scripts','style.css'),
+      icon: path.join(__dirname, 'images', 'playing.png')
+    })
+    .then((r) => {
+        name = r
+    })
+  }
   let bookmarks = JSON.parse(fs.readFileSync(userData+'/bookmarks.json'));
   const selectOptions = bookmarks.reduce((acc, item) => {
     acc[item.name] = item.name;
@@ -1055,21 +1075,23 @@ function bookmarkStation() {
     label: 'Genre:',
     selectOptions: selectOptions,
     type: 'select',
-    icon: path.join(__dirname, 'images/playing.png')
+    height: 175,
+    customStylesheet: path.join(__dirname, 'scripts','style.css'),
+    icon: path.join(__dirname, 'images','playing.png')
   })
   .then((r) => {
       if(r === null) {
       } else {
         const group = bookmarks.find(category => category.name === r)
-        const bookmarkExists = group.bookmark.some(bookmark => bookmark.name === currentStreamData.streamName);
+        const bookmarkExists = group.bookmark.some(bookmark => bookmark.name === name);
         if (bookmarkExists) {
           dialog.showMessageBox(null, {
             type: 'question',
-            message: "You already have a bookmarked station called \""+currentStreamData.streamName+"\" in \""+r+".\"\r\n\r\nDo you want to add this bookmark anyways?",
+            message: "You already have a bookmarked station called \""+name+"\" in \""+r+".\"\r\n\r\nDo you want to add this bookmark anyways?",
             buttons: ['Yes', 'No'],
           }).then(result => {
             if (result.response === 0) {
-              group.bookmark.push({name: currentStreamData.streamName, url: currentStreamData.url, img: "" })
+              group.bookmark.push({name: name, url: currentStreamData.url, img: "" })
               group.bookmark.sort((a, b) => a.name.localeCompare(b.name));
               fs.writeFile(userData+'/bookmarks.json', JSON.stringify(bookmarks, null, 3), function(err) {
                 if(err) {
@@ -1080,7 +1102,7 @@ function bookmarkStation() {
                   }).then(result => {})
                   errorLog.error(err);
                 } else {
-                  store.set("lastStation", currentStreamData.streamName)
+                  store.set("lastStation", name)
                   store.set("lastURL", currentStreamData.url)
                   bookmarkButton = contextMenu.getMenuItemById('bookmark');
                   bookmarkButton.visible = false;
@@ -1089,7 +1111,26 @@ function bookmarkStation() {
               });
             }
           })
-        }  
+        } else {
+          group.bookmark.push({name: name, url: currentStreamData.url, img: "" })
+          group.bookmark.sort((a, b) => a.name.localeCompare(b.name));
+          fs.writeFile(userData+'/bookmarks.json', JSON.stringify(bookmarks, null, 3), function(err) {
+            if(err) {
+              dialog.showMessageBox(null, {
+                type: 'error',
+                message: "An error occurred saving bookmarks:\r\r\n" + err,
+                buttons: ['OK'],
+              }).then(result => {})
+              errorLog.error(err);
+            } else {
+              store.set("lastStation", name)
+              store.set("lastURL", currentStreamData.url)
+              bookmarkButton = contextMenu.getMenuItemById('bookmark');
+              bookmarkButton.visible = false;
+              reloadBookmarks();
+            }
+          });
+        }
       }
   })
 }
@@ -1277,7 +1318,7 @@ ipcMain.on('error-notification', (event, data) => {
     {
       title: 'NodeRadioTray Error',
       message: data,
-      icon: path.join(__dirname, 'images/playing.png'), // Absolute path (doesn't work on balloons)
+      icon: path.join(__dirname, 'images','playing.png'), // Absolute path (doesn't work on balloons)
       sound: false,
       wait: false
     }
