@@ -25,86 +25,40 @@ let countries
 let languages 
 let tags
 
+const removeEmojis = (str) => str.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}]/gu, '');
+
 radioBrowser.getCategory("countries")
   .then(data => {
-    countries = data.reduce((result, entry) => {
-      const originalName = entry.name;
-      const transformedName = originalName.startsWith("The ") 
-        ? `${originalName.substring(4)}` 
-        : originalName;
-      result[originalName] = transformedName;
-      return result;
-    }, {});
-    let sortedCountries = Object.entries(countries).sort(([, a], [, b]) => {
-      return a.localeCompare(b);
-    });
-    sortedCountries.unshift(["Any", "Any"]);
-    countries = Object.fromEntries(sortedCountries);
+    countries = data.map(entry => entry.name);
+    //console.log(countries);
   })
-  .catch(error => console.error(error))
+  .catch(error => console.error(error));
 
 radioBrowser.getCategory("languages")
   .then(data => {
-    languages = data.reduce((result, entry) => {
-      const originalName = entry.name;
-      const transformedName = originalName.startsWith("The ") 
-        ? `${originalName.substring(4)}` 
-        : originalName;
-      result[originalName] = transformedName;
-      return result;
-    }, {});
-    let sortedLangs = Object.entries(languages).sort(([, a], [, b]) => {
-      return a.localeCompare(b);
-    });
-    sortedLangs.unshift(["Any", "Any"]);
-    languages = Object.fromEntries(sortedLangs);
-  })
-  .catch(error => console.error(error))
-
-/* radioBrowser.getCategory("tags")
-  .then(data => {
-    tags = data.reduce((result, entry) => {
-      const originalName = entry.name;
-      const transformedName = originalName.startsWith("The ") 
-        ? `${originalName.substring(4)}` 
-        : originalName;
-      result[originalName] = transformedName;
-      return result;
-    }, {});
-    let sortedTags = Object.entries(tags).sort(([keyA, valA], [keyB, valB]) => {
-      if (keyA === "Any") return -1; // Ensure "Any" is always first
-      if (keyB === "Any") return 1;
-      return valA.localeCompare(valB);
-    });
-    if (!tags["Any"]) {
-      sortedTags.unshift(["Any", "Any"]);
+    languages = data.map(entry => entry.name);
+    if (!languages.includes("Any")) {
+      languages.push("Any");
     }
-    tags = Object.fromEntries(sortedTags);
-    console.log(tags)
+    languages.sort((a, b) => a.localeCompare(b));
+    languages = ["Any", ...languages.filter(tag => tag !== "Any")];
   })
-  .catch(error => console.error(error)) */
+  .catch(error => console.error(error));
 
-  radioBrowser.getCategory("tags") // Or "countries"
+radioBrowser.getCategory("tags")
   .then(data => {
-    let tags = data.reduce((result, entry) => {
-      const originalName = entry.name;
-      result[originalName] = originalName; // No transformation needed for tags
-      return result;
-    }, {});
-
-    // Convert the object to an array of entries, excluding "Any"
-    let sortedEntries = Object.entries(tags).filter(([key]) => key !== "Any");
-
-    // Sort the entries alphabetically
-    sortedEntries.sort(([, valA], [, valB]) => valA.localeCompare(valB));
-
-    // Prepend "Any" explicitly as the first entry
-    sortedEntries.unshift(["Any", "Any"]);
-
-    // Convert back to an object
-    tags = Object.fromEntries(sortedEntries);
-
-    console.log(tags);
+/*     data.forEach((entry, index) => {
+      console.log(`Tag ${index + 1}: ${entry.name}`);
+    }); */
+    tags = data.map(entry => removeEmojis(entry.name).trim());
+    if (!tags.includes("Any")) {
+      tags.push("Any");
+    }
+    tags.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    tags = ["Any", ...tags.filter(tag => tag !== "Any")];
+    tags = tags.filter(tag => {
+      return tag.trim().length > 0 && !/^[\s\u200B\u200C\u200D\uFEFF]*$/.test(tag);
+    });
   })
   .catch(error => console.error(error));
 
@@ -213,6 +167,7 @@ let editorWindow;
 let aboutWindow;
 let playerWindow;
 let tooltipWindow;
+let randomWindow;
 let bookmarksArr = []
 let currentStreamData;
 let lastStationImage = path.join(__dirname, '/images/playing.png')
@@ -1120,7 +1075,21 @@ async function extractURLfromPlaylist(url) {
 }
 
 async function randomStation() {
-  prompt2({
+  if (!randomWindow) {
+    randomWindow = new BrowserWindow({
+      width: 300,
+      height: 300,
+      icon: path.join(__dirname, 'images/playing.ico'),
+      skipTaskbar: true,
+      webPreferences: {
+        nodeIntegration: true,
+        contextIsolation: false
+      }
+    })
+    randomWindow.setMenu(null)
+    randomWindow.loadFile('random.html');
+  }
+  /* prompt2({
     title: 'Prompt example',
     type: "multiInput",
     customStylesheet: path.join(__dirname, 'scripts','style.css'),
@@ -1149,7 +1118,7 @@ async function randomStation() {
           console.log('result', r);
       }
   })
-  .catch(console.error);
+  .catch(console.error); */
 /*   let filter = {
     limit: 500,
     by: 'tag',  

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <title>NodeRadioTray Station Editor</title>
+    <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
+    <script type="text/javascript" src="./scripts/jquery-1.11.3.min.js"></script>
+    <link href="./scripts/style.css" rel="stylesheet" type='text/css'/>
+  </head>
+  <body style="padding:10px!important">
+    <label>Country:</label><br>
+    <input type="text" id="countryList" list="countries" value="The United States of America" style="width: 100%;">
+        <datalist id="countries">
+            <option>Home</option>
+            <option>Away</option>
+            <option>Alternate</option>
+            <option>Throwback</option>
+            <option>Fauxback</option>
+            <option>Home Alternate</option>
+            <option>Away Alternate</option>
+            <option>City Connect</option>
+            <option>Sunday Special</option>
+            <option>The United States of America</option>
+            <option>Turn Ahead The Clock</option>
+        </datalist>
+        <br><br>
+    <label>Language:</label><br>
+    <input type="text" id="langList" list="langs" value="The United States of America" style="width: 100%;">
+        <datalist id="langs">
+            <option>Home</option>
+            <option>Away</option>
+            <option>Alternate</option>
+            <option>Throwback</option>
+            <option>Fauxback</option>
+            <option>Home Alternate</option>
+            <option>Away Alternate</option>
+            <option>City Connect</option>
+            <option>Sunday Special</option>
+            <option>The United States of America</option>
+            <option>Turn Ahead The Clock</option>
+        </datalist>
+        <br><br>
+    <label>Tag:</label><br>
+    <input type="text" id="tagList" list="tags" value="The United States of America" style="width: 100%;">
+        <datalist id="tags">
+            <option>Home</option>
+            <option>Away</option>
+            <option>Alternate</option>
+            <option>Throwback</option>
+            <option>Fauxback</option>
+            <option>Home Alternate</option>
+            <option>Away Alternate</option>
+            <option>City Connect</option>
+            <option>Sunday Special</option>
+            <option>The United States of America</option>
+            <option>Turn Ahead The Clock</option>
+        </datalist><br><br>
+    <div style="width:100%; text-align: center;">
+    <input type="button" value="Submit">
+    </div>
+  </body>
+</html>
