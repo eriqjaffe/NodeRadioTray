@@ -4,6 +4,7 @@ const fs = require('fs');
 const Store = require("electron-store");
 const chokidar = require("chokidar");
 const prompt = require('electron-prompt');
+const prompt2 = require('custom-electron-prompt')
 const notifier = require('node-notifier');
 const path = require('path');
 const AutoLaunch = require('auto-launch');
@@ -14,9 +15,98 @@ const M3U = parsers.M3U;
 const PLS = parsers.PLS;
 const ASX = parsers.ASX
 const log = require('electron-log/main');
+const RadioBrowser = require('radio-browser');
+const radioBrowser = require('radio-browser');
 const gotTheLock = app.requestSingleInstanceLock();
 const userData = app.getPath('userData');
 const iconFolder = path.join(userData,"icons")
+
+let countries
+let languages 
+let tags
+
+radioBrowser.getCategory("countries")
+  .then(data => {
+    countries = data.reduce((result, entry) => {
+      const originalName = entry.name;
+      const transformedName = originalName.startsWith("The ") 
+        ? `${originalName.substring(4)}` 
+        : originalName;
+      result[originalName] = transformedName;
+      return result;
+    }, {});
+    let sortedCountries = Object.entries(countries).sort(([, a], [, b]) => {
+      return a.localeCompare(b);
+    });
+    sortedCountries.unshift(["Any", "Any"]);
+    countries = Object.fromEntries(sortedCountries);
+  })
+  .catch(error => console.error(error))
+
+radioBrowser.getCategory("languages")
+  .then(data => {
+    languages = data.reduce((result, entry) => {
+      const originalName = entry.name;
+      const transformedName = originalName.startsWith("The ") 
+        ? `${originalName.substring(4)}` 
+        : originalName;
+      result[originalName] = transformedName;
+      return result;
+    }, {});
+    let sortedLangs = Object.entries(languages).sort(([, a], [, b]) => {
+      return a.localeCompare(b);
+    });
+    sortedLangs.unshift(["Any", "Any"]);
+    languages = Object.fromEntries(sortedLangs);
+  })
+  .catch(error => console.error(error))
+
+/* radioBrowser.getCategory("tags")
+  .then(data => {
+    tags = data.reduce((result, entry) => {
+      const originalName = entry.name;
+      const transformedName = originalName.startsWith("The ") 
+        ? `${originalName.substring(4)}` 
+        : originalName;
+      result[originalName] = transformedName;
+      return result;
+    }, {});
+    let sortedTags = Object.entries(tags).sort(([keyA, valA], [keyB, valB]) => {
+      if (keyA === "Any") return -1; // Ensure "Any" is always first
+      if (keyB === "Any") return 1;
+      return valA.localeCompare(valB);
+    });
+    if (!tags["Any"]) {
+      sortedTags.unshift(["Any", "Any"]);
+    }
+    tags = Object.fromEntries(sortedTags);
+    console.log(tags)
+  })
+  .catch(error => console.error(error)) */
+
+  radioBrowser.getCategory("tags") // Or "countries"
+  .then(data => {
+    let tags = data.reduce((result, entry) => {
+      const originalName = entry.name;
+      result[originalName] = originalName; // No transformation needed for tags
+      return result;
+    }, {});
+
+    // Convert the object to an array of entries, excluding "Any"
+    let sortedEntries = Object.entries(tags).filter(([key]) => key !== "Any");
+
+    // Sort the entries alphabetically
+    sortedEntries.sort(([, valA], [, valB]) => valA.localeCompare(valB));
+
+    // Prepend "Any" explicitly as the first entry
+    sortedEntries.unshift(["Any", "Any"]);
+
+    // Convert back to an object
+    tags = Object.fromEntries(sortedEntries);
+
+    console.log(tags);
+  })
+  .catch(error => console.error(error));
 
 const helpInfo = `
 Options:
@@ -1030,12 +1120,40 @@ async function extractURLfromPlaylist(url) {
 }
 
 async function randomStation() {
-  const RadioBrowser = require('radio-browser')
-  let filter = {
+  prompt2({
+    title: 'Prompt example',
+    type: "multiInput",
+    customStylesheet: path.join(__dirname, 'scripts','style.css'),
+    icon: path.join(__dirname, 'images', 'playing.png'),
+    multiInputOptions:
+        [
+          {
+            label: "Country:",
+            selectOptions: countries
+          },
+          {
+            label: "Language:",
+            selectOptions: languages
+          },
+          {
+            label: "Tag:",
+            selectOptions: tags
+          }
+      ],
+    height: 300
+  })
+  .then((r) => {
+      if(r === null) {
+          console.log('user cancelled');
+      } else {
+          console.log('result', r);
+      }
+  })
+  .catch(console.error);
+/*   let filter = {
     limit: 500,
     by: 'tag',  
-    order: 'random',       // search in tag
-    searchterm: 'punk' // term in tag
+    order: 'random'
   }
   await RadioBrowser.getRandomHost()
   RadioBrowser.searchStations(filter)
@@ -1044,6 +1162,7 @@ async function randomStation() {
         playStream(station.name, station.url_resolved, false)
       })
       .catch(error => console.error(error))
+       */
 }
 
 async function bookmarkStation() {
