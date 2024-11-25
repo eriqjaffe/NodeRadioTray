@@ -16,7 +16,6 @@ const PLS = parsers.PLS;
 const ASX = parsers.ASX
 const log = require('electron-log/main');
 const RadioBrowser = require('radio-browser');
-const radioBrowser = require('radio-browser');
 const gotTheLock = app.requestSingleInstanceLock();
 const userData = app.getPath('userData');
 const iconFolder = path.join(userData,"icons")
@@ -27,14 +26,18 @@ let tags
 
 const removeEmojis = (str) => str.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}]/gu, '');
 
-radioBrowser.getCategory("countries")
+RadioBrowser.getCategory("countries")
   .then(data => {
     countries = data.map(entry => entry.name);
-    //console.log(countries);
+    countries.sort((a, b) => a.localeCompare(b));
+    countries = ["Any", ...countries.filter(tag => tag !== "Any")];
+    countries = countries.filter(country => {
+      return country.trim().length > 18;
+    });
   })
   .catch(error => console.error(error));
 
-radioBrowser.getCategory("languages")
+RadioBrowser.getCategory("languages")
   .then(data => {
     languages = data.map(entry => entry.name);
     if (!languages.includes("Any")) {
@@ -42,14 +45,14 @@ radioBrowser.getCategory("languages")
     }
     languages.sort((a, b) => a.localeCompare(b));
     languages = ["Any", ...languages.filter(tag => tag !== "Any")];
+    languages = languages.filter(lang => {
+      return lang.trim().length > 18;
+    });
   })
   .catch(error => console.error(error));
 
-radioBrowser.getCategory("tags")
+RadioBrowser.getCategory("tags")
   .then(data => {
-/*     data.forEach((entry, index) => {
-      console.log(`Tag ${index + 1}: ${entry.name}`);
-    }); */
     tags = data.map(entry => removeEmojis(entry.name).trim());
     if (!tags.includes("Any")) {
       tags.push("Any");
@@ -57,7 +60,7 @@ radioBrowser.getCategory("tags")
     tags.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
     tags = ["Any", ...tags.filter(tag => tag !== "Any")];
     tags = tags.filter(tag => {
-      return tag.trim().length > 0 && !/^[\s\u200B\u200C\u200D\uFEFF]*$/.test(tag);
+      return tag.trim().length > 18;
     });
   })
   .catch(error => console.error(error));
@@ -1078,7 +1081,7 @@ async function randomStation() {
   if (!randomWindow) {
     randomWindow = new BrowserWindow({
       width: 300,
-      height: 300,
+      height: 260,
       icon: path.join(__dirname, 'images/playing.ico'),
       skipTaskbar: true,
       webPreferences: {
@@ -1088,6 +1091,7 @@ async function randomStation() {
     })
     randomWindow.setMenu(null)
     randomWindow.loadFile('random.html');
+    randomWindow.webContents.openDevTools({ mode: 'detach' })
   }
   /* prompt2({
     title: 'Prompt example',
@@ -1474,4 +1478,8 @@ ipcMain.on('check-for-update', (event, arg) => {
       aboutWindow.webContents.send('update-available',{update: true, currentVersion: pkg.version, newVersion: update.name, url: update.url})
 		} 
 	});
+})
+
+ipcMain.on('get-radio-browser-stuff', (event, arg) => {
+  randomWindow.webContents.send('get-radio-browser-stuff-response', { countries: countries, languages: languages, tags: tags})
 })
