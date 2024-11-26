@@ -27,7 +27,7 @@
         <datalist id="tags">
         </datalist><br><br>
     <div style="width:100%; text-align: center;">
-    <input type="button" value="Submit">
+    <input type="button" value="Submit" id="submit">
     </div>
   </body>
   <script>
@@ -46,6 +46,11 @@
       data.tags.forEach(function(tag) {
         $('<option>').val(tag).appendTo($("#tags"));
       });
+    })
+
+    $("#submit").on("click", function(e) {
+      e.preventDefault()
+      ipcRenderer.send('find-random-station', {country: $("#countryList").val(), language: $("#langList").val(), tag: $("#tagList").val()})
     })
   </script>
 </html>

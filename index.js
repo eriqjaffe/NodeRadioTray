@@ -4,13 +4,13 @@ const fs = require('fs');
 const Store = require("electron-store");
 const chokidar = require("chokidar");
 const prompt = require('electron-prompt');
-const prompt2 = require('custom-electron-prompt')
 const notifier = require('node-notifier');
 const path = require('path');
 const AutoLaunch = require('auto-launch');
 const pkg = require('./package.json')
 const parsers = require("playlist-parser");
 const versionCheck = require('github-version-checker')
+const lookup = require('country-code-lookup')
 const M3U = parsers.M3U;
 const PLS = parsers.PLS;
 const ASX = parsers.ASX
@@ -26,14 +26,12 @@ let tags
 
 const removeEmojis = (str) => str.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}]/gu, '');
 
-RadioBrowser.getCategory("countries")
+RadioBrowser.getCategory("countrycodes")
   .then(data => {
-    countries = data.map(entry => entry.name);
-    countries.sort((a, b) => a.localeCompare(b));
-    countries = ["Any", ...countries.filter(tag => tag !== "Any")];
-    countries = countries.filter(country => {
-      return country.trim().length > 18;
-    });
+    countriesTmp = data.map(entry => lookup.byIso(entry.name).country);
+    countriesTmp.sort((a, b) => a.localeCompare(b));
+    countriesTmp = ["Any", ...countriesTmp.filter(tag => tag !== "Any")];
+    countries = [...new Set(countriesTmp)]; 
   })
   .catch(error => console.error(error));
 
@@ -1081,7 +1079,7 @@ async function randomStation() {
   if (!randomWindow) {
     randomWindow = new BrowserWindow({
       width: 300,
-      height: 260,
+      height: 270,
       icon: path.join(__dirname, 'images/playing.ico'),
       skipTaskbar: true,
       webPreferences: {
@@ -1091,51 +1089,8 @@ async function randomStation() {
     })
     randomWindow.setMenu(null)
     randomWindow.loadFile('random.html');
-    randomWindow.webContents.openDevTools({ mode: 'detach' })
+    //randomWindow.webContents.openDevTools({ mode: 'detach' })
   }
-  /* prompt2({
-    title: 'Prompt example',
-    type: "multiInput",
-    customStylesheet: path.join(__dirname, 'scripts','style.css'),
-    icon: path.join(__dirname, 'images', 'playing.png'),
-    multiInputOptions:
-        [
-          {
-            label: "Country:",
-            selectOptions: countries
-          },
-          {
-            label: "Language:",
-            selectOptions: languages
-          },
-          {
-            label: "Tag:",
-            selectOptions: tags
-          }
-      ],
-    height: 300
-  })
-  .then((r) => {
-      if(r === null) {
-          console.log('user cancelled');
-      } else {
-          console.log('result', r);
-      }
-  })
-  .catch(console.error); */
-/*   let filter = {
-    limit: 500,
-    by: 'tag',  
-    order: 'random'
-  }
-  await RadioBrowser.getRandomHost()
-  RadioBrowser.searchStations(filter)
-      .then(data => {
-        let station = data[Math.floor(Math.random()*data.length)]
-        playStream(station.name, station.url_resolved, false)
-      })
-      .catch(error => console.error(error))
-       */
 }
 
 async function bookmarkStation() {
@@ -1482,4 +1437,45 @@ ipcMain.on('check-for-update', (event, arg) => {
 
 ipcMain.on('get-radio-browser-stuff', (event, arg) => {
   randomWindow.webContents.send('get-radio-browser-stuff-response', { countries: countries, languages: languages, tags: tags})
+})
+
+ipcMain.on('find-random-station', (event, arg) => {
+  const query = {
+    order: 'random',
+    limit: 100,
+    coded: 'mp3'
+  };
+
+  if (arg.country !== 'Any') {
+    query.countryCode = lookup.byCountry(arg.country).iso2;
+  }
+
+  if (arg.language !== 'Any') {
+    query.language = arg.language;
+  }
+
+  if (arg.tag !== 'Any') {
+    query.tag = arg.tag;
+  }
+  
+  getRandomStation()
+
+  async function getRandomStation() {
+    (async () => {
+      const { RadioBrowserApi } = await import('@luigivampa/radio-browser-api');
+      const api = new RadioBrowserApi('NodeRadioTray')
+      const stations = await api.searchStations(query)
+      if (stations.length > 0) {
+        let station = stations[Math.floor(Math.random()*stations.length)]
+        playStream(station.name, station.urlResolved, false)
+        randomWindow.close()
+      } else {
+        dialog.showMessageBox(null, {
+          type: 'info',
+          message: "No stations matched your criteria, try again!",
+          buttons: ['OK'],
+        }).then(result => {})
+      }
+    })();
+  }
 })
