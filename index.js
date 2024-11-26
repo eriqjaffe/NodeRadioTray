@@ -872,10 +872,19 @@ async function playStream(streamName, url, fromBookmark) {
         bookmarkButton.visible = true;
       }
     }
+    if (randomWindow) {
+      randomWindow.close()
+    }
     toggleButtons(true);
   } catch (error) {
     toggleButtons(false);
     errorLog.error(`Error playing stream: ${error.message}`);
+    dialog.showMessageBox(null, {
+      type: 'error',
+      message: "An error occurred:\r\r\n" + error.message,
+      buttons: ['OK'],
+    }).then(result => {})
+    
   }
 }
 
@@ -1089,7 +1098,13 @@ async function randomStation() {
     })
     randomWindow.setMenu(null)
     randomWindow.loadFile('random.html');
+    randomWindow.on('closed', () => {
+      randomWindow.destroy()
+      randomWindow = null
+    })
     //randomWindow.webContents.openDevTools({ mode: 'detach' })
+  } else {
+    randomWindow.show()
   }
 }
 
@@ -1467,14 +1482,15 @@ ipcMain.on('find-random-station', (event, arg) => {
       const stations = await api.searchStations(query)
       if (stations.length > 0) {
         let station = stations[Math.floor(Math.random()*stations.length)]
-        playStream(station.name, station.urlResolved, false)
-        randomWindow.close()
+        playStream(station.name, station.urlResolved, false) 
       } else {
         dialog.showMessageBox(null, {
           type: 'info',
           message: "No stations matched your criteria, try again!",
           buttons: ['OK'],
-        }).then(result => {})
+        }).then(result => {
+          randomWindow.webContents.send('no-station-found', null)
+        })
       }
     })();
   }
