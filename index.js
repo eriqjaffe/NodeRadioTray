@@ -172,7 +172,7 @@ let tooltipWindow;
 let randomWindow;
 let bookmarksArr = []
 let currentStreamData;
-let lastStationImage = path.join(__dirname, '/images/playing.png')
+let lastStationImage = path.join(__dirname, 'images','playing.png')
 
 initializeWatcher();
 
@@ -299,40 +299,40 @@ var menuTemplate = [
     id: 'stationMenu',
     label: 'Stations',
     submenu: loadBookmarks(),
-    icon: path.join(__dirname, 'images/icons8-radio-2.png')
+    icon: path.join(__dirname, 'images','icons8-radio-2.png')
   },
   { 
     type: 'separator'
   },
   { label: 'Preferences',
     submenu: prefsTemplate,
-    icon: path.join(__dirname, 'images/icons8-settings.png')
+    icon: path.join(__dirname, 'images','icons8-settings.png')
   },
   { 
     label: 'Edit Stations',
     click: e => {
       editBookmarksGui()
     },
-    icon: path.join(__dirname, '/images/icons8-maintenance.png')
+    icon: path.join(__dirname, 'images','icons8-maintenance.png')
   },
   { 
     label: 'Edit Station JSON file',
     click: e => {
-      shell.openPath(userData+'/bookmarks.json');
+      shell.openPath(path.join(userData, 'bookmarks.json'));
     },
-    icon: path.join(__dirname, '/images/icons8-edit-text-file.png')
+    icon: path.join(__dirname, 'images','icons8-edit-text-file.png')
   },
   { 
     label: 'Reload Stations',
     click: e => {
       reloadBookmarks();
     },
-    icon: path.join(__dirname, '/images/icons8-synchronize.png')
+    icon: path.join(__dirname, 'images','icons8-synchronize.png')
   },
   { 
     label: 'Restore Original Station list',
     click: e => {
-      fs.copyFile(path.join(__dirname, '/bookmarks.json'), userData+'/bookmarks.json', (err) => {
+      fs.copyFile(path.join(__dirname, 'bookmarks.json'), path.join(userData, 'bookmarks.json'), (err) => {
         if (err) {
           errorLog.error(err)
         } else {
@@ -341,19 +341,19 @@ var menuTemplate = [
         }
       })
     },
-    icon: path.join(__dirname, '/images/icons8-restore.png')
+    icon: path.join(__dirname, 'images','icons8-restore.png')
   },
   { label: 'Play Custom URL',
     click: e => {
       playCustomURL();
     },
-    icon: path.join(__dirname, '/images/icons8-add-link.png')
+    icon: path.join(__dirname, 'images','icons8-add-link.png')
   },
   { 
     id: 'devicesMenu',
     label: 'Audio Outputs',
     submenu: [],
-    icon: path.join(__dirname, 'images/icons8-speaker.png'),
+    icon: path.join(__dirname, 'images','icons8-speaker.png'),
     visible: true
   },
   { 
@@ -365,7 +365,7 @@ var menuTemplate = [
     click: async() => {
       playStream(store.get('lastStation'), store.get('lastURL'), true);
     },
-    icon: path.join(__dirname, '/images/icons8-Play.png'),
+    icon: path.join(__dirname, 'images','icons8-Play.png'),
     visible: true
   },
   {
@@ -374,12 +374,12 @@ var menuTemplate = [
     click: async() => {
       toggleButtons(false);
     },
-    icon: path.join(__dirname, '/images/icons8-Stop.png'),
+    icon: path.join(__dirname, 'images','icons8-Stop.png'),
     visible: false
   },
   { label: "Volume: "+Math.round(parseFloat(store.get("lastVolume", 1)) * 100)+"%",
     id: "volumeDisplay",
-    icon: path.join(__dirname, '/images/'+Math.round(parseFloat(store.get("lastVolume", .5)) * 100)+"-percent-icon.png"),
+    icon: path.join(__dirname, 'images', Math.round(parseFloat(store.get("lastVolume", .5)) * 100)+"-percent-icon.png"),
     visible: false
   },
   {
@@ -388,7 +388,7 @@ var menuTemplate = [
     click: async() => {
       changeVolume("up")
     },
-    icon: path.join(__dirname, '/images/icons8-thick-arrow-pointing-up-16.png'),
+    icon: path.join(__dirname, 'images','icons8-thick-arrow-pointing-up-16.png'),
     visible: false
   },
   {
@@ -397,7 +397,7 @@ var menuTemplate = [
     click: async() => {
       changeVolume("down")
     },
-    icon: path.join(__dirname, '/images/icons8-thick-arrow-pointing-down-16.png'),
+    icon: path.join(__dirname, 'images','icons8-thick-arrow-pointing-down-16.png'),
     visible: false
   },
   {
@@ -406,7 +406,7 @@ var menuTemplate = [
     click: async() => {
       changeStation("forward")
     },
-    icon: path.join(__dirname, '/images/icons8-Fast Forward.png'),
+    icon: path.join(__dirname, 'images','icons8-Fast Forward.png'),
     visible: false
   },
   {
@@ -415,7 +415,7 @@ var menuTemplate = [
     click: async() => {
       changeStation("backward")
     },
-    icon: path.join(__dirname, '/images/icons8-Rewind.png'),
+    icon: path.join(__dirname, 'images','icons8-Rewind.png'),
     visible: false
   },
   {
@@ -428,7 +428,7 @@ var menuTemplate = [
       let right = `"${parts[1].trim().replace(/ /g, "+").replace(/ /g, "_")}"`;
       shell.openExternal(`https://www.google.com/search?q=${left}+${right}`)
     },
-    icon: path.join(__dirname, '/images/icons8-google.png'),
+    icon: path.join(__dirname, 'images','icons8-google.png'),
     visible: false
   },
   { 
@@ -440,7 +440,7 @@ var menuTemplate = [
     click: async() => {
       showAbout()
     },
-    icon: path.join(__dirname, '/images/icons8-about.png')
+    icon: path.join(__dirname, 'images','icons8-about.png')
   },
   {
     label: "Toggle Debugging Window",
@@ -452,15 +452,15 @@ var menuTemplate = [
         playerWindow.show()
       }
     },
-    icon: path.join(__dirname, '/images/icons8-debug.png')
+    icon: path.join(__dirname, 'images','icons8-debug.png')
   },
   {
     label: "Open Log Folder",
     id: "OpenLogFolder",
     click: async() => {
-      shell.openPath(userData+'/logs/')
+      shell.openPath(userData,'logs')
     },
-    icon: path.join(__dirname, '/images/icons8-log.png')
+    icon: path.join(__dirname, 'images','icons8-log.png')
   },
   { 
     label: "Play a Random Station!",
@@ -468,7 +468,7 @@ var menuTemplate = [
     click: async() => {
       randomStation()
     },
-    icon: path.join(__dirname, '/images/icons8-random-16.png'),
+    icon: path.join(__dirname, 'images','icons8-random-16.png'),
     visible: true
   },
   { 
@@ -477,13 +477,13 @@ var menuTemplate = [
     click: async() => {
       bookmarkStation()
     },
-    icon: path.join(__dirname, '/images/icons8-bookmark-16.png'),
+    icon: path.join(__dirname, 'images','icons8-bookmark-16.png'),
     visible: false
   },
   {
     label: "Exit",
     role: "quit",
-    icon: path.join(__dirname, '/images/icons8-cancel.png')
+    icon: path.join(__dirname, 'images','icons8-cancel.png')
   }
 ]
 
@@ -623,7 +623,7 @@ app.whenReady().then(() => {
   } else {
     setIconTheme(darkIcon);
   }
-  lastStationImage = (darkIcon == true) ? path.join(__dirname, '/images/playing.png') : path.join(__dirname, '/images/playing_white.png')
+  lastStationImage = (darkIcon == true) ? path.join(__dirname, 'images','playing.png') : path.join(__dirname, 'images','playing_white.png')
   if (store.get("checkForUpdates") == true) {
     versionCheck(updateOptions, function (error, update) {
       if (error) {
@@ -669,7 +669,7 @@ app.whenReady().then(() => {
     height: 480,
     show: false,
     skipTaskbar: true,
-    icon: path.join(__dirname, 'images/playing.ico'),
+    icon: path.join(__dirname, 'images','playing.ico'),
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -750,7 +750,7 @@ function loadBookmarks() {
           if (tmp.img.length > 0 && fs.existsSync(userData+'/icons/'+tmp.img)) {
             var stationIcon = nativeImage.createFromPath(userData+'/icons/'+tmp.img).resize({width:16})
           } else {
-            var stationIcon = path.join(__dirname, '/images/icons8-radio-2.png')
+            var stationIcon = path.join(__dirname, 'images','icons8-radio-2.png')
           }
         } catch (error) {
           errorLog.error(error)
@@ -766,10 +766,10 @@ function loadBookmarks() {
         if (obj.img.length > 0 && fs.existsSync(userData+'/icons/'+obj.img)) {
           var genreIcon = nativeImage.createFromPath(userData+'/icons/'+obj.img).resize({width:16})
         } else {
-          var genreIcon = path.join(__dirname, '/images/icons8-radio-2.png')
+          var genreIcon = path.join(__dirname, 'images','icons8-radio-2.png')
         }
       } catch (error) {
-        var genreIcon = path.join(__dirname, '/images/icons8-radio-2.png')
+        var genreIcon = path.join(__dirname, 'images','icons8-radio-2.png')
       }
       var genre = {
         label: obj.name,
@@ -800,7 +800,7 @@ function showAbout() {
       width: 800,
       height: 600,
       skipTaskbar: true,
-      icon: path.join(__dirname, 'images/playing.ico'),
+      icon: path.join(__dirname, 'images','playing.ico'),
       webPreferences: {
         nodeIntegration: true,
         contextIsolation: false
@@ -829,7 +829,7 @@ function editBookmarksGui() {
     editorWindow = new BrowserWindow({
       width: 800,
       height: 650,
-      icon: path.join(__dirname, 'images/playing.ico'),
+      icon: path.join(__dirname, 'images','playing.ico'),
       skipTaskbar: true,
       webPreferences: {
         nodeIntegration: true,
@@ -858,9 +858,9 @@ async function playStream(streamName, url, fromBookmark) {
     playerWindow.webContents.send("play", { streamName: streamName, url: streamUrl, volume: store.get("lastVolume") });
     let bookmarks = JSON.parse(fs.readFileSync(userData+'/bookmarks.json'));
     let iconImage = findImageByName(streamName, bookmarks)
-    let defaultImage = path.join(__dirname, 'images/playing.png')
+    let defaultImage = path.join(__dirname, 'images','playing.png')
     if (darkIcon == false) {
-      defaultImage = path.join(__dirname, 'images/playing_white.png')
+      defaultImage = path.join(__dirname, 'images','playing_white.png')
     }
     lastStationImage = (iconImage == null) ? defaultImage : path.join(userData,'icons',iconImage)
     bookmarkButton = contextMenu.getMenuItemById('bookmark');
@@ -932,43 +932,43 @@ function toggleButtons(state) {
 function setIconTheme(checked) {
   switch (process.platform) {
     case "darwin":
-      idleIcon = path.join(__dirname, '/images/idleTemplate.png')
-      playingIcon = path.join(__dirname, '/images/playingTemplate.png')
+      idleIcon = path.join(__dirname, 'images','idleTemplate.png')
+      playingIcon = path.join(__dirname, 'images','playingTemplate.png')
       break;
     case "win32":
       if (checked) {
-        idleIcon = path.join(__dirname, '/images/idle.ico')
-        playingIcon = path.join(__dirname, '/images/playing.ico')
+        idleIcon = path.join(__dirname, 'images','idle.ico')
+        playingIcon = path.join(__dirname, 'images','playing.ico')
       } else {
-        idleIcon = path.join(__dirname, '/images/idle_white.ico')
-        playingIcon = path.join(__dirname, '/images/playing_white.ico')
+        idleIcon = path.join(__dirname, 'images','idle_white.ico')
+        playingIcon = path.join(__dirname, 'images','playing_white.ico')
       }
       break;
     case "linux":
       if (checked) {
-        idleIcon = path.join(__dirname, '/images/idle.png')
+        idleIcon = path.join(__dirname, 'images','idle.png')
         playingIcon = path.join(__dirname, '/images/playing.png')
       } else {
-        idleIcon = path.join(__dirname, '/images/idle_white.png')
-        playingIcon = path.join(__dirname, '/images/playing_white.png')
+        idleIcon = path.join(__dirname, 'images','idle_white.png')
+        playingIcon = path.join(__dirname, 'images','playing_white.png')
       }
       break;
     default:
       if (checked) {
-        idleIcon = path.join(__dirname, '/images/idle.png')
-        playingIcon = path.join(__dirname, '/images/playing.png')
+        idleIcon = path.join(__dirname, 'images','idle.png')
+        playingIcon = path.join(__dirname, 'images','playing.png')
       } else {
-        idleIcon = path.join(__dirname, '/images/idle_white.png')
-        playingIcon = path.join(__dirname, '/images/playing_white.png')
+        idleIcon = path.join(__dirname, 'images','idle_white.png')
+        playingIcon = path.join(__dirname, 'images','playing_white.png')
       }
       break;
   }
 }
 
 function initializeWatcher() {
-  if (!fs.existsSync(userData+'/bookmarks.json')) {
+  if (!fs.existsSync(userData+'bookmarks.json')) {
     try {
-      fs.copyFileSync(path.join(__dirname, '/bookmarks.json'), userData+'/bookmarks.json');
+      fs.copyFileSync(path.join(__dirname, 'bookmarks.json'), path.join(userData,'bookmarks.json'));
     } catch (error) {
       errorLog.error(error)
       .catch(error => {
@@ -1090,7 +1090,7 @@ async function randomStation() {
     randomWindow = new BrowserWindow({
       width: 300,
       height: 270,
-      icon: path.join(__dirname, 'images/playing.ico'),
+      icon: path.join(__dirname, 'images','playing.ico'),
       skipTaskbar: true,
       webPreferences: {
         nodeIntegration: true,
@@ -1410,7 +1410,7 @@ ipcMain.on("get-initial-volume", (event, data) => {
 ipcMain.on("set-volume-response", (event, data) => {
   store.set("lastVolume", data.volume)
   menuTemplate[12].label = "Volume: "+Math.round(parseFloat(data.volume) * 100)+"%"
-  menuTemplate[12].icon = path.join(__dirname, '/images/'+Math.round(parseFloat(data.volume) * 100)+"-percent-icon.png")
+  menuTemplate[12].icon = path.join(__dirname, 'images',Math.round(parseFloat(data.volume) * 100)+"-percent-icon.png")
   contextMenu = Menu.buildFromTemplate(menuTemplate)
   tray.setContextMenu(contextMenu)
   if (data.status == "playing") {
