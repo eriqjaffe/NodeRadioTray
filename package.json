@@ -38,7 +38,8 @@
     "node-gyp": "^8.4.1",
     "node-notifier": "^10.0.0",
     "playlist-parser": "^0.0.12",
-    "radio-browser": "^2.2.3"
+    "radio-browser": "^2.2.3",
+    "read-last-lines": "^1.8.0"
   },
   "devDependencies": {
     "electron": "^33.0.2",

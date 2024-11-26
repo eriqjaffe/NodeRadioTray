@@ -11,6 +11,7 @@ const pkg = require('./package.json')
 const parsers = require("playlist-parser");
 const versionCheck = require('github-version-checker')
 const lookup = require('country-code-lookup')
+const readLastLines = require('read-last-lines');
 const M3U = parsers.M3U;
 const PLS = parsers.PLS;
 const ASX = parsers.ASX
@@ -1299,7 +1300,13 @@ ipcMain.on('set-tooltip', (event, data) => {
       tooltipWindow.webContents.send('tooltip-update', {playing: data.playing, data: data.data, streamName: data.streamName, image: lastStationImage})
     }
     if (store.get("metadataLog") == true) {
-      log.info(data.data.replace("\r\n"," - "))
+      readLastLines.read(userData+'/logs/metadata.log', 1)
+	    .then((lines) => {
+        let mtd = data.data.replace("\r\n"," - ")
+        if (!lines.trim().includes(mtd.trim())) {
+          log.info(data.data.replace("\r\n"," - "))
+        }
+      });
     }
     if (store.get("notifications") == true) {
       notifier.notify(
