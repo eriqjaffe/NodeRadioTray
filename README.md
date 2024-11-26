@@ -20,7 +20,7 @@ Note that the ```yarn start``` method will cause the "Autostart with OS" option 
 - To play a station, simply pick it from the list.
 - The "Play" button will always start playing the last station you played (unless, of course, you've *never* played any stations).
 - Turning notifications on will just cause a notification when a station starts playing.  Error notifications always show up even if you have notifications off.
-- Bookmarks are stored in a .json file.  Stations and groups can be added, changed & removed manually.  If NodeRadioTray is running the changes will be reflected upon saving the file (there's a 2 second delay to make sure the file is done writing).  The "Edit stations" option will automaticlly open it in whatever your default json editor is, but if you want to open it directly the file location depends on your operating system.
+- Bookmarks are stored in a .json file.  There is a GUI to edit the Station list, but stations and groups can also be added, changed & removed manually.  If NodeRadioTray is running the changes will be reflected upon saving the file (there's a 2 second delay to make sure the file is done writing).  The "Edit stations" option will automaticlly open it in whatever your default json editor is, but if you want to open it directly the file location depends on your operating system.
   - ```Windows:  C:\Users\<user>\AppData\Roaming\noderadiotray```
   - ```macOS: /Users/<user>/Library/Application Support/noderadiotray```
   - ```Linux: /home/<user>/.config/noderadiotray```
