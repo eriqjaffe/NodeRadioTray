@@ -10,6 +10,7 @@
     </script>
     <script type="text/javascript" src="./scripts/jquery-1.11.3.min.js"></script>
     <script type="text/javascript" src="./scripts/jquery.magnific-popup.js"></script>
+    <script src="./scripts/icecast-metadata-player-1.17.3.main.min.js"></script>
     <link href="./scripts/magnific-popup.css" rel="stylesheet" type='text/css'/>
     <link href="./scripts/style.css" rel="stylesheet" type='text/css'/>
   </head>
@@ -69,6 +70,34 @@
         type: 'inline'
       });
       ipcRenderer.send('find-random-station', {country: $("#countryList").val(), language: $("#langList").val(), tag: $("#tagList").val()})
+    })
+
+    ipcRenderer.on('test-station', (event, data) => {
+      const onPlay = () => {
+        player.stop()
+        ipcRenderer.send('test-station-response', data)
+      }
+
+      const onStop = () => {
+        //$.magnificPopup.close()
+      }
+
+      const onError = (message, error) => {
+        alert("An error occurred playing the found stream:\r\n\r\n" + error)
+        player.stop()
+        $.magnificPopup.close()
+      }
+
+      const player = new IcecastMetadataPlayer(data.url, {
+        onError,
+        onPlay,
+        onStop,
+        retryTimeout: 0,
+        metadataTypes: ["icy"],
+      });
+
+      player.audioElement.volume = 0;
+      player.play();
     })
   </script>
 </html>

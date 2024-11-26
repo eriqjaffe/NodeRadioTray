@@ -882,7 +882,7 @@ async function playStream(streamName, url, fromBookmark) {
     errorLog.error(`Error playing stream: ${error.message}`);
     dialog.showMessageBox(null, {
       type: 'error',
-      message: "An error occurred:\r\r\n" + error.message,
+      message: "An error occurred:\r\n\r\n" + error.message,
       buttons: ['OK'],
     }).then(result => {})
     
@@ -1489,7 +1489,8 @@ ipcMain.on('find-random-station', (event, arg) => {
       const stations = await api.searchStations(query)
       if (stations.length > 0) {
         let station = stations[Math.floor(Math.random()*stations.length)]
-        playStream(station.name, station.urlResolved, false) 
+        randomWindow.webContents.send('test-station', {name: station.name, url: station.urlResolved})
+        //playStream(station.name, station.urlResolved, false) 
       } else {
         dialog.showMessageBox(null, {
           type: 'info',
@@ -1501,4 +1502,9 @@ ipcMain.on('find-random-station', (event, arg) => {
       }
     })();
   }
+
+  ipcMain.on('test-station-response', (event, data) => {
+    toggleButtons(false)
+    playStream(data.name, data.url, false)
+  })
 })
