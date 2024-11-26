@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>About NodeRadioTray</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+  <script>
+    if (typeof module === "object") { window.module = module; module = undefined; }
+    const { ipcRenderer } = require("electron");
+  </script>
+  <script type="text/javascript" src="./scripts/jquery-1.11.3.min.js"></script>
+  <link href="./scripts/tooltip.css" rel="stylesheet" type='text/css'/>
+</head>
+<body>
+  <div id="artDiv">
+    <img id="stationIcon" src="images/playing.png" />
+  </div>
+  <div id="textDiv">
+    <div style="font-weight: bold;">NodeRadioTray</div>
+    <span id="streamTitle"></span>
+  </div>
+  <script>
+    const observed = document.getElementById("textDiv")
+
+    const resizeTooltip = () => {
+      const width = observed.scrollWidth + 86;
+      let newWidth = Math.max(width, 302)
+      ipcRenderer.send("set-tooltip-width", newWidth);
+    };
+
+    const observer = new MutationObserver(resizeTooltip);
+    observer.observe(observed, { childList: true, subtree: true, characterData: true });
+
+    resizeTooltip();
+
+    ipcRenderer.on("tooltip-update", (event, data) => {
+      if (data.playing == true) {
+        $("#streamTitle").html(data.data.replace("\r\n", "<br>"));
+        $("#streamTitle").css("display", "block");
+        $("#stationIcon").attr("src", data.image);
+      } else {
+        $("#streamTitle").html("");
+        $("#streamTitle").css("display", "none");
+        $("#stationIcon").attr("src", data.image.replace(".ico", ".png"));
+      }
+    });
+
+    ipcRenderer.on("set-theme", (event, data) => {
+      if (data.dark == true) {
+        $("html").css("background-color", "#f0f0f0");
+        $("body").css("background-color", "#f0f0f0");
+        $("html").css("color", "#000000");
+      } else {
+        $("html").css("background-color", "#28282B");
+        $("body").css("background-color", "#28282B");
+        $("html").css("color", "#ffffff");
+      }
+      if (data.initial == true) {
+        if (data.dark == true) {
+          $("#stationIcon").attr("src", "images/playing.png");
+        } else {
+          $("#stationIcon").attr("src", "images/playing_white.png");
+        }
+      } else {
+        switch ($("#stationIcon").attr("src")) {
+          case ("images/playing.png"):
+            $("#stationIcon").attr("src", "images/playing_white.png");
+            break;
+          case ("images/playing_white.png"):
+            $("#stationIcon").attr("src", "images/playing.png");
+            break;
+          default:
+            break;
+        }
+      }
+    });
+  </script>
+</body>
+</html>

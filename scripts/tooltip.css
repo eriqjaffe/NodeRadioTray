@@ -1,0 +1,49 @@
+body {
+    margin: 0;
+    padding: 2px;
+    background-color: #f0f0f0;
+    font-size: 0.95em;
+    box-sizing: border-box;
+    border: 1px solid lightgray;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh; /* Centers content vertically within the tooltip window */
+    font-family: "Outfit", sans-serif;
+    overflow: hidden;
+    /*border-radius: 10px;*/
+  }
+
+  #artDiv {
+    height: 58px;
+    width: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #textDiv {
+    height: 58px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 216px;
+    padding-left: 6px;
+  }
+
+  #stationIcon {
+    max-width: 50px;
+    max-height: 50px;
+  }
+
+  #textDiv div {
+    white-space: nowrap;
+    box-sizing: border-box
+  }
+
+  #streamTitle {
+    display: none;
+    width: auto;
+    white-space: nowrap;
+    box-sizing: border-box
+  }

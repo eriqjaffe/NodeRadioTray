@@ -44,10 +44,13 @@
               <td style="text-align: right;">Group Name: </td>
               <td><input type='text' class='editField' name='groupName' id='groupName' value='' required style="width:500px;"></td>
             </tr>
-            <!--<tr>
+            <tr>
               <td style="text-align: right;">Group Icon: </td>
-              <td><input type='text' class='editField' name='groupIcon' id='groupIcon' value='' style="width:500px;"></td>
-            </tr>-->
+              <td>
+                <input type='text' class='editField iconField' name='groupIcon' id='groupIcon' value='' readonly style="width:408px;">
+                <input type="button" class='deleteIcon' value="Clear Image">
+              </td>
+            </tr>
           </table>
           <input type='submit' id='editGroupSubmit' value='Submit'>
           <input type="button" id="deleteGroup" value="Delete Group">
@@ -66,10 +69,13 @@
               <td style="text-align: right;">Station URL: </td>
               <td><input type='url' class='editField' name='stationURL' type="url" id='stationURL' value='' required style="width:500px;"></td>
             </tr>
-            <!--<tr>
+            <tr>
               <td style="text-align: right;">Station Icon: </td>
-              <td><input type='text' class='editField' name='stationIcon' id='stationIcon' value='' style="width:500px;"></td>
-            </tr>-->
+              <td>
+                <input type='text' class='editField iconField' name='stationIcon' id='stationIcon' value='' readonly style="width:408px;">
+                <input type="button" class='deleteIcon' value="Clear Image">
+              </td>
+            </tr>
           </table>
           <input type='submit' id='editStationSubmit' value='Submit'>
           <input type="button" id="deleteStation" value="Delete Station">
@@ -84,10 +90,13 @@
               <td style="text-align: right;">Group Name: </td>
               <td><input type='text' class='editField' name='newGroupName' id='newGroupName' value='' required style="width:500px;"></td>
             </tr>
-            <!--<tr>
+            <tr>
               <td style="text-align: right;">Group Icon: </td>
-              <td><input type='text' class='editField' name='newGroupIcon' id='newGroupIcon' value='' style="width:500px;"></td>
-            </tr>-->
+              <td>
+                <input type='text' class='editField iconField' name='newGroupIcon' id='newGroupIcon' value='' readonly style="width:408px;">
+                <input type="button" class='deleteIcon' value="Clear Image">
+              </td>
+            </tr>
           </table>
           <input type='submit' id='newStationSubmit' value='Submit'>
           <input type="button" class="cancelButton" value="Cancel">
@@ -109,10 +118,13 @@
               <td style="text-align: right;">Station Group: </td>
               <td><select name="newStationGroup" id="newStationGroup" style="width:500px;"></select></td>
             </tr>
-            <!--<tr>
+            <tr>
               <td style="text-align: right;">Station Icon: </td>
-              <td><input type='text' class='editField' name='newStationIcon' id='newStationIcon' value='' style="width:500px; display:none;"></td>
-            </tr>-->
+              <td>
+                <input type='text' class='editField iconField' name='newStationIcon' id='newStationIcon' value='' readonly style="width:408px;">
+                <input type="button" class='deleteIcon' data-id='stationIcon' value="Clear Image">
+              </td>
+            </tr>
           </table>
           <input type='submit' id='newStationSubmit' value='Submit'>
           <input type="button" class="cancelButton" value="Cancel">
@@ -125,9 +137,9 @@
     </div>
   </body>
   <script>
-    ipcRenderer.send('test-ipc', null)
+    ipcRenderer.send('get-bookmarks', null)
 
-    ipcRenderer.on('get-bookmarks', (event, response) => {
+    ipcRenderer.on('get-bookmarks-response', (event, response) => {
       $("#tree").fancytree({
         extensions: ["dnd5"],
         source: convertToFancytreeFormat(response),
@@ -193,15 +205,18 @@
             $(".background-change").css("background-color","#FAA0A0")
         },
         click: function(event, data){
+          console.log("click event")
           $(".footerChild").css("display","none")
           $(".editField").val("")
           let node = data.node
           if (node.type == "group") {
+            console.log(node)
             $("#groupName").val(node.title)
             $("#groupIcon").val(node.data.img)
             $("#editGroupDiv").css("display","inline-block")
             $("#editGroupName").html(node.title.toUpperCase())
           } else {
+            console.log(node)
             $("#stationName").val(node.title)
             $("#stationIcon").val(node.data.img)
             $("#stationURL").val(node.data.url)
@@ -210,6 +225,7 @@
           }
         },
         activate: function(event, data){
+          console.log('activate event')
           $(".footerChild").css("display","none")
           $(".editField").val("")
           let node = data.node
@@ -317,6 +333,20 @@
       }
     })
 
+    //$("#stationIcon").on("click", function(e) {
+    $(".iconField").on("click", function(e) {
+      ipcRenderer.send('get-icon-file', $(this).attr("id"))
+      //$("#stationIconFile").click()
+    })
+
+    $(".deleteIcon").on("click", function(e) {
+      $(this).siblings('.iconField').val('')
+    })
+
+    ipcRenderer.on('get-icon-file-response', (event, arg) => {
+      $("#"+arg.id).val(arg.image)
+    })
+
     ipcRenderer.on('check-tree', () => {
       ipcRenderer.send('check-tree-response', treeModified);
     })
@@ -390,7 +420,7 @@
 
     $("#editStationForm").on("submit",function(e) {
       e.preventDefault()
-      ipcRenderer.send('extract-url', {action: "edit", url: $("#stationURL").val() })
+      ipcRenderer.send('extract-url', {action: "edit", url: $("#stationURL").val(), image: $("#stationIcon").val() })
       $.magnificPopup.open({
         items: {
           src: '#checkingStream'
@@ -422,7 +452,7 @@
     $("#newGroupForm").on("submit",function(e) {
       e.preventDefault()
       const tree = $.ui.fancytree.getTree("#tree").getRootNode()
-      tree.addChildren({ title: $("#newGroupName").val(), folder: true, type: "group" })
+      tree.addChildren({ title: $("#newGroupName").val(), folder: true, img: $("#newGroupIcon").val(), type: "group" })
       tree.sortChildren(null, true)
       resetStuff()
     })
@@ -449,7 +479,7 @@
         const folderItem = {
           title: category.name,
           folder: true,
-          img: "",
+          img: category.img,
           children: [],
           type: 'group'
         };
@@ -480,7 +510,7 @@
       data.forEach(folderItem => {
         const category = {
           name: folderItem.title,
-          img: "",
+          img: folderItem.data.img || "", // Add a default value for img if it doesn't exist
           bookmark: [],
         };
 

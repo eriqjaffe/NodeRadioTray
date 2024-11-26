@@ -430,4 +430,20 @@ img.mfp-img {
   margin: 20px auto;
   animation: open 250ms;
 }
+
+.random-popup {
+  /*font-family: 'Archivo Narrow', sans-serif;*/
+  position: relative;
+  background: #ffffff;
+  -moz-border-radius:20px;  
+  border-radius: 20px;  
+  -webkit-border-radius: 20px;
+	/*padding: 5px 0px 10px 0px;*/
+  border: 2px solid #5a5a5a;
+  /*padding: 20px;*/
+  width: 266px;
+  height: 210px;
+  /*margin: 20px auto;*/
+  animation: open 250ms;
+}
 /*# sourceMappingURL=magnific-popup.css.map */

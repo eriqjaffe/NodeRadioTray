@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <title>Random Station</title>
+    <script>
+      if (typeof module === 'object') {window.module = module; module = undefined;}
+      const { ipcRenderer } = require("electron");
+    </script>
+    <script type="text/javascript" src="./scripts/jquery-1.11.3.min.js"></script>
+    <script type="text/javascript" src="./scripts/jquery.magnific-popup.js"></script>
+    <script src="./scripts/icecast-metadata-player-1.17.3.main.min.js"></script>
+    <link href="./scripts/magnific-popup.css" rel="stylesheet" type='text/css'/>
+    <link href="./scripts/style.css" rel="stylesheet" type='text/css'/>
+  </head>
+  <body style="padding:10px!important; overflow:hidden!important;">
+    <label>Country:</label><br>
+    <input type="text" id="countryList" list="countries" value="Any" style="width: 95%;">
+        <datalist id="countries">
+        </datalist>
+        <br><br>
+    <label>Language:</label><br>
+    <input type="text" id="langList" list="langs" value="Any" style="width: 95%;">
+        <datalist id="langs">
+        </datalist>
+        <br><br>
+    <label>Tag:</label><br>
+    <input type="text" id="tagList" list="tags" value="Any" style="width: 95%;">
+        <datalist id="tags">
+        </datalist><br><br>
+    <div style="width:100%; text-align: center;">
+    <input type="button" value="Submit" id="submit">
+    </div>
+    <div id="checkingStream" class="random-popup mfp-hide" style="text-align:center;">
+      <h2 style="width:100%;">Finding a Station...</h2>
+      <img src="./images/progress.gif" style="max-height:100px;">
+    </div>
+  </body>
+  <script>
+    ipcRenderer.send('get-radio-browser-stuff', null)
+
+    ipcRenderer.on('get-radio-browser-stuff-response', (event, data) => {
+      $("#countries").empty()
+      $("#langs").empty()
+      $("#tags").empty()
+      data.countries.forEach(function(country) {
+        $('<option>').val(country).appendTo($("#countries"));
+      });
+      data.languages.forEach(function(lang) {
+        $('<option>').val(lang).appendTo($("#langs"));
+      });
+      data.tags.forEach(function(tag) {
+        $('<option>').val(tag).appendTo($("#tags"));
+      });
+    })
+
+    ipcRenderer.on('no-station-found', (event, arg) => {
+      $.magnificPopup.close()
+    })
+
+    $("#submit").on("click", function(e) {
+      e.preventDefault()
+      $.magnificPopup.open({
+        items: {
+          src: '#checkingStream'
+        },
+        removalDelay: 250,
+        showCloseBtn: false,
+        type: 'inline'
+      });
+      ipcRenderer.send('find-random-station', {country: $("#countryList").val(), language: $("#langList").val(), tag: $("#tagList").val()})
+    })
+
+    ipcRenderer.on('test-station', (event, data) => {
+      const onPlay = () => {
+        player.stop()
+        ipcRenderer.send('test-station-response', data)
+      }
+
+      const onStop = () => {
+        //$.magnificPopup.close()
+      }
+
+      const onError = (message, error) => {
+        alert("An error occurred playing the found stream:\r\n\r\n" + error)
+        player.stop()
+        $.magnificPopup.close()
+      }
+
+      const player = new IcecastMetadataPlayer(data.url, {
+        onError,
+        onPlay,
+        onStop,
+        retryTimeout: 0,
+        metadataTypes: ["icy"],
+      });
+
+      player.audioElement.volume = 0;
+      player.play();
+    })
+  </script>
+</html>
