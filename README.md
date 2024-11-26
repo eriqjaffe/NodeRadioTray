@@ -1,6 +1,6 @@
 # NodeRadioTray
 
-A simple cross-platform internet radio player that reads URLs from a JSON file using node.js, Electron.  Based on [Radio Tray](https://github.com/lubosz/radiotray), originally written by Carlos Ribiero.
+A simple cross-platform internet radio player that reads URLs from a JSON file using node.js and Electron.  Based on [Radio Tray](https://github.com/lubosz/radiotray), originally written by Carlos Ribiero.
 
 ![Windows screenshot](https://i.imgur.com/HNKCfwm.png)![Linux screenshot](https://i.imgur.com/W9jLwMM.png)![macOS screenshot](https://i.imgur.com/1bYZex8.png)
 
