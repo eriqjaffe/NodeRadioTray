@@ -966,7 +966,7 @@ function setIconTheme(checked) {
 }
 
 function initializeWatcher() {
-  if (!fs.existsSync(userData+'bookmarks.json')) {
+  if (!fs.existsSync(path.join(userData,'bookmarks.json'))) {
     try {
       fs.copyFileSync(path.join(__dirname, 'bookmarks.json'), path.join(userData,'bookmarks.json'));
     } catch (error) {
@@ -1426,6 +1426,7 @@ ipcMain.on('get-bookmarks', (event, arg) => {
 })
 
 ipcMain.on('save-bookmarks', (event, data) => {
+  console.log(data.data)
   fs.writeFile(userData+'/bookmarks.json', data.data, function(err) {
     if(err) {
       dialog.showMessageBox(null, {
