@@ -4,7 +4,6 @@ const fs = require('fs');
 const Store = require("electron-store");
 const chokidar = require("chokidar");
 const prompt = require('electron-prompt');
-const prompt2 = require('custom-electron-prompt')
 const notifier = require('node-notifier');
 const path = require('path');
 const AutoLaunch = require('auto-launch');
