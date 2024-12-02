@@ -4,14 +4,13 @@ const fs = require('fs');
 const Store = require("electron-store");
 const chokidar = require("chokidar");
 const prompt = require('electron-prompt');
+const prompt2 = require('custom-electron-prompt')
 const notifier = require('node-notifier');
 const path = require('path');
 const AutoLaunch = require('auto-launch');
 const pkg = require('./package.json')
 const parsers = require("playlist-parser");
 const versionCheck = require('github-version-checker')
-const lookup = require('country-code-lookup')
-const readLastLines = require('read-last-lines');
 const M3U = parsers.M3U;
 const PLS = parsers.PLS;
 const ASX = parsers.ASX
@@ -24,15 +23,18 @@ const iconFolder = path.join(userData,"icons")
 let countries
 let languages 
 let tags
+let bookmarkFile
 
 const removeEmojis = (str) => str.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}]/gu, '');
 
-RadioBrowser.getCategory("countrycodes")
+RadioBrowser.getCategory("countries")
   .then(data => {
-    countriesTmp = data.map(entry => lookup.byIso(entry.name).country);
-    countriesTmp.sort((a, b) => a.localeCompare(b));
-    countriesTmp = ["Any", ...countriesTmp.filter(tag => tag !== "Any")];
-    countries = [...new Set(countriesTmp)]; 
+    countries = data.map(entry => entry.name);
+    countries.sort((a, b) => a.localeCompare(b));
+    countries = ["Any", ...countries.filter(tag => tag !== "Any")];
+    countries = countries.filter(country => {
+      return country.trim().length > 18;
+    });
   })
   .catch(error => console.error(error));
 
@@ -143,6 +145,8 @@ const watcher = chokidar.watch([], { awaitWriteFinish: true })
     reloadBookmarks();
 })
 
+bookmarkFile = store.get("customBookmarkPath", path.join(userData, "bookmarks.json"))
+
 log.initialize();
 log.transports.file.fileName = "metadata.log"
 log.eventLogger.startLogging
@@ -172,7 +176,7 @@ let tooltipWindow;
 let randomWindow;
 let bookmarksArr = []
 let currentStreamData;
-let lastStationImage = path.join(__dirname, 'images','playing.png')
+let lastStationImage = path.join(__dirname, '/images/playing.png')
 
 initializeWatcher();
 
@@ -291,7 +295,45 @@ const prefsTemplate = [
     },
     type: "checkbox",
     checked: (store.get("checkForUpdates") == true) ? true : false
+  },
+  {
+    label: 'Custom bookmark file location',
+    click: e => {
+      if (!e.checked) {
+        changeWatcher(path.join(store.get("customBookmarkPath")), path.join(userData,"bookmarks.json"))
+        fs.copyFileSync(path.join(store.get("customBookmarkPath")), path.join(userData,"bookmarks.json"))
+        store.delete("customBookmarkPath")
+        bookmarkFile = path.join(userData,"bookmarks.json")
+      } else {
+        dialog.showOpenDialog(null, {properties: ['openDirectory', 'createDirectory']}).then(result => {
+          if(!result.canceled) {
+            try {
+              console.log(path.join(result.filePaths[0]))
+              try {
+                if (!fs.existsSync(path.join(result.filePaths[0],"NodeRadioTray"))) {
+                  fs.mkdirSync(path.join(result.filePaths[0],"NodeRadioTray"))
+                }
+                fs.copyFileSync(path.join(userData,"bookmarks.json"), path.join(result.filePaths[0],"NodeRadioTray","bookmarks.json"))
+                bookmarkFile = path.join(result.filePaths[0],"NodeRadioTray","bookmarks.json")
+                store.set("customBookmarkPath", path.join(result.filePaths[0],"NodeRadioTray","bookmarks.json"))
+                changeWatcher(path.join(userData,"bookmarks.json"), path.join(result.filePaths[0],"NodeRadioTray","bookmarks.json"))
+              } catch (err) {
+
+                errorLog.error(err)
+              }
+            } catch (err) {
+              errorLog.error(err)
+            }
+          } else {
+            
+          }
+        })
+      }
+    },
+    type: "checkbox",
+    checked: (bookmarkFile != path.join(userData,"bookmarks.json")) ? true : false
   }
+
 ]
 
 var menuTemplate = [
@@ -299,40 +341,40 @@ var menuTemplate = [
     id: 'stationMenu',
     label: 'Stations',
     submenu: loadBookmarks(),
-    icon: path.join(__dirname, 'images','icons8-radio-2.png')
+    icon: path.join(__dirname, 'images/icons8-radio-2.png')
   },
   { 
     type: 'separator'
   },
   { label: 'Preferences',
     submenu: prefsTemplate,
-    icon: path.join(__dirname, 'images','icons8-settings.png')
+    icon: path.join(__dirname, 'images/icons8-settings.png')
   },
   { 
     label: 'Edit Stations',
     click: e => {
       editBookmarksGui()
     },
-    icon: path.join(__dirname, 'images','icons8-maintenance.png')
+    icon: path.join(__dirname, '/images/icons8-maintenance.png')
   },
   { 
     label: 'Edit Station JSON file',
     click: e => {
-      shell.openPath(path.join(userData, 'bookmarks.json'));
+      shell.openPath(bookmarkFile);
     },
-    icon: path.join(__dirname, 'images','icons8-edit-text-file.png')
+    icon: path.join(__dirname, '/images/icons8-edit-text-file.png')
   },
   { 
     label: 'Reload Stations',
     click: e => {
       reloadBookmarks();
     },
-    icon: path.join(__dirname, 'images','icons8-synchronize.png')
+    icon: path.join(__dirname, '/images/icons8-synchronize.png')
   },
   { 
     label: 'Restore Original Station list',
     click: e => {
-      fs.copyFile(path.join(__dirname, 'bookmarks.json'), path.join(userData, 'bookmarks.json'), (err) => {
+      fs.copyFile(path.join(__dirname, '/bookmarks.json'), bookmarkFile, (err) => {
         if (err) {
           errorLog.error(err)
         } else {
@@ -341,19 +383,19 @@ var menuTemplate = [
         }
       })
     },
-    icon: path.join(__dirname, 'images','icons8-restore.png')
+    icon: path.join(__dirname, '/images/icons8-restore.png')
   },
   { label: 'Play Custom URL',
     click: e => {
       playCustomURL();
     },
-    icon: path.join(__dirname, 'images','icons8-add-link.png')
+    icon: path.join(__dirname, '/images/icons8-add-link.png')
   },
   { 
     id: 'devicesMenu',
     label: 'Audio Outputs',
     submenu: [],
-    icon: path.join(__dirname, 'images','icons8-speaker.png'),
+    icon: path.join(__dirname, 'images/icons8-speaker.png'),
     visible: true
   },
   { 
@@ -365,7 +407,7 @@ var menuTemplate = [
     click: async() => {
       playStream(store.get('lastStation'), store.get('lastURL'), true);
     },
-    icon: path.join(__dirname, 'images','icons8-Play.png'),
+    icon: path.join(__dirname, '/images/icons8-Play.png'),
     visible: true
   },
   {
@@ -374,12 +416,12 @@ var menuTemplate = [
     click: async() => {
       toggleButtons(false);
     },
-    icon: path.join(__dirname, 'images','icons8-Stop.png'),
+    icon: path.join(__dirname, '/images/icons8-Stop.png'),
     visible: false
   },
   { label: "Volume: "+Math.round(parseFloat(store.get("lastVolume", 1)) * 100)+"%",
     id: "volumeDisplay",
-    icon: path.join(__dirname, 'images', Math.round(parseFloat(store.get("lastVolume", .5)) * 100)+"-percent-icon.png"),
+    icon: path.join(__dirname, '/images/'+Math.round(parseFloat(store.get("lastVolume", .5)) * 100)+"-percent-icon.png"),
     visible: false
   },
   {
@@ -388,7 +430,7 @@ var menuTemplate = [
     click: async() => {
       changeVolume("up")
     },
-    icon: path.join(__dirname, 'images','icons8-thick-arrow-pointing-up-16.png'),
+    icon: path.join(__dirname, '/images/icons8-thick-arrow-pointing-up-16.png'),
     visible: false
   },
   {
@@ -397,7 +439,7 @@ var menuTemplate = [
     click: async() => {
       changeVolume("down")
     },
-    icon: path.join(__dirname, 'images','icons8-thick-arrow-pointing-down-16.png'),
+    icon: path.join(__dirname, '/images/icons8-thick-arrow-pointing-down-16.png'),
     visible: false
   },
   {
@@ -406,7 +448,7 @@ var menuTemplate = [
     click: async() => {
       changeStation("forward")
     },
-    icon: path.join(__dirname, 'images','icons8-Fast Forward.png'),
+    icon: path.join(__dirname, '/images/icons8-Fast Forward.png'),
     visible: false
   },
   {
@@ -415,7 +457,7 @@ var menuTemplate = [
     click: async() => {
       changeStation("backward")
     },
-    icon: path.join(__dirname, 'images','icons8-Rewind.png'),
+    icon: path.join(__dirname, '/images/icons8-Rewind.png'),
     visible: false
   },
   {
@@ -428,7 +470,7 @@ var menuTemplate = [
       let right = `"${parts[1].trim().replace(/ /g, "+").replace(/ /g, "_")}"`;
       shell.openExternal(`https://www.google.com/search?q=${left}+${right}`)
     },
-    icon: path.join(__dirname, 'images','icons8-google.png'),
+    icon: path.join(__dirname, '/images/icons8-google.png'),
     visible: false
   },
   { 
@@ -440,7 +482,7 @@ var menuTemplate = [
     click: async() => {
       showAbout()
     },
-    icon: path.join(__dirname, 'images','icons8-about.png')
+    icon: path.join(__dirname, '/images/icons8-about.png')
   },
   {
     label: "Toggle Debugging Window",
@@ -452,15 +494,15 @@ var menuTemplate = [
         playerWindow.show()
       }
     },
-    icon: path.join(__dirname, 'images','icons8-debug.png')
+    icon: path.join(__dirname, '/images/icons8-debug.png')
   },
   {
     label: "Open Log Folder",
     id: "OpenLogFolder",
     click: async() => {
-      shell.openPath(userData,'logs')
+      shell.openPath(userData+'/logs/')
     },
-    icon: path.join(__dirname, 'images','icons8-log.png')
+    icon: path.join(__dirname, '/images/icons8-log.png')
   },
   { 
     label: "Play a Random Station!",
@@ -468,7 +510,7 @@ var menuTemplate = [
     click: async() => {
       randomStation()
     },
-    icon: path.join(__dirname, 'images','icons8-random-16.png'),
+    icon: path.join(__dirname, '/images/icons8-random-16.png'),
     visible: true
   },
   { 
@@ -477,13 +519,13 @@ var menuTemplate = [
     click: async() => {
       bookmarkStation()
     },
-    icon: path.join(__dirname, 'images','icons8-bookmark-16.png'),
+    icon: path.join(__dirname, '/images/icons8-bookmark-16.png'),
     visible: false
   },
   {
     label: "Exit",
     role: "quit",
-    icon: path.join(__dirname, 'images','icons8-cancel.png')
+    icon: path.join(__dirname, '/images/icons8-cancel.png')
   }
 ]
 
@@ -623,7 +665,7 @@ app.whenReady().then(() => {
   } else {
     setIconTheme(darkIcon);
   }
-  lastStationImage = (darkIcon == true) ? path.join(__dirname, 'images','playing.png') : path.join(__dirname, 'images','playing_white.png')
+  lastStationImage = (darkIcon == true) ? path.join(__dirname, '/images/playing.png') : path.join(__dirname, '/images/playing_white.png')
   if (store.get("checkForUpdates") == true) {
     versionCheck(updateOptions, function (error, update) {
       if (error) {
@@ -669,7 +711,7 @@ app.whenReady().then(() => {
     height: 480,
     show: false,
     skipTaskbar: true,
-    icon: path.join(__dirname, 'images','playing.ico'),
+    icon: path.join(__dirname, 'images/playing.ico'),
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -728,7 +770,7 @@ function loadBookmarks() {
   var stationMenu = [];
   bookmarksArr = []
   try {
-    let bookmarks = JSON.parse(fs.readFileSync(userData+'/bookmarks.json'));
+    let bookmarks = JSON.parse(fs.readFileSync(bookmarkFile));
     bookmarks.forEach(genre => {
       genre.bookmark.forEach(station => {
           bookmarksArr.push({
@@ -750,7 +792,7 @@ function loadBookmarks() {
           if (tmp.img.length > 0 && fs.existsSync(userData+'/icons/'+tmp.img)) {
             var stationIcon = nativeImage.createFromPath(userData+'/icons/'+tmp.img).resize({width:16})
           } else {
-            var stationIcon = path.join(__dirname, 'images','icons8-radio-2.png')
+            var stationIcon = path.join(__dirname, '/images/icons8-radio-2.png')
           }
         } catch (error) {
           errorLog.error(error)
@@ -766,10 +808,10 @@ function loadBookmarks() {
         if (obj.img.length > 0 && fs.existsSync(userData+'/icons/'+obj.img)) {
           var genreIcon = nativeImage.createFromPath(userData+'/icons/'+obj.img).resize({width:16})
         } else {
-          var genreIcon = path.join(__dirname, 'images','icons8-radio-2.png')
+          var genreIcon = path.join(__dirname, '/images/icons8-radio-2.png')
         }
       } catch (error) {
-        var genreIcon = path.join(__dirname, 'images','icons8-radio-2.png')
+        var genreIcon = path.join(__dirname, '/images/icons8-radio-2.png')
       }
       var genre = {
         label: obj.name,
@@ -800,7 +842,7 @@ function showAbout() {
       width: 800,
       height: 600,
       skipTaskbar: true,
-      icon: path.join(__dirname, 'images','playing.ico'),
+      icon: path.join(__dirname, 'images/playing.ico'),
       webPreferences: {
         nodeIntegration: true,
         contextIsolation: false
@@ -829,7 +871,7 @@ function editBookmarksGui() {
     editorWindow = new BrowserWindow({
       width: 800,
       height: 650,
-      icon: path.join(__dirname, 'images','playing.ico'),
+      icon: path.join(__dirname, 'images/playing.ico'),
       skipTaskbar: true,
       webPreferences: {
         nodeIntegration: true,
@@ -856,11 +898,11 @@ async function playStream(streamName, url, fromBookmark) {
     tray.setImage(idleIcon);
     const streamUrl = await extractURLfromPlaylist(url);
     playerWindow.webContents.send("play", { streamName: streamName, url: streamUrl, volume: store.get("lastVolume") });
-    let bookmarks = JSON.parse(fs.readFileSync(userData+'/bookmarks.json'));
+    let bookmarks = JSON.parse(fs.readFileSync(bookmarkFile));
     let iconImage = findImageByName(streamName, bookmarks)
-    let defaultImage = path.join(__dirname, 'images','playing.png')
+    let defaultImage = path.join(__dirname, 'images/playing.png')
     if (darkIcon == false) {
-      defaultImage = path.join(__dirname, 'images','playing_white.png')
+      defaultImage = path.join(__dirname, 'images/playing_white.png')
     }
     lastStationImage = (iconImage == null) ? defaultImage : path.join(userData,'icons',iconImage)
     bookmarkButton = contextMenu.getMenuItemById('bookmark');
@@ -873,19 +915,10 @@ async function playStream(streamName, url, fromBookmark) {
         bookmarkButton.visible = true;
       }
     }
-    if (randomWindow) {
-      randomWindow.close()
-    }
     toggleButtons(true);
   } catch (error) {
     toggleButtons(false);
     errorLog.error(`Error playing stream: ${error.message}`);
-    dialog.showMessageBox(null, {
-      type: 'error',
-      message: "An error occurred:\r\n\r\n" + error.message,
-      buttons: ['OK'],
-    }).then(result => {})
-    
   }
 }
 
@@ -932,43 +965,43 @@ function toggleButtons(state) {
 function setIconTheme(checked) {
   switch (process.platform) {
     case "darwin":
-      idleIcon = path.join(__dirname, 'images','idleTemplate.png')
-      playingIcon = path.join(__dirname, 'images','playingTemplate.png')
+      idleIcon = path.join(__dirname, '/images/idleTemplate.png')
+      playingIcon = path.join(__dirname, '/images/playingTemplate.png')
       break;
     case "win32":
       if (checked) {
-        idleIcon = path.join(__dirname, 'images','idle.ico')
-        playingIcon = path.join(__dirname, 'images','playing.ico')
+        idleIcon = path.join(__dirname, '/images/idle.ico')
+        playingIcon = path.join(__dirname, '/images/playing.ico')
       } else {
-        idleIcon = path.join(__dirname, 'images','idle_white.ico')
-        playingIcon = path.join(__dirname, 'images','playing_white.ico')
+        idleIcon = path.join(__dirname, '/images/idle_white.ico')
+        playingIcon = path.join(__dirname, '/images/playing_white.ico')
       }
       break;
     case "linux":
       if (checked) {
-        idleIcon = path.join(__dirname, 'images','idle.png')
+        idleIcon = path.join(__dirname, '/images/idle.png')
         playingIcon = path.join(__dirname, '/images/playing.png')
       } else {
-        idleIcon = path.join(__dirname, 'images','idle_white.png')
-        playingIcon = path.join(__dirname, 'images','playing_white.png')
+        idleIcon = path.join(__dirname, '/images/idle_white.png')
+        playingIcon = path.join(__dirname, '/images/playing_white.png')
       }
       break;
     default:
       if (checked) {
-        idleIcon = path.join(__dirname, 'images','idle.png')
-        playingIcon = path.join(__dirname, 'images','playing.png')
+        idleIcon = path.join(__dirname, '/images/idle.png')
+        playingIcon = path.join(__dirname, '/images/playing.png')
       } else {
-        idleIcon = path.join(__dirname, 'images','idle_white.png')
-        playingIcon = path.join(__dirname, 'images','playing_white.png')
+        idleIcon = path.join(__dirname, '/images/idle_white.png')
+        playingIcon = path.join(__dirname, '/images/playing_white.png')
       }
       break;
   }
 }
 
 function initializeWatcher() {
-  if (!fs.existsSync(path.join(userData,'bookmarks.json'))) {
+  if (!fs.existsSync(bookmarkFile)) {
     try {
-      fs.copyFileSync(path.join(__dirname, 'bookmarks.json'), path.join(userData,'bookmarks.json'));
+      fs.copyFileSync(path.join(__dirname, '/bookmarks.json'), bookmarkFile);
     } catch (error) {
       errorLog.error(error)
       .catch(error => {
@@ -986,7 +1019,7 @@ function initializeWatcher() {
       });
     }
   }
-  watcher.add(userData+'/bookmarks.json',
+  watcher.add(bookmarkFile,
     { awaitWriteFinish: true })
     .on('ready', function() {});
 }
@@ -1041,6 +1074,11 @@ function toggleMMKeys(state) {
   }
 }
 
+async function changeWatcher(stop, start) {
+  await watcher.unwatch(path.join(stop))
+  await watcher.add(path.join(start))
+}
+
 function changeStation(dir) {
   let index;
   const currentIndex = bookmarksArr.findIndex(station => station.name === store.get('lastStation'));
@@ -1089,8 +1127,8 @@ async function randomStation() {
   if (!randomWindow) {
     randomWindow = new BrowserWindow({
       width: 300,
-      height: 270,
-      icon: path.join(__dirname, 'images','playing.ico'),
+      height: 260,
+      icon: path.join(__dirname, 'images/playing.ico'),
       skipTaskbar: true,
       webPreferences: {
         nodeIntegration: true,
@@ -1099,14 +1137,51 @@ async function randomStation() {
     })
     randomWindow.setMenu(null)
     randomWindow.loadFile('random.html');
-    randomWindow.on('closed', () => {
-      randomWindow.destroy()
-      randomWindow = null
-    })
-    //randomWindow.webContents.openDevTools({ mode: 'detach' })
-  } else {
-    randomWindow.show()
+    randomWindow.webContents.openDevTools({ mode: 'detach' })
   }
+  /* prompt2({
+    title: 'Prompt example',
+    type: "multiInput",
+    customStylesheet: path.join(__dirname, 'scripts','style.css'),
+    icon: path.join(__dirname, 'images', 'playing.png'),
+    multiInputOptions:
+        [
+          {
+            label: "Country:",
+            selectOptions: countries
+          },
+          {
+            label: "Language:",
+            selectOptions: languages
+          },
+          {
+            label: "Tag:",
+            selectOptions: tags
+          }
+      ],
+    height: 300
+  })
+  .then((r) => {
+      if(r === null) {
+          console.log('user cancelled');
+      } else {
+          console.log('result', r);
+      }
+  })
+  .catch(console.error); */
+/*   let filter = {
+    limit: 500,
+    by: 'tag',  
+    order: 'random'
+  }
+  await RadioBrowser.getRandomHost()
+  RadioBrowser.searchStations(filter)
+      .then(data => {
+        let station = data[Math.floor(Math.random()*data.length)]
+        playStream(station.name, station.url_resolved, false)
+      })
+      .catch(error => console.error(error))
+       */
 }
 
 async function bookmarkStation() {
@@ -1128,7 +1203,7 @@ async function bookmarkStation() {
         name = r
     })
   }
-  let bookmarks = JSON.parse(fs.readFileSync(userData+'/bookmarks.json'));
+  let bookmarks = JSON.parse(fs.readFileSync(bookmarkFile));
   const selectOptions = bookmarks.reduce((acc, item) => {
     acc[item.name] = item.name;
     return acc;
@@ -1156,7 +1231,7 @@ async function bookmarkStation() {
             if (result.response === 0) {
               group.bookmark.push({name: name, url: currentStreamData.url, img: "" })
               group.bookmark.sort((a, b) => a.name.localeCompare(b.name));
-              fs.writeFile(userData+'/bookmarks.json', JSON.stringify(bookmarks, null, 3), function(err) {
+              fs.writeFile(bookmarkFile, JSON.stringify(bookmarks, null, 3), function(err) {
                 if(err) {
                   dialog.showMessageBox(null, {
                     type: 'error',
@@ -1177,7 +1252,7 @@ async function bookmarkStation() {
         } else {
           group.bookmark.push({name: name, url: currentStreamData.url, img: "" })
           group.bookmark.sort((a, b) => a.name.localeCompare(b.name));
-          fs.writeFile(userData+'/bookmarks.json', JSON.stringify(bookmarks, null, 3), function(err) {
+          fs.writeFile(bookmarkFile, JSON.stringify(bookmarks, null, 3), function(err) {
             if(err) {
               dialog.showMessageBox(null, {
                 type: 'error',
@@ -1300,13 +1375,7 @@ ipcMain.on('set-tooltip', (event, data) => {
       tooltipWindow.webContents.send('tooltip-update', {playing: data.playing, data: data.data, streamName: data.streamName, image: lastStationImage})
     }
     if (store.get("metadataLog") == true) {
-      readLastLines.read(userData+'/logs/metadata.log', 1)
-	    .then((lines) => {
-        let mtd = data.data.replace("\r\n"," - ")
-        if (!lines.trim().includes(mtd.trim())) {
-          log.info(data.data.replace("\r\n"," - "))
-        }
-      });
+      log.info(data.data.replace("\r\n"," - "))
     }
     if (store.get("notifications") == true) {
       notifier.notify(
@@ -1410,7 +1479,7 @@ ipcMain.on("get-initial-volume", (event, data) => {
 ipcMain.on("set-volume-response", (event, data) => {
   store.set("lastVolume", data.volume)
   menuTemplate[12].label = "Volume: "+Math.round(parseFloat(data.volume) * 100)+"%"
-  menuTemplate[12].icon = path.join(__dirname, 'images',Math.round(parseFloat(data.volume) * 100)+"-percent-icon.png")
+  menuTemplate[12].icon = path.join(__dirname, '/images/'+Math.round(parseFloat(data.volume) * 100)+"-percent-icon.png")
   contextMenu = Menu.buildFromTemplate(menuTemplate)
   tray.setContextMenu(contextMenu)
   if (data.status == "playing") {
@@ -1421,13 +1490,12 @@ ipcMain.on("set-volume-response", (event, data) => {
 })
 
 ipcMain.on('get-bookmarks', (event, arg) => {
-  let bookmarks = JSON.parse(fs.readFileSync(userData+'/bookmarks.json'));
+  let bookmarks = JSON.parse(fs.readFileSync(bookmarkFile));
   event.sender.send('get-bookmarks-response', bookmarks)
 })
 
 ipcMain.on('save-bookmarks', (event, data) => {
-  console.log(data.data)
-  fs.writeFile(userData+'/bookmarks.json', data.data, function(err) {
+  fs.writeFile(bookmarkFile, data.data, function(err) {
     if(err) {
       dialog.showMessageBox(null, {
         type: 'error',
@@ -1460,52 +1528,4 @@ ipcMain.on('check-for-update', (event, arg) => {
 
 ipcMain.on('get-radio-browser-stuff', (event, arg) => {
   randomWindow.webContents.send('get-radio-browser-stuff-response', { countries: countries, languages: languages, tags: tags})
-})
-
-ipcMain.on('find-random-station', (event, arg) => {
-  const query = {
-    order: 'random',
-    limit: 100,
-    coded: 'mp3'
-  };
-
-  if (arg.country !== 'Any') {
-    query.countryCode = lookup.byCountry(arg.country).iso2;
-  }
-
-  if (arg.language !== 'Any') {
-    query.language = arg.language;
-  }
-
-  if (arg.tag !== 'Any') {
-    query.tag = arg.tag;
-  }
-  
-  getRandomStation()
-
-  async function getRandomStation() {
-    (async () => {
-      const { RadioBrowserApi } = await import('@luigivampa/radio-browser-api');
-      const api = new RadioBrowserApi('NodeRadioTray')
-      const stations = await api.searchStations(query)
-      if (stations.length > 0) {
-        let station = stations[Math.floor(Math.random()*stations.length)]
-        randomWindow.webContents.send('test-station', {name: station.name, url: station.urlResolved})
-        //playStream(station.name, station.urlResolved, false) 
-      } else {
-        dialog.showMessageBox(null, {
-          type: 'info',
-          message: "No stations matched your criteria, try again!",
-          buttons: ['OK'],
-        }).then(result => {
-          randomWindow.webContents.send('no-station-found', null)
-        })
-      }
-    })();
-  }
-
-  ipcMain.on('test-station-response', (event, data) => {
-    toggleButtons(false)
-    playStream(data.name, data.url, false)
-  })
 })
