@@ -301,7 +301,7 @@ const prefsTemplate = [
     click: e => {
       if (!e.checked) {
         // revert back to the default path
-        switchBookmarks(path.join(store.get("customBookmarkPath")), path.join(userData,"bookmarks.json"))
+        moveBookmarks(path.join(store.get("customBookmarkPath")), path.join(userData,"bookmarks.json"))
       } else {
         // switch to a user-defined path
         dialog.showOpenDialog(null, {properties: ['openDirectory', 'createDirectory']}).then(result => {
@@ -309,7 +309,7 @@ const prefsTemplate = [
             if (!fs.existsSync(path.join(result.filePaths[0],"NodeRadioTray"))) {
               fs.mkdirSync(path.join(result.filePaths[0],"NodeRadioTray"))
             }
-            switchBookmarks(path.join(userData,"bookmarks.json"), path.join(result.filePaths[0],'NodeRadioTray','bookmarks.json'))
+            moveBookmarks(path.join(userData,"bookmarks.json"), path.join(result.filePaths[0],'NodeRadioTray','bookmarks.json'))
           }
         })
       }
@@ -319,65 +319,6 @@ const prefsTemplate = [
   }
 
 ]
-
-function switchBookmarks(oldFile, newFile) {
-  let menuItem = contextMenu.getMenuItemById('customBookmarkPath');
-  if (fs.existsSync(newFile)) {
-    let result = dialog.showMessageBoxSync(null, {
-      type: 'question',
-      message: "Ovewrite the existing bookmark file:\r\n\r\n"+newFile+"?",
-      buttons: ['Yes', 'No', 'Cancel']
-    })
-    switch (result) {
-      case 0:
-        console.log("you said yes!")
-        fs.copyFileSync(oldFile, newFile)
-        changeWatcher(oldFile, newFile)
-        store.set("customBookmarkPath", newFile)
-        bookmarkFile = newFile
-        if (bookmarkFile == path.join(userData,"bookmarks.json")) {
-          store.delete("customBookmarkPath")
-          menuItem.checked = false
-        } else {
-          menuItem.checked = true
-        }
-        break;
-      case 1:
-        console.log("you said no!")
-        changeWatcher(oldFile, newFile)
-        store.set("customBookmarkPath", newFile)
-        bookmarkFile = newFile
-        if (bookmarkFile == path.join(userData,"bookmarks.json")) {
-          store.delete("customBookmarkPath")
-          menuItem.checked = false
-        } else {
-          menuItem.checked = true
-        }
-        break;
-      default:
-        console.log("you said cancel")
-        bookmarkFile = oldFile
-        if (bookmarkFile == path.join(userData,"bookmarks.json")) {
-          store.delete("customBookmarkPath")
-          menuItem.checked = false
-        } else {
-          menuItem.checked = true
-        }
-        break;
-    }
-  } else {
-    fs.copyFileSync(oldFile, newFile)
-    changeWatcher(oldFile, newFile)
-    bookmarkFile = newFile
-    if (newFile == path.join(userData,"bookmarks.json")) {
-      store.delete("customBookmarkPath")
-      menuItem.checked = false
-    } else {
-      menuItem.checked = true
-    }
-  }
-  console.log("Bookmarks are now at "+bookmarkFile)
-}
 
 var menuTemplate = [
   { 
@@ -874,6 +815,65 @@ function reloadBookmarks() {
   contextMenu = Menu.buildFromTemplate(menuTemplate)
   tray.setContextMenu(contextMenu)
   playerWindow.webContents.send("get-player-status", null)
+}
+
+function moveBookmarks(oldFile, newFile) {
+  let menuItem = contextMenu.getMenuItemById('customBookmarkPath');
+  if (fs.existsSync(newFile)) {
+    let result = dialog.showMessageBoxSync(null, {
+      type: 'question',
+      message: "Ovewrite the existing bookmark file:\r\n\r\n"+newFile+"?",
+      buttons: ['Yes', 'No', 'Cancel']
+    })
+    switch (result) {
+      case 0:
+        console.log("you said yes!")
+        fs.copyFileSync(oldFile, newFile)
+        changeWatcher(oldFile, newFile)
+        store.set("customBookmarkPath", newFile)
+        bookmarkFile = newFile
+        if (bookmarkFile == path.join(userData,"bookmarks.json")) {
+          store.delete("customBookmarkPath")
+          menuItem.checked = false
+        } else {
+          menuItem.checked = true
+        }
+        break;
+      case 1:
+        console.log("you said no!")
+        changeWatcher(oldFile, newFile)
+        store.set("customBookmarkPath", newFile)
+        bookmarkFile = newFile
+        if (bookmarkFile == path.join(userData,"bookmarks.json")) {
+          store.delete("customBookmarkPath")
+          menuItem.checked = false
+        } else {
+          menuItem.checked = true
+        }
+        break;
+      default:
+        console.log("you said cancel")
+        bookmarkFile = oldFile
+        if (bookmarkFile == path.join(userData,"bookmarks.json")) {
+          store.delete("customBookmarkPath")
+          menuItem.checked = false
+        } else {
+          menuItem.checked = true
+        }
+        break;
+    }
+  } else {
+    fs.copyFileSync(oldFile, newFile)
+    changeWatcher(oldFile, newFile)
+    bookmarkFile = newFile
+    if (newFile == path.join(userData,"bookmarks.json")) {
+      store.delete("customBookmarkPath")
+      menuItem.checked = false
+    } else {
+      menuItem.checked = true
+    }
+  }
+  reloadBookmarks()
 }
 
 function showAbout() {
