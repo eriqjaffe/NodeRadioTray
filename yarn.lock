@@ -971,10 +971,10 @@ electron-installer-windows@^3.0.0:
     which "^2.0.2"
     yargs "^15.1.0"
 
-electron-log@^5.2.0:
-  version "5.2.0"
-  resolved "https://registry.yarnpkg.com/electron-log/-/electron-log-5.2.0.tgz#505716926dfcf9cb3e74f42b1003be6d865bcb88"
-  integrity sha512-VjLkvaLmbP3AOGOh5Fob9M8bFU0mmeSAb5G2EoTBx+kQLf2XA/0byzjsVGBTHhikbT+m1AB27NEQUv9wX9nM8w==
+electron-log@^5.2.3:
+  version "5.2.3"
+  resolved "https://registry.yarnpkg.com/electron-log/-/electron-log-5.2.3.tgz#b58447b2158b9aa5faa07c4d15340113069d3f15"
+  integrity sha512-BabCiEV+p362LzY0EFE8hyzeGknzKDWSbhS0VFfRYQGA4FHWXWSfaKJlvTR9LFepNoORXxc/BWvqBXIPgsVFgA==
 
 electron-notarize@^1.1.1:
   version "1.1.1"

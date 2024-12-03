@@ -148,6 +148,7 @@ const watcher = chokidar.watch([], { awaitWriteFinish: true })
 bookmarkFile = store.get("customBookmarkPath", path.join(userData, "bookmarks.json"))
 
 log.initialize();
+log.transports.console.level = false
 log.transports.file.fileName = "metadata.log"
 log.eventLogger.startLogging
 
