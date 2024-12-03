@@ -959,6 +959,9 @@ async function playStream(streamName, url, fromBookmark) {
         bookmarkButton.visible = true;
       }
     }
+    if (randomWindow) {
+      randomWindow.close()
+    }
     toggleButtons(true);
   } catch (error) {
     toggleButtons(false);
@@ -1538,4 +1541,52 @@ ipcMain.on('check-for-update', (event, arg) => {
 
 ipcMain.on('get-radio-browser-stuff', (event, arg) => {
   randomWindow.webContents.send('get-radio-browser-stuff-response', { countries: countries, languages: languages, tags: tags})
+})
+
+ipcMain.on('find-random-station', (event, arg) => {
+  const query = {
+    order: 'random',
+    limit: 100,
+    coded: 'mp3'
+  };
+
+  if (arg.country !== 'Any') {
+    query.countryCode = lookup.byCountry(arg.country).iso2;
+  }
+
+  if (arg.language !== 'Any') {
+    query.language = arg.language;
+  }
+
+  if (arg.tag !== 'Any') {
+    query.tag = arg.tag;
+  }
+  
+  getRandomStation()
+
+  async function getRandomStation() {
+    (async () => {
+      const { RadioBrowserApi } = await import('@luigivampa/radio-browser-api');
+      const api = new RadioBrowserApi('NodeRadioTray')
+      const stations = await api.searchStations(query)
+      if (stations.length > 0) {
+        let station = stations[Math.floor(Math.random()*stations.length)]
+        randomWindow.webContents.send('test-station', {name: station.name, url: station.urlResolved})
+        //playStream(station.name, station.urlResolved, false) 
+      } else {
+        dialog.showMessageBox(null, {
+          type: 'info',
+          message: "No stations matched your criteria, try again!",
+          buttons: ['OK'],
+        }).then(result => {
+          randomWindow.webContents.send('no-station-found', null)
+        })
+      }
+    })();
+  }
+
+  ipcMain.on('test-station-response', (event, data) => {
+    toggleButtons(false)
+    playStream(data.name, data.url, false)
+  })
 })
