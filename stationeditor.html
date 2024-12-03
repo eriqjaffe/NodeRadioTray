@@ -338,7 +338,6 @@
       }
     })
 
-    //$("#stationIcon").on("click", function(e) {
     $(".image").on("click", function(e) {
       ipcRenderer.send('get-icon-file', $(this).attr("id"))
       //$("#stationIconFile").click()
@@ -368,7 +367,7 @@
         if (data.action == "edit") {
           let nodeToEdit = tree.getActiveNode();
           nodeToEdit.setTitle($("#stationName").val())
-          nodeToEdit.data.img = $("#stationIcon").val()
+          nodeToEdit.data.img = $("#stationIcon").attr("src")
           nodeToEdit.data.url = $("#stationURL").val()
           nodeToEdit.parent.sortChildren(null, true)
           resetStuff()
@@ -376,7 +375,7 @@
           const node = tree.findFirst(function(node) {
             return node.type == "group" && node.title == $("#newStationGroup").val()
           })
-          node.addChildren({ title: $("#newStationName").val(), type: "bookmark", url: $("#newStationURL").val(), img: $("#newStationIcon").val() })
+          node.addChildren({ title: $("#newStationName").val(), type: "bookmark", url: $("#newStationURL").val(), img: $("#newStationIcon").attr("src") })
           node.sortChildren(null, true)
           let station = node.findFirst($("#newStationName").val())
           node.setExpanded()
@@ -418,14 +417,15 @@
       let tree = $.ui.fancytree.getTree("#tree");
       let nodeToEdit = tree.getActiveNode();
       nodeToEdit.setTitle($("#groupName").val())
-      nodeToEdit.data.img = $("#groupIcon").val()
+      nodeToEdit.data.img = $("#groupIcon").attr("src")
       nodeToEdit.parent.sortChildren(null, true)
+      console.log(nodeToEdit)
       resetStuff()
     })
 
     $("#editStationForm").on("submit",function(e) {
       e.preventDefault()
-      ipcRenderer.send('extract-url', {action: "edit", url: $("#stationURL").val(), image: $("#stationIcon").val() })
+      ipcRenderer.send('extract-url', {action: "edit", url: $("#stationURL").val(), image: $("#stationIcon").attr("src") })
       $.magnificPopup.open({
         items: {
           src: '#checkingStream'
@@ -457,7 +457,7 @@
     $("#newGroupForm").on("submit",function(e) {
       e.preventDefault()
       const tree = $.ui.fancytree.getTree("#tree").getRootNode()
-      tree.addChildren({ title: $("#newGroupName").val(), folder: true, img: $("#newGroupIcon").val(), type: "group" })
+      tree.addChildren({ title: $("#newGroupName").val(), folder: true, img: $("#newGroupIcon").attr("src"), type: "group" })
       tree.sortChildren(null, true)
       resetStuff()
     })

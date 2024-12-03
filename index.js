@@ -1547,7 +1547,8 @@ ipcMain.on('get-bookmarks', (event, arg) => {
 })
 
 ipcMain.on('save-bookmarks', (event, data) => {
-  fs.writeFile(bookmarkFile, data.data, function(err) {
+  let cleanedString = data.data.replaceAll("images/playing.png", "")
+  fs.writeFile(bookmarkFile, cleanedString, function(err) {
     if(err) {
       dialog.showMessageBox(null, {
         type: 'error',
