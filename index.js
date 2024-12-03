@@ -690,7 +690,7 @@ app.whenReady().then(() => {
   });
   tooltipWindow.setMenu(null)
   tooltipWindow.loadFile('tooltip.html')
-  tooltipWindow.webContents.openDevTools({ mode: 'detach' })
+  //tooltipWindow.webContents.openDevTools({ mode: 'detach' })
 
   playerWindow = new BrowserWindow({
     width: 1024,
@@ -937,6 +937,7 @@ function editBookmarksGui() {
 
 async function playStream(streamName, url, fromBookmark) {
   try {
+    let bookmarkButton = contextMenu.getMenuItemById('bookmark');
     if (!htmlToolTip) {
       tray.setToolTip("NodeRadioTray");
     }
@@ -1453,7 +1454,7 @@ ipcMain.on('get-icon-file', (event, data) => {
 	dialog.showOpenDialog(null, options).then(result => {
 		  if(!result.canceled) {
         try {
-
+          store.set("uploadImagePath", path.dirname(userFile.filePaths[0]));
           readImage(data, result.filePaths[0])
           async function readImage(data, file) {
             const image = await Jimp.read(file);
