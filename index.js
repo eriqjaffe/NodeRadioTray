@@ -18,7 +18,7 @@ const log = require('electron-log/main');
 const RadioBrowser = require('radio-browser');
 const gotTheLock = app.requestSingleInstanceLock();
 const userData = app.getPath('userData');
-const iconFolder = path.join(userData,"icons")
+//const iconFolder = path.join(userData,"icons")
 
 let countries
 let languages 
@@ -159,9 +159,9 @@ const updateOptions = {
 	currentVersion: pkg.version
 };
 
-if (!fs.existsSync(iconFolder)) {
+/* if (!fs.existsSync(iconFolder)) {
   fs.mkdirSync(iconFolder);
-}
+} */
 
 var stream = null;
 var contextMenu = null;
@@ -1445,7 +1445,7 @@ ipcMain.on('set-tooltip', (event, data) => {
 
 ipcMain.on('get-icon-file', (event, data) => {
   const options = {
-		defaultPath: store.get("uploadImagePath", app.getPath('pictures')),
+		defaultPath: store.get("uploadImagePath", app.getPath("downloads")),
 		properties: ['openFile'],
 		filters: [
 			{ name: 'Images', extensions: ['jpg', 'png'] }
