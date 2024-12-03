@@ -690,6 +690,7 @@ app.whenReady().then(() => {
   });
   tooltipWindow.setMenu(null)
   tooltipWindow.loadFile('tooltip.html')
+  tooltipWindow.webContents.openDevTools({ mode: 'detach' })
 
   playerWindow = new BrowserWindow({
     width: 1024,
@@ -774,8 +775,8 @@ function loadBookmarks() {
         tmp.url = obj.bookmark[j].url
         tmp.img = obj.bookmark[j].img
         try {
-          if (tmp.img.length > 0 && fs.existsSync(userData+'/icons/'+tmp.img)) {
-            var stationIcon = nativeImage.createFromPath(userData+'/icons/'+tmp.img).resize({width:16})
+          if (tmp.img.length > 0) {
+            var stationIcon = nativeImage.createFromDataURL(tmp.img).resize({width:16})
           } else {
             var stationIcon = path.join(__dirname, '/images/icons8-radio-2.png')
           }
@@ -790,8 +791,8 @@ function loadBookmarks() {
         stations.push(station)
       }
       try {
-        if (obj.img.length > 0 && fs.existsSync(userData+'/icons/'+obj.img)) {
-          var genreIcon = nativeImage.createFromPath(userData+'/icons/'+obj.img).resize({width:16})
+        if (obj.img.length > 0) {
+          var genreIcon = nativeImage.createFromDataURL(obj.img).resize({width:16})
         } else {
           var genreIcon = path.join(__dirname, '/images/icons8-radio-2.png')
         }
@@ -924,7 +925,7 @@ function editBookmarksGui() {
     })
     editorWindow.setMenu(null)
     editorWindow.loadFile('stationeditor.html');
-    editorWindow.webContents.openDevTools({ mode: 'detach' })
+    //editorWindow.webContents.openDevTools({ mode: 'detach' })
     editorWindow.on('close', (event) => {
       event.preventDefault()
       editorWindow.webContents.send('check-tree');
@@ -948,7 +949,7 @@ async function playStream(streamName, url, fromBookmark) {
     if (darkIcon == false) {
       defaultImage = path.join(__dirname, 'images/playing_white.png')
     }
-    lastStationImage = (iconImage == null) ? defaultImage : path.join(userData,'icons',iconImage)
+    lastStationImage = (iconImage == null) ? defaultImage : iconImage
     
     if (fromBookmark) {
       store.set('lastStation', streamName);
@@ -1181,7 +1182,7 @@ async function randomStation() {
     })
     randomWindow.setMenu(null)
     randomWindow.loadFile('random.html');
-    randomWindow.webContents.openDevTools({ mode: 'detach' })
+    //randomWindow.webContents.openDevTools({ mode: 'detach' })
   }
   /* prompt2({
     title: 'Prompt example',

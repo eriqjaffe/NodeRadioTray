@@ -214,15 +214,15 @@
           $(".editField").val("")
           let node = data.node
           if (node.type == "group") {
-            console.log(node)
+            console.log(node.data)
             $("#groupName").val(node.title)
-            $("#groupIcon").val(node.data.img)
+            $("#groupIcon").attr("src",node.data.img)
             $("#editGroupDiv").css("display","inline-block")
             $("#editGroupName").html(node.title.toUpperCase())
           } else {
-            console.log(node)
+            console.log(node.data)
             $("#stationName").val(node.title)
-            $("#stationIcon").val(node.data.img)
+            $("#stationIcon").attr("src",node.data.img)
             $("#stationURL").val(node.data.url)
             $("#editStationDiv").css("display","inline-block")
             $("#editStationName").html(node.title.toUpperCase())
@@ -234,13 +234,15 @@
           $(".editField").val("")
           let node = data.node
           if (node.type == "group") {
+            //console.log(node.data.img)
             $("#groupName").val(node.title)
-            $("#groupIcon").val(node.data.img)
+            $("#groupIcon").attr("src",node.data.img)
             $("#editGroupDiv").css("display","inline-block")
             $("#editGroupName").html(node.title.toUpperCase())
           } else {
+            //console.log(node.data.img)
             $("#stationName").val(node.title)
-            $("#stationIcon").val(node.data.img)
+            $("#stationIcon").attr("src",node.data.img)
             $("#stationURL").val(node.data.url)
             $("#editStationDiv").css("display","inline-block")
             $("#editStationName").html(node.title.toUpperCase())
@@ -481,19 +483,21 @@
 
       // Iterate over the original JSON data
       data.forEach(category => {
+        var image = (category.img == "") ? "images/playing.png" : category.img
         const folderItem = {
           title: category.name,
           folder: true,
-          img: category.img,
+          img: image,
           children: [],
           type: 'group'
         };
 
         category.bookmark.forEach(bookmark => {
+          var image = (bookmark.img == "") ? "images/playing.png" : bookmark.img
           folderItem.children.push({
             title: bookmark.name,
             url: bookmark.url,
-            img: bookmark.img,
+            img: image,
             type: 'bookmark'
           });
         });
