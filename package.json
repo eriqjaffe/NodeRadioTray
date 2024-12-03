@@ -35,6 +35,8 @@
     "electron-squirrel-startup": "^1.0.0",
     "electron-store": "^8.0.1",
     "github-version-checker": "2.3.0",
+    "image-base64": "^1.0.2",
+    "is-base64": "^1.1.0",
     "jimp": "0.22.12",
     "node-gyp": "^8.4.1",
     "node-notifier": "^10.0.0",

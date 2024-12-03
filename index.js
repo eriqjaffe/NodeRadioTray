@@ -13,6 +13,8 @@ const versionCheck = require('github-version-checker')
 const Jimp = require("jimp");
 const lookup = require('country-code-lookup')
 const readLastLines = require('read-last-lines');
+const isBase64 = require('is-base64')
+const imageBase64 = require('image-base64');
 const M3U = parsers.M3U;
 const PLS = parsers.PLS;
 const ASX = parsers.ASX
@@ -749,7 +751,31 @@ if (process.platform == "darwin") {
   app.dock.hide()
 }
 
+function validateImages() {
+  let bookmarks = JSON.parse(fs.readFileSync(bookmarkFile));
+  bookmarks.forEach(category => {
+    // Process the main category image
+    if (category.img && !isBase64(category.img, { allowMime: true })) {
+       if (!category.img.startsWith("data:image")) {
+        category.img = imageBase64.local(path.join(userData,"icons",category.img))
+       }
+    }
+ 
+    // Process bookmark images
+    category.bookmark.forEach(bookmark => {
+       if (bookmark.img && !isBase64(bookmark.img, { allowMime: true })) {
+          console.log(bookmark.img)
+          if (!bookmark.img.startsWith("data:image")) {
+            bookmark.img = imageBase64.local(path.join(userData,"icons",bookmark.img))
+          }
+       }
+    });
+ })
+ fs.writeFileSync(bookmarkFile, JSON.stringify(bookmarks, null, 3))
+}
+
 function loadBookmarks() {
+  validateImages()
   var stationMenu = [];
   bookmarksArr = []
   try {
