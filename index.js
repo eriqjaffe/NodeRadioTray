@@ -10,6 +10,7 @@ const AutoLaunch = require('auto-launch');
 const pkg = require('./package.json')
 const parsers = require("playlist-parser");
 const versionCheck = require('github-version-checker')
+const Jimp = require("jimp");
 const M3U = parsers.M3U;
 const PLS = parsers.PLS;
 const ASX = parsers.ASX
@@ -923,7 +924,7 @@ function editBookmarksGui() {
     })
     editorWindow.setMenu(null)
     editorWindow.loadFile('stationeditor.html');
-    //editorWindow.webContents.openDevTools({ mode: 'detach' })
+    editorWindow.webContents.openDevTools({ mode: 'detach' })
     editorWindow.on('close', (event) => {
       event.preventDefault()
       editorWindow.webContents.send('check-tree');
@@ -1451,10 +1452,18 @@ ipcMain.on('get-icon-file', (event, data) => {
 	dialog.showOpenDialog(null, options).then(result => {
 		  if(!result.canceled) {
         try {
-          fs.copyFileSync(result.filePaths[0], path.join(iconFolder,path.basename(result.filePaths[0])))
-          editorWindow.webContents.send("get-icon-file-response", {id: data, image: path.basename(result.filePaths[0])})
+
+          readImage(data, result.filePaths[0])
+          async function readImage(data, file) {
+            const image = await Jimp.read(file);
+            image.scaleToFit(50, 50)
+            let b64 = await image.getBase64Async(Jimp.AUTO)
+            editorWindow.webContents.send("get-icon-file-response", {id: data, image: b64})
+          }
+          /* fs.copyFileSync(result.filePaths[0], path.join(iconFolder,path.basename(result.filePaths[0])))
+          editorWindow.webContents.send("get-icon-file-response", {id: data, image: path.basename(result.filePaths[0])}) */
         } catch (err) {
-          errorLog.error(err)
+          console.log(err)
         }
       } else {
         

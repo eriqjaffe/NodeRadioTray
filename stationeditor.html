@@ -41,16 +41,17 @@
         <form id='editGroupForm' action="">
           <table>
             <tr>
+              <td style="padding-right:10px; text-align:center;"><img class="image" title="Click to choose an image" id='groupIcon' src="images/playing.png" style="max-height:50px;"><br/><input type="button" class='deleteIcon' value="Clear Image"></td>
               <td style="text-align: right;">Group Name: </td>
               <td><input type='text' class='editField' name='groupName' id='groupName' value='' required style="width:500px;"></td>
             </tr>
-            <tr>
+            <!--<tr>
               <td style="text-align: right;">Group Icon: </td>
               <td>
                 <input type='text' class='editField iconField' name='groupIcon' id='groupIcon' value='' readonly style="width:408px;">
                 <input type="button" class='deleteIcon' value="Clear Image">
               </td>
-            </tr>
+            </tr>-->
           </table>
           <input type='submit' id='editGroupSubmit' value='Submit'>
           <input type="button" id="deleteGroup" value="Delete Group">
@@ -62,6 +63,7 @@
         <form id='editStationForm' action="">
           <table>
             <tr>
+              <td rowspan="2" style="padding-right:10px; text-align:center;"><img class="image" title="Click to choose an image" id='stationIcon' src="images/playing.png" style="max-height:50px;"><br/><input type="button" class='deleteIcon' value="Clear Image"></td>
               <td style="text-align: right;">Station Name: </td>
               <td><input type='text' class='editField' name='stationName' id='stationName' value='' required style="width:500px;"></td>
             </tr>
@@ -69,13 +71,13 @@
               <td style="text-align: right;">Station URL: </td>
               <td><input type='url' class='editField' name='stationURL' type="url" id='stationURL' value='' required style="width:500px;"></td>
             </tr>
-            <tr>
+            <!--<tr>
               <td style="text-align: right;">Station Icon: </td>
               <td>
                 <input type='text' class='editField iconField' name='stationIcon' id='stationIcon' value='' readonly style="width:408px;">
                 <input type="button" class='deleteIcon' value="Clear Image">
               </td>
-            </tr>
+            </tr>-->
           </table>
           <input type='submit' id='editStationSubmit' value='Submit'>
           <input type="button" id="deleteStation" value="Delete Station">
@@ -87,16 +89,17 @@
         <form id='newGroupForm' action="">
           <table>
             <tr>
+              <td style="padding-right:10px; text-align:center;"><img class="image" id='newGroupIcon' title="Click to choose an image" src="images/playing.png" style="max-height:50px;"><br/><input type="button" class='deleteIcon' value="Clear Image"></td>
               <td style="text-align: right;">Group Name: </td>
               <td><input type='text' class='editField' name='newGroupName' id='newGroupName' value='' required style="width:500px;"></td>
             </tr>
-            <tr>
+            <!--<tr>
               <td style="text-align: right;">Group Icon: </td>
               <td>
                 <input type='text' class='editField iconField' name='newGroupIcon' id='newGroupIcon' value='' readonly style="width:408px;">
                 <input type="button" class='deleteIcon' value="Clear Image">
               </td>
-            </tr>
+            </tr>-->
           </table>
           <input type='submit' id='newStationSubmit' value='Submit'>
           <input type="button" class="cancelButton" value="Cancel">
@@ -107,6 +110,7 @@
           <b>ADD A NEW STATION</b>
           <table>
             <tr>
+              <td rowspan="3" style="padding-right:10px; text-align:center;"><img class="image" id='newStationIcon' title="Click to choose an image" src="images/playing.png" style="max-height:50px;"><br/><input type="button" class='deleteIcon' value="Clear Image"></td>
               <td style="text-align: right;">Station Name: </td>
               <td><input type='text' class='editField' name='newStationName' id='newStationName' value='' required style="width:500px;"></td>
             </tr>
@@ -118,13 +122,13 @@
               <td style="text-align: right;">Station Group: </td>
               <td><select name="newStationGroup" id="newStationGroup" style="width:500px;"></select></td>
             </tr>
-            <tr>
+            <!--<tr>
               <td style="text-align: right;">Station Icon: </td>
               <td>
                 <input type='text' class='editField iconField' name='newStationIcon' id='newStationIcon' value='' readonly style="width:408px;">
                 <input type="button" class='deleteIcon' data-id='stationIcon' value="Clear Image">
               </td>
-            </tr>
+            </tr>-->
           </table>
           <input type='submit' id='newStationSubmit' value='Submit'>
           <input type="button" class="cancelButton" value="Cancel">
@@ -300,6 +304,7 @@
       }
     });
 
+
     $("#btnAddGroup").on("click", function() {
       $(".footerChild").css("display","none")
       $(".editField").val("")
@@ -334,17 +339,17 @@
     })
 
     //$("#stationIcon").on("click", function(e) {
-    $(".iconField").on("click", function(e) {
+    $(".image").on("click", function(e) {
       ipcRenderer.send('get-icon-file', $(this).attr("id"))
       //$("#stationIconFile").click()
     })
 
     $(".deleteIcon").on("click", function(e) {
-      $(this).siblings('.iconField').val('')
+      $(this).siblings('.image').attr("src","images/playing.png")
     })
 
     ipcRenderer.on('get-icon-file-response', (event, arg) => {
-      $("#"+arg.id).val(arg.image)
+      $("#"+arg.id).attr("src",arg.image);
     })
 
     ipcRenderer.on('check-tree', () => {
