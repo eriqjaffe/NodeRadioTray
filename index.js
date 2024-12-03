@@ -11,11 +11,12 @@ const pkg = require('./package.json')
 const parsers = require("playlist-parser");
 const versionCheck = require('github-version-checker')
 const Jimp = require("jimp");
+const lookup = require('country-code-lookup')
+const readLastLines = require('read-last-lines');
 const M3U = parsers.M3U;
 const PLS = parsers.PLS;
 const ASX = parsers.ASX
 const log = require('electron-log/main');
-const RadioBrowser = require('radio-browser');
 const gotTheLock = app.requestSingleInstanceLock();
 const userData = app.getPath('userData');
 //const iconFolder = path.join(userData,"icons")
@@ -26,45 +27,6 @@ let tags
 let bookmarkFile
 
 const removeEmojis = (str) => str.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}]/gu, '');
-
-RadioBrowser.getCategory("countries")
-  .then(data => {
-    countries = data.map(entry => entry.name);
-    countries.sort((a, b) => a.localeCompare(b));
-    countries = ["Any", ...countries.filter(tag => tag !== "Any")];
-    countries = countries.filter(country => {
-      return country.trim().length > 18;
-    });
-  })
-  .catch(error => console.error(error));
-
-RadioBrowser.getCategory("languages")
-  .then(data => {
-    languages = data.map(entry => entry.name);
-    if (!languages.includes("Any")) {
-      languages.push("Any");
-    }
-    languages.sort((a, b) => a.localeCompare(b));
-    languages = ["Any", ...languages.filter(tag => tag !== "Any")];
-    languages = languages.filter(lang => {
-      return lang.trim().length > 18;
-    });
-  })
-  .catch(error => console.error(error));
-
-RadioBrowser.getCategory("tags")
-  .then(data => {
-    tags = data.map(entry => removeEmojis(entry.name).trim());
-    if (!tags.includes("Any")) {
-      tags.push("Any");
-    }
-    tags.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-    tags = ["Any", ...tags.filter(tag => tag !== "Any")];
-    tags = tags.filter(tag => {
-      return tag.trim().length > 18;
-    });
-  })
-  .catch(error => console.error(error));
 
 const helpInfo = `
 Options:
@@ -646,6 +608,8 @@ const positionTooltipWindow = () => {
 };
 
 app.whenReady().then(() => {
+  getRBData()
+
   if (process.platform == "darwin") {
     setIconTheme(nativeTheme.shouldUseDarkColors)
   } else {
@@ -737,6 +701,38 @@ app.whenReady().then(() => {
       playStream(store.get('lastStation'), store.get('lastURL'), true)
     case "--play":
       playStream(store.get('lastStation'), store.get('lastURL'), true)
+  }
+
+  async function getRBData() {
+    const { RadioBrowserApi } = await import('@luigivampa/radio-browser-api');
+      const api = new RadioBrowserApi('NodeRadioTray')
+      const tagReturn = await api.getTags()
+      tags = tagReturn.map(entry => removeEmojis(entry.name).trim());
+      if (!tags.includes("Any")) {
+        tags.push("Any");
+      }
+      tags.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+      tags = ["Any", ...tags.filter(tag => tag !== "Any")];
+      tags = tags.filter(tag => {
+        return tag.trim().length > 18;
+      });
+      
+      const countryReturn = await api.getCountryCodes()
+      countries = countryReturn.map(entry => lookup.byIso(entry.name).country);
+      countries.sort((a, b) => a.localeCompare(b));
+      countries = ["Any", ...countries.filter(tag => tag !== "Any")];
+      countries = [...new Set(countries)];
+
+      const langReturn = await api.getLanguages()
+      languages = langReturn.map(entry => entry.name);
+      if (!languages.includes("Any")) {
+        languages.push("Any");
+      }
+      languages.sort((a, b) => a.localeCompare(b));
+      languages = ["Any", ...languages.filter(tag => tag !== "Any")];
+      languages = languages.filter(lang => {
+        return lang.trim().length > 18;
+      });
   }
 })
 
@@ -1379,7 +1375,13 @@ ipcMain.on('set-tooltip', (event, data) => {
       tooltipWindow.webContents.send('tooltip-update', {playing: data.playing, data: data.data, streamName: data.streamName, image: lastStationImage})
     }
     if (store.get("metadataLog") == true) {
-      log.info(data.data.replace("\r\n"," - "))
+      readLastLines.read(userData+'/logs/metadata.log', 1)
+	    .then((lines) => {
+        let mtd = data.data.replace("\r\n"," - ")
+        if (!lines.trim().includes(mtd.trim())) {
+          log.info(data.data.replace("\r\n"," - "))
+        }
+      });
     }
     if (store.get("notifications") == true) {
       notifier.notify(
