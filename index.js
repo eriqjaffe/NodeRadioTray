@@ -829,7 +829,6 @@ function moveBookmarks(oldFile, newFile) {
     })
     switch (result) {
       case 0:
-        console.log("you said yes!")
         fs.copyFileSync(oldFile, newFile)
         changeWatcher(oldFile, newFile)
         store.set("customBookmarkPath", newFile)
@@ -842,7 +841,6 @@ function moveBookmarks(oldFile, newFile) {
         }
         break;
       case 1:
-        console.log("you said no!")
         changeWatcher(oldFile, newFile)
         store.set("customBookmarkPath", newFile)
         bookmarkFile = newFile
@@ -854,7 +852,6 @@ function moveBookmarks(oldFile, newFile) {
         }
         break;
       default:
-        console.log("you said cancel")
         bookmarkFile = oldFile
         if (bookmarkFile == path.join(userData,"bookmarks.json")) {
           store.delete("customBookmarkPath")
@@ -1185,49 +1182,6 @@ async function randomStation() {
     randomWindow.loadFile('random.html');
     //randomWindow.webContents.openDevTools({ mode: 'detach' })
   }
-  /* prompt2({
-    title: 'Prompt example',
-    type: "multiInput",
-    customStylesheet: path.join(__dirname, 'scripts','style.css'),
-    icon: path.join(__dirname, 'images', 'playing.png'),
-    multiInputOptions:
-        [
-          {
-            label: "Country:",
-            selectOptions: countries
-          },
-          {
-            label: "Language:",
-            selectOptions: languages
-          },
-          {
-            label: "Tag:",
-            selectOptions: tags
-          }
-      ],
-    height: 300
-  })
-  .then((r) => {
-      if(r === null) {
-          console.log('user cancelled');
-      } else {
-          console.log('result', r);
-      }
-  })
-  .catch(console.error); */
-/*   let filter = {
-    limit: 500,
-    by: 'tag',  
-    order: 'random'
-  }
-  await RadioBrowser.getRandomHost()
-  RadioBrowser.searchStations(filter)
-      .then(data => {
-        let station = data[Math.floor(Math.random()*data.length)]
-        playStream(station.name, station.url_resolved, false)
-      })
-      .catch(error => console.error(error))
-       */
 }
 
 async function bookmarkStation() {
@@ -1454,7 +1408,7 @@ ipcMain.on('get-icon-file', (event, data) => {
 	dialog.showOpenDialog(null, options).then(result => {
 		  if(!result.canceled) {
         try {
-          store.set("uploadImagePath", path.dirname(userFile.filePaths[0]));
+          store.set("uploadImagePath", path.dirname(result.filePaths[0]));
           readImage(data, result.filePaths[0])
           async function readImage(data, file) {
             const image = await Jimp.read(file);
@@ -1465,7 +1419,7 @@ ipcMain.on('get-icon-file', (event, data) => {
           /* fs.copyFileSync(result.filePaths[0], path.join(iconFolder,path.basename(result.filePaths[0])))
           editorWindow.webContents.send("get-icon-file-response", {id: data, image: path.basename(result.filePaths[0])}) */
         } catch (err) {
-          console.log(err)
+          errorLog.error(err)
         }
       } else {
         
