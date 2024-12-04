@@ -959,8 +959,8 @@ function editBookmarksGui() {
 }
 
 async function playStream(streamName, url, fromBookmark) {
+  let bookmarkButton = contextMenu.getMenuItemById('bookmark');
   try {
-    let bookmarkButton = contextMenu.getMenuItemById('bookmark');
     if (!htmlToolTip) {
       tray.setToolTip("NodeRadioTray");
     }
