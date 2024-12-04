@@ -41,16 +41,17 @@
         <form id='editGroupForm' action="">
           <table>
             <tr>
+              <td style="padding-right:10px; text-align:center;"><img class="image" title="Click to choose an image" id='groupIcon' src="images/playing.png" style="max-height:50px;"><br/><input type="button" class='deleteIcon' value="Clear Image"></td>
               <td style="text-align: right;">Group Name: </td>
               <td><input type='text' class='editField' name='groupName' id='groupName' value='' required style="width:500px;"></td>
             </tr>
-            <tr>
+            <!--<tr>
               <td style="text-align: right;">Group Icon: </td>
               <td>
                 <input type='text' class='editField iconField' name='groupIcon' id='groupIcon' value='' readonly style="width:408px;">
                 <input type="button" class='deleteIcon' value="Clear Image">
               </td>
-            </tr>
+            </tr>-->
           </table>
           <input type='submit' id='editGroupSubmit' value='Submit'>
           <input type="button" id="deleteGroup" value="Delete Group">
@@ -62,6 +63,7 @@
         <form id='editStationForm' action="">
           <table>
             <tr>
+              <td rowspan="2" style="padding-right:10px; text-align:center;"><img class="image" title="Click to choose an image" id='stationIcon' src="images/playing.png" style="max-height:50px;"><br/><input type="button" class='deleteIcon' value="Clear Image"></td>
               <td style="text-align: right;">Station Name: </td>
               <td><input type='text' class='editField' name='stationName' id='stationName' value='' required style="width:500px;"></td>
             </tr>
@@ -69,13 +71,13 @@
               <td style="text-align: right;">Station URL: </td>
               <td><input type='url' class='editField' name='stationURL' type="url" id='stationURL' value='' required style="width:500px;"></td>
             </tr>
-            <tr>
+            <!--<tr>
               <td style="text-align: right;">Station Icon: </td>
               <td>
                 <input type='text' class='editField iconField' name='stationIcon' id='stationIcon' value='' readonly style="width:408px;">
                 <input type="button" class='deleteIcon' value="Clear Image">
               </td>
-            </tr>
+            </tr>-->
           </table>
           <input type='submit' id='editStationSubmit' value='Submit'>
           <input type="button" id="deleteStation" value="Delete Station">
@@ -87,16 +89,17 @@
         <form id='newGroupForm' action="">
           <table>
             <tr>
+              <td style="padding-right:10px; text-align:center;"><img class="image" id='newGroupIcon' title="Click to choose an image" src="images/playing.png" style="max-height:50px;"><br/><input type="button" class='deleteIcon' value="Clear Image"></td>
               <td style="text-align: right;">Group Name: </td>
               <td><input type='text' class='editField' name='newGroupName' id='newGroupName' value='' required style="width:500px;"></td>
             </tr>
-            <tr>
+            <!--<tr>
               <td style="text-align: right;">Group Icon: </td>
               <td>
                 <input type='text' class='editField iconField' name='newGroupIcon' id='newGroupIcon' value='' readonly style="width:408px;">
                 <input type="button" class='deleteIcon' value="Clear Image">
               </td>
-            </tr>
+            </tr>-->
           </table>
           <input type='submit' id='newStationSubmit' value='Submit'>
           <input type="button" class="cancelButton" value="Cancel">
@@ -107,6 +110,7 @@
           <b>ADD A NEW STATION</b>
           <table>
             <tr>
+              <td rowspan="3" style="padding-right:10px; text-align:center;"><img class="image" id='newStationIcon' title="Click to choose an image" src="images/playing.png" style="max-height:50px;"><br/><input type="button" class='deleteIcon' value="Clear Image"></td>
               <td style="text-align: right;">Station Name: </td>
               <td><input type='text' class='editField' name='newStationName' id='newStationName' value='' required style="width:500px;"></td>
             </tr>
@@ -118,13 +122,13 @@
               <td style="text-align: right;">Station Group: </td>
               <td><select name="newStationGroup" id="newStationGroup" style="width:500px;"></select></td>
             </tr>
-            <tr>
+            <!--<tr>
               <td style="text-align: right;">Station Icon: </td>
               <td>
                 <input type='text' class='editField iconField' name='newStationIcon' id='newStationIcon' value='' readonly style="width:408px;">
                 <input type="button" class='deleteIcon' data-id='stationIcon' value="Clear Image">
               </td>
-            </tr>
+            </tr>-->
           </table>
           <input type='submit' id='newStationSubmit' value='Submit'>
           <input type="button" class="cancelButton" value="Cancel">
@@ -210,15 +214,15 @@
           $(".editField").val("")
           let node = data.node
           if (node.type == "group") {
-            console.log(node)
+            console.log(node.data)
             $("#groupName").val(node.title)
-            $("#groupIcon").val(node.data.img)
+            $("#groupIcon").attr("src",node.data.img)
             $("#editGroupDiv").css("display","inline-block")
             $("#editGroupName").html(node.title.toUpperCase())
           } else {
-            console.log(node)
+            console.log(node.data)
             $("#stationName").val(node.title)
-            $("#stationIcon").val(node.data.img)
+            $("#stationIcon").attr("src",node.data.img)
             $("#stationURL").val(node.data.url)
             $("#editStationDiv").css("display","inline-block")
             $("#editStationName").html(node.title.toUpperCase())
@@ -230,13 +234,15 @@
           $(".editField").val("")
           let node = data.node
           if (node.type == "group") {
+            //console.log(node.data.img)
             $("#groupName").val(node.title)
-            $("#groupIcon").val(node.data.img)
+            $("#groupIcon").attr("src",node.data.img)
             $("#editGroupDiv").css("display","inline-block")
             $("#editGroupName").html(node.title.toUpperCase())
           } else {
+            //console.log(node.data.img)
             $("#stationName").val(node.title)
-            $("#stationIcon").val(node.data.img)
+            $("#stationIcon").attr("src",node.data.img)
             $("#stationURL").val(node.data.url)
             $("#editStationDiv").css("display","inline-block")
             $("#editStationName").html(node.title.toUpperCase())
@@ -300,6 +306,7 @@
       }
     });
 
+
     $("#btnAddGroup").on("click", function() {
       $(".footerChild").css("display","none")
       $(".editField").val("")
@@ -333,18 +340,17 @@
       }
     })
 
-    //$("#stationIcon").on("click", function(e) {
-    $(".iconField").on("click", function(e) {
+    $(".image").on("click", function(e) {
       ipcRenderer.send('get-icon-file', $(this).attr("id"))
       //$("#stationIconFile").click()
     })
 
     $(".deleteIcon").on("click", function(e) {
-      $(this).siblings('.iconField').val('')
+      $(this).siblings('.image').attr("src","images/playing.png")
     })
 
     ipcRenderer.on('get-icon-file-response', (event, arg) => {
-      $("#"+arg.id).val(arg.image)
+      $("#"+arg.id).attr("src",arg.image);
     })
 
     ipcRenderer.on('check-tree', () => {
@@ -363,7 +369,7 @@
         if (data.action == "edit") {
           let nodeToEdit = tree.getActiveNode();
           nodeToEdit.setTitle($("#stationName").val())
-          nodeToEdit.data.img = $("#stationIcon").val()
+          nodeToEdit.data.img = $("#stationIcon").attr("src")
           nodeToEdit.data.url = $("#stationURL").val()
           nodeToEdit.parent.sortChildren(null, true)
           resetStuff()
@@ -371,7 +377,7 @@
           const node = tree.findFirst(function(node) {
             return node.type == "group" && node.title == $("#newStationGroup").val()
           })
-          node.addChildren({ title: $("#newStationName").val(), type: "bookmark", url: $("#newStationURL").val(), img: $("#newStationIcon").val() })
+          node.addChildren({ title: $("#newStationName").val(), type: "bookmark", url: $("#newStationURL").val(), img: $("#newStationIcon").attr("src") })
           node.sortChildren(null, true)
           let station = node.findFirst($("#newStationName").val())
           node.setExpanded()
@@ -413,14 +419,15 @@
       let tree = $.ui.fancytree.getTree("#tree");
       let nodeToEdit = tree.getActiveNode();
       nodeToEdit.setTitle($("#groupName").val())
-      nodeToEdit.data.img = $("#groupIcon").val()
+      nodeToEdit.data.img = $("#groupIcon").attr("src")
       nodeToEdit.parent.sortChildren(null, true)
+      console.log(nodeToEdit)
       resetStuff()
     })
 
     $("#editStationForm").on("submit",function(e) {
       e.preventDefault()
-      ipcRenderer.send('extract-url', {action: "edit", url: $("#stationURL").val(), image: $("#stationIcon").val() })
+      ipcRenderer.send('extract-url', {action: "edit", url: $("#stationURL").val(), image: $("#stationIcon").attr("src") })
       $.magnificPopup.open({
         items: {
           src: '#checkingStream'
@@ -452,7 +459,7 @@
     $("#newGroupForm").on("submit",function(e) {
       e.preventDefault()
       const tree = $.ui.fancytree.getTree("#tree").getRootNode()
-      tree.addChildren({ title: $("#newGroupName").val(), folder: true, img: $("#newGroupIcon").val(), type: "group" })
+      tree.addChildren({ title: $("#newGroupName").val(), folder: true, img: $("#newGroupIcon").attr("src"), type: "group" })
       tree.sortChildren(null, true)
       resetStuff()
     })
@@ -476,19 +483,21 @@
 
       // Iterate over the original JSON data
       data.forEach(category => {
+        var image = (category.img == "") ? "images/playing.png" : category.img
         const folderItem = {
           title: category.name,
           folder: true,
-          img: category.img,
+          img: image,
           children: [],
           type: 'group'
         };
 
         category.bookmark.forEach(bookmark => {
+          var image = (bookmark.img == "") ? "images/playing.png" : bookmark.img
           folderItem.children.push({
             title: bookmark.name,
             url: bookmark.url,
-            img: bookmark.img,
+            img: image,
             type: 'bookmark'
           });
         });

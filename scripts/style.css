@@ -65,3 +65,10 @@ html, body {
   h1, h4 {
     text-align: center;
   }
+
+  .image:hover {
+    cursor: pointer;
+    /* color: #111;
+    box-shadow: 0 0 100px greenyellow; */
+    filter: drop-shadow(0 0 0.75rem rgb(255, 255, 255));
+  }
