@@ -752,6 +752,7 @@ if (process.platform == "darwin") {
 }
 
 function validateImages() {
+  // leaving this here for possible future use, it's not actually ever called currently
   let bookmarks = JSON.parse(fs.readFileSync(bookmarkFile));
   bookmarks.forEach(category => {
     // Process the main category image
@@ -775,7 +776,7 @@ function validateImages() {
 }
 
 function loadBookmarks() {
-  validateImages()
+  //validateImages()
   var stationMenu = [];
   bookmarksArr = []
   try {
@@ -836,10 +837,12 @@ function loadBookmarks() {
 }
 
 function reloadBookmarks() {
-  menuTemplate[0].submenu = loadBookmarks();
-  contextMenu = Menu.buildFromTemplate(menuTemplate)
-  tray.setContextMenu(contextMenu)
-  playerWindow.webContents.send("get-player-status", null)
+  if (tray && !tray.isDestroyed()) {
+    menuTemplate[0].submenu = loadBookmarks();
+    contextMenu = Menu.buildFromTemplate(menuTemplate)
+    tray.setContextMenu(contextMenu)
+    playerWindow.webContents.send("get-player-status", null)
+  }
 }
 
 function moveBookmarks(oldFile, newFile) {
