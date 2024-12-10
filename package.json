@@ -1,6 +1,6 @@
 {
   "name": "NodeRadioTray",
-  "version": "0.10.3",
+  "version": "0.10.4",
   "description": "Radio Tray using Node.js",
   "main": "index.js",
   "scripts": {
