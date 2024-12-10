@@ -766,7 +766,6 @@ function validateImages() {
     // Process bookmark images
     category.bookmark.forEach(bookmark => {
        if (bookmark.img && !isBase64(bookmark.img, { allowMime: true })) {
-          console.log(bookmark.img)
           if (!bookmark.img.startsWith("data:image")) {
             bookmark.img = imageBase64.local(path.join(userData,"icons",bookmark.img))
           }
@@ -1229,7 +1228,6 @@ async function bookmarkStation() {
   let bookmarks = JSON.parse(fs.readFileSync(bookmarkFile));
   let selectOptions = bookmarks.map(item => item.name)
   selectOptions.sort((a, b) => a.localeCompare(b));
-  console.log(JSON.stringify(selectOptions))
   bookmarkWindow = new BrowserWindow({
     width: 600,
     height: 180,
