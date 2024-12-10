@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <title>Bookmark Station</title>
+    <script>
+      if (typeof module === 'object') {window.module = module; module = undefined;}
+      const { ipcRenderer } = require("electron");
+    </script>
+    <script type="text/javascript" src="./scripts/jquery-1.11.3.min.js"></script>
+    <script type="text/javascript" src="./scripts/jquery.magnific-popup.js"></script>
+    <script src="./scripts/icecast-metadata-player-1.17.3.main.min.js"></script>
+    <link href="./scripts/magnific-popup.css" rel="stylesheet" type='text/css'/>
+    <link href="./scripts/style.css" rel="stylesheet" type='text/css'/>
+  </head>
+  <body style="padding:10px!important; overflow:hidden!important;">
+    <form id="bookmarkForm">
+    <table style="width:100%;">
+        <tr>
+            <td>Name:</td>
+            <td><input type="text" id="streamName" value="" style="width: 95%;" placeholder="Enter A Name" required></td>
+        </tr>
+        <tr><td colpan="2">&nbsp;</td></tr>
+        <tr>
+            <td>Group:</td>
+            <td><select name="newStationGroup" id="newStationGroup" style="width:95%;"></select></td>
+        </tr>
+        <tr><td colpan="2">&nbsp;</td></tr>
+        <tr>
+            <td style="vertical-align: middle;">Icon:</td>
+            <td style="vertical-align: middle;">
+                <img class="image2" id='newStationIcon' title="Click to choose an image" src="images/playing.png" style="max-height:50px;"><br>
+                <input type="button" id='deleteIcon' value="Clear Image">
+                <!--<input type="hidden" id="newStationIconB64" val="">-->
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: center;" colspan="2"><br><input type="submit" value="Submit"></td>
+        </tr>
+    </table>
+    </form>
+  </body>
+  <script>
+    $("#newStationGroup").empty()
+    const params = new URLSearchParams(window.location.search)
+    const groups = JSON.parse(params.get('groups'))
+    const url = params.get('url')
+
+    $("#streamName").val(params.get('name'))
+
+    for (group of groups) {
+        $("#newStationGroup").append($("<option></option>")
+            .attr("value", group)
+            .text(group)); 
+    }
+    
+    $("#newStationIcon").on("click", function(e) {
+        ipcRenderer.send('get-new-bookmark-icon-file', null)
+      //$("#stationIconFile").click()
+    })
+
+    $("#deleteIcon").on("click", function(e) {
+        $("#newStationIcon").attr("src","images/playing.png")
+        //$("#newStationIconB64").val("")
+    })
+    
+    ipcRenderer.on('get-icon-file-response', (event, data) => {
+        $("#newStationIcon").attr("src", data.image)
+        //$("#newStationIconB64").val(data.image)
+    })
+
+    $("#bookmarkForm").on("submit", function(e) {
+        e.preventDefault()
+        ipcRenderer.send('bookmark-random-station', { name: $("#streamName").val(), group: $("#newStationGroup").val(), icon: $("#newStationIcon").attr("src")})
+    })
+  </script>
+</html>
