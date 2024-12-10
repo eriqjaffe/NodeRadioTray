@@ -1225,14 +1225,14 @@ async function randomStation() {
 }
 
 async function bookmarkStation() {
-  let name = (currentStreamData.streamName != undefined) ? currentStreamData.streamName : "No Stream Name Provided"
+  let name = (currentStreamData.streamName != undefined || currentStreamData.streamName != null) ? currentStreamData.streamName : "No Stream Name Provided"
   let bookmarks = JSON.parse(fs.readFileSync(bookmarkFile));
   let selectOptions = bookmarks.map(item => item.name)
   selectOptions.sort((a, b) => a.localeCompare(b));
   console.log(JSON.stringify(selectOptions))
   bookmarkWindow = new BrowserWindow({
-    width: 400,
-    height: 300,
+    width: 600,
+    height: 180,
     icon: path.join(__dirname, 'images/playing.ico'),
     skipTaskbar: true,
     webPreferences: {
