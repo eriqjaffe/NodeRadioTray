@@ -139,6 +139,7 @@ let aboutWindow;
 let playerWindow;
 let tooltipWindow;
 let randomWindow;
+let bookmarkWindow;
 let bookmarksArr = []
 let currentStreamData;
 let lastStationImage = path.join(__dirname, '/images/playing.png')
@@ -765,7 +766,6 @@ function validateImages() {
     // Process bookmark images
     category.bookmark.forEach(bookmark => {
        if (bookmark.img && !isBase64(bookmark.img, { allowMime: true })) {
-          console.log(bookmark.img)
           if (!bookmark.img.startsWith("data:image")) {
             bookmark.img = imageBase64.local(path.join(userData,"icons",bookmark.img))
           }
@@ -959,7 +959,7 @@ function editBookmarksGui() {
 }
 
 async function playStream(streamName, url, fromBookmark) {
-  let bookmarkButton = contextMenu.getMenuItemById('bookmark');
+  //let bookmarkButton = contextMenu.getMenuItemById('bookmark');
   try {
     if (!htmlToolTip) {
       tray.setToolTip("NodeRadioTray");
@@ -978,10 +978,10 @@ async function playStream(streamName, url, fromBookmark) {
     if (fromBookmark) {
       store.set('lastStation', streamName);
       store.set('lastURL', url)
-      bookmarkButton.visible = false;
+      //bookmarkButton.visible = false;
     } else {
       if (streamName != undefined || streamName != null) {
-        bookmarkButton.visible = true;
+        //bookmarkButton.visible = true;
       }
     }
     if (randomWindow) {
@@ -995,13 +995,14 @@ async function playStream(streamName, url, fromBookmark) {
 }
 
 function toggleButtons(state) {
-  playButton = contextMenu.getMenuItemById('playButton');
-  stopButton = contextMenu.getMenuItemById('stopButton');
-  volDisplay = contextMenu.getMenuItemById('volumeDisplay')
-  volUpButton = contextMenu.getMenuItemById('volumeUp');
-  volDownButton = contextMenu.getMenuItemById('volumeDown')
-  nextButton = contextMenu.getMenuItemById('nextButton')
-  previousButton = contextMenu.getMenuItemById('previousButton')
+  let playButton = contextMenu.getMenuItemById('playButton');
+  let stopButton = contextMenu.getMenuItemById('stopButton');
+  let volDisplay = contextMenu.getMenuItemById('volumeDisplay')
+  let volUpButton = contextMenu.getMenuItemById('volumeUp');
+  let volDownButton = contextMenu.getMenuItemById('volumeDown')
+  let nextButton = contextMenu.getMenuItemById('nextButton')
+  let previousButton = contextMenu.getMenuItemById('previousButton')
+  let bookmarkButton = contextMenu.getMenuItemById('bookmark');
   googleIt =  contextMenu.getMenuItemById('googleIt')
   if (state == true) {
     playButton.visible = false;
@@ -1012,6 +1013,7 @@ function toggleButtons(state) {
     nextButton.visible = true;
     previousButton.visible = true;
     googleIt.visible = true;
+    bookmarkButton.visible = true;
     tray.setImage(playingIcon);
     tray.setContextMenu(contextMenu)
   } else {
@@ -1023,6 +1025,7 @@ function toggleButtons(state) {
     nextButton.visible = false;
     previousButton.visible = false;
     googleIt.visible = false;
+    bookmarkButton.visible = false;
     tray.setImage(idleIcon);
     if (!htmlToolTip) {
       tray.setToolTip("NodeRadioTray");
@@ -1199,7 +1202,7 @@ async function randomStation() {
   if (!randomWindow) {
     randomWindow = new BrowserWindow({
       width: 300,
-      height: 260,
+      height: 280,
       icon: path.join(__dirname, 'images/playing.ico'),
       skipTaskbar: true,
       webPreferences: {
@@ -1209,98 +1212,94 @@ async function randomStation() {
     })
     randomWindow.setMenu(null)
     randomWindow.loadFile('random.html');
+    randomWindow.on('close', (event) => {
+      event.preventDefault()
+      randomWindow.destroy()
+      randomWindow = null
+    });
     //randomWindow.webContents.openDevTools({ mode: 'detach' })
+  } else {
+    randomWindow.show()
   }
 }
 
 async function bookmarkStation() {
-  let name = currentStreamData.streamName
-  if (currentStreamData.streamName === "Custom URL") {
-    await prompt({
-      title: 'Custom URL',
-      label: 'Please Enter a Name for the Stream:',
-      value: '',
-      type: 'input',
-      inputAttrs: {
-        required: true
-      },
-      height: 175,
-      customStylesheet: path.join(__dirname, 'scripts','style.css'),
-      icon: path.join(__dirname, 'images', 'playing.png')
-    })
-    .then((r) => {
-        name = r
-    })
-  }
+  let name = (currentStreamData.streamName != undefined || currentStreamData.streamName != null) ? currentStreamData.streamName : "No Stream Name Provided"
   let bookmarks = JSON.parse(fs.readFileSync(bookmarkFile));
-  const selectOptions = bookmarks.reduce((acc, item) => {
-    acc[item.name] = item.name;
-    return acc;
-  }, {});
-  prompt({
-    title: 'Bookmark A Station',
-    label: 'Genre:',
-    selectOptions: selectOptions,
-    type: 'select',
-    height: 175,
-    customStylesheet: path.join(__dirname, 'scripts','style.css'),
-    icon: path.join(__dirname, 'images','playing.png')
+  let selectOptions = bookmarks.map(item => item.name)
+  selectOptions.sort((a, b) => a.localeCompare(b));
+  bookmarkWindow = new BrowserWindow({
+    width: 600,
+    height: 180,
+    icon: path.join(__dirname, 'images/playing.ico'),
+    skipTaskbar: true,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
   })
-  .then((r) => {
-      if(r === null) {
-      } else {
-        const group = bookmarks.find(category => category.name === r)
-        const bookmarkExists = group.bookmark.some(bookmark => bookmark.name === name);
-        if (bookmarkExists) {
-          dialog.showMessageBox(null, {
-            type: 'question',
-            message: "You already have a bookmarked station called \""+name+"\" in \""+r+".\"\r\n\r\nDo you want to add this bookmark anyways?",
-            buttons: ['Yes', 'No'],
-          }).then(result => {
-            if (result.response === 0) {
-              group.bookmark.push({name: name, url: currentStreamData.url, img: "" })
-              group.bookmark.sort((a, b) => a.name.localeCompare(b.name));
-              fs.writeFile(bookmarkFile, JSON.stringify(bookmarks, null, 3), function(err) {
-                if(err) {
-                  dialog.showMessageBox(null, {
-                    type: 'error',
-                    message: "An error occurred saving bookmarks:\r\r\n" + err,
-                    buttons: ['OK'],
-                  }).then(result => {})
-                  errorLog.error(err);
-                } else {
-                  store.set("lastStation", name)
-                  store.set("lastURL", currentStreamData.url)
-                  bookmarkButton = contextMenu.getMenuItemById('bookmark');
-                  bookmarkButton.visible = false;
-                  reloadBookmarks();
-                }
-              });
-            }
-          })
-        } else {
-          group.bookmark.push({name: name, url: currentStreamData.url, img: "" })
-          group.bookmark.sort((a, b) => a.name.localeCompare(b.name));
-          fs.writeFile(bookmarkFile, JSON.stringify(bookmarks, null, 3), function(err) {
-            if(err) {
-              dialog.showMessageBox(null, {
-                type: 'error',
-                message: "An error occurred saving bookmarks:\r\r\n" + err,
-                buttons: ['OK'],
-              }).then(result => {})
-              errorLog.error(err);
-            } else {
-              store.set("lastStation", name)
-              store.set("lastURL", currentStreamData.url)
-              bookmarkButton = contextMenu.getMenuItemById('bookmark');
-              bookmarkButton.visible = false;
-              reloadBookmarks();
-            }
-          });
-        }
-      }
-  })
+  bookmarkWindow.setMenu(null)
+  bookmarkWindow.loadURL(`file://${__dirname}/bookmark.html?name=${name}&groups=${JSON.stringify(selectOptions)}`);
+  //bookmarkWindow.webContents.openDevTools({ mode: 'detach' })
 }
+
+ipcMain.on('bookmark-random-station', (event, arg) => {
+  const name = arg.name
+  const img = (arg.icon == "images/playing.png") ? "" : arg.icon
+  let bookmarks = JSON.parse(fs.readFileSync(bookmarkFile));
+  const group = bookmarks.find(category => category.name === arg.group)
+  const bookmarkExists = group.bookmark.some(bookmark => bookmark.name === name);
+  if (bookmarkExists) {
+    dialog.showMessageBox(null, {
+      type: 'question',
+      message: "You already have a bookmarked station called \""+name+"\" in \""+r+".\"\r\n\r\nDo you want to add this bookmark anyways?",
+      buttons: ['Yes', 'No'],
+    }).then(result => {
+      if (result.response === 0) {
+        group.bookmark.push({name: name, url: currentStreamData.url, img: img })
+        group.bookmark.sort((a, b) => a.name.localeCompare(b.name));
+        fs.writeFile(bookmarkFile, JSON.stringify(bookmarks, null, 3), function(err) {
+          if(err) {
+            dialog.showMessageBox(null, {
+              type: 'error',
+              message: "An error occurred saving bookmarks:\r\r\n" + err,
+              buttons: ['OK'],
+            }).then(result => {})
+            errorLog.error(err);
+          } else {
+            store.set("lastStation", name)
+            store.set("lastURL", currentStreamData.url)
+            //bookmarkButton = contextMenu.getMenuItemById('bookmark');
+            //bookmarkButton.visible = false;
+            reloadBookmarks();
+          }
+        });
+      }
+    })
+  } else {
+    group.bookmark.push({name: name, url: currentStreamData.url, img: img })
+    group.bookmark.sort((a, b) => a.name.localeCompare(b.name));
+    fs.writeFile(bookmarkFile, JSON.stringify(bookmarks, null, 3), function(err) {
+      if(err) {
+        dialog.showMessageBox(null, {
+          type: 'error',
+          message: "An error occurred saving bookmarks:\r\r\n" + err,
+          buttons: ['OK'],
+        }).then(result => {})
+        errorLog.error(err);
+      } else {
+        store.set("lastStation", name)
+        store.set("lastURL", currentStreamData.url)
+        //bookmarkButton = contextMenu.getMenuItemById('bookmark');
+        //bookmarkButton.visible = false;
+        reloadBookmarks();
+      }
+    });
+  }
+  if (bookmarkWindow) {
+    bookmarkWindow.close()
+  }
+})
 
 ipcMain.on("audio-devices-list", (event, devices) => {
   const defaultDevice = store.get('defaultAudioDevice', "default")
@@ -1450,6 +1449,36 @@ ipcMain.on('get-icon-file', (event, data) => {
             image.scaleToFit(50, 50)
             let b64 = await image.getBase64Async(Jimp.AUTO)
             editorWindow.webContents.send("get-icon-file-response", {id: data, image: b64})
+          }
+          /* fs.copyFileSync(result.filePaths[0], path.join(iconFolder,path.basename(result.filePaths[0])))
+          editorWindow.webContents.send("get-icon-file-response", {id: data, image: path.basename(result.filePaths[0])}) */
+        } catch (err) {
+          errorLog.error(err)
+        }
+      } else {
+        
+      }
+  })
+})
+
+ipcMain.on('get-new-bookmark-icon-file', (event, data) => {
+  const options = {
+		defaultPath: store.get("uploadImagePath", app.getPath("downloads")),
+		properties: ['openFile'],
+		filters: [
+			{ name: 'Images', extensions: ['jpg', 'png'] }
+		]
+	}
+	dialog.showOpenDialog(null, options).then(result => {
+		  if(!result.canceled) {
+        try {
+          store.set("uploadImagePath", path.dirname(result.filePaths[0]));
+          readImage(data, result.filePaths[0])
+          async function readImage(data, file) {
+            const image = await Jimp.read(file);
+            image.scaleToFit(50, 50)
+            let b64 = await image.getBase64Async(Jimp.AUTO)
+            bookmarkWindow.webContents.send("get-icon-file-response", {image: b64})
           }
           /* fs.copyFileSync(result.filePaths[0], path.join(iconFolder,path.basename(result.filePaths[0])))
           editorWindow.webContents.send("get-icon-file-response", {id: data, image: path.basename(result.filePaths[0])}) */
@@ -1618,6 +1647,7 @@ ipcMain.on('find-random-station', (event, arg) => {
 
   ipcMain.on('test-station-response', (event, data) => {
     toggleButtons(false)
-    playStream(data.name, data.url, false)
+    let streamName = (data.name.length < 1) ? "No Stream Name Provided" : data.name
+    playStream(streamName, data.url, false)
   })
 })
