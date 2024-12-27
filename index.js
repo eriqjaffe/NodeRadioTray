@@ -1,6 +1,7 @@
 if(require('electron-squirrel-startup')) return;
 const { nativeTheme, app, Menu, Tray, nativeImage, shell, globalShortcut, BrowserWindow, ipcMain, dialog, screen } = require('electron')
 const fs = require('fs');
+const os = require('os')
 const Store = require("electron-store");
 const chokidar = require("chokidar");
 const prompt = require('electron-prompt');
@@ -21,6 +22,7 @@ const ASX = parsers.ASX
 const log = require('electron-log/main');
 const gotTheLock = app.requestSingleInstanceLock();
 const userData = app.getPath('userData');
+const tempDir = os.tmpdir();
 //const iconFolder = path.join(userData,"icons")
 
 let countries
@@ -481,6 +483,7 @@ var menuTemplate = [
 ]
 
 const createTray = () => {
+  fs.writeFileSync(path.join(tempDir,"NodeRadioTray.txt"), "Not Playing", { encoding: 'utf-8' });
   tray = new Tray(idleIcon)
   
   contextMenu = Menu.buildFromTemplate(menuTemplate)
@@ -1393,8 +1396,9 @@ ipcMain.on('get-app-version', (event, response) => {
 })
 
 ipcMain.on('set-tooltip', (event, data) => {
-  currentStreamData = data; 
+  currentStreamData = data;
   if (data.playing) {
+    fs.writeFileSync(path.join(tempDir,"noderadiotray.txt"), data.data, { encoding: 'utf-8' });
     toggleButtons(true)
     tray.setImage(playingIcon);
     if (!htmlToolTip) {
@@ -1423,6 +1427,7 @@ ipcMain.on('set-tooltip', (event, data) => {
       );
     }
   } else {
+    fs.writeFileSync(path.join(tempDir,"noderadiotray.txt"), "Not Playing", { encoding: 'utf-8' });
     if (htmlToolTip) {
       tooltipWindow.webContents.send('tooltip-update', { playing: false, image: playingIcon })
     }
