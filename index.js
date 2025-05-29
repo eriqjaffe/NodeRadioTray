@@ -35,8 +35,9 @@ const removeEmojis = (str) => str.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5F
 
 const helpInfo = `
 Options:
-  -P, --play <optional bookmark>      Begins playing the specified bookmark (bookmark name must be wrapped in quotes).
+  -P, --play <optional bookmark>      Begins playing the specified bookmark (bookmark name must be wrapped in quotes)
                                       If omitted, play the last played station
+  -L, --url <url>                     Attempts to play the specified URL
   -H, --help                          Displays this information
 
 The following options are also available if NodeRadioTray is currently running:
