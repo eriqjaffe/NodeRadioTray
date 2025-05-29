@@ -35,18 +35,18 @@ const removeEmojis = (str) => str.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5F
 
 const helpInfo = `
 Options:
-  -P, --play <optional bookmark>      Begins playing the specified bookmark (bookmark name must be wrapped in quotes)
-                                      If omitted, play the last played station
-  -L, --url <url>                     Attempts to play the specified URL
   -H, --help                          Displays this information
 
 The following options are also available if NodeRadioTray is currently running:
-  -S, --stop        Stops playback
-  -U, --volup       Raises the stream's volume
-  -D, --voldown     Lowers the stream's volume
-  -M, --mute        Mutes the stream
-  -N, --next        Switches to the next station in the bookmark file
-  -R, --prev        Switches to the previous station in the bookmark file
+  -P, --play <optional bookmark>      Begins playing the specified bookmark (bookmark name must be wrapped in quotes)
+                                      If omitted, play the last played station
+  -L, --url <url>                     Attempts to play the specified URL
+  -S, --stop                          Stops playback
+  -U, --volup                         Raises the stream's volume
+  -D, --voldown                       Lowers the stream's volume
+  -M, --mute                          Mutes the stream
+  -N, --next                          Switches to the next station in the bookmark file
+  -R, --prev                          Switches to the previous station in the bookmark file
 `;
 
 if (!gotTheLock) {
@@ -733,20 +733,18 @@ app.whenReady().then(() => {
   toggleMMKeys(store.get("mmkeys"))
 
   const args = process.argv;
-  const validCommands = ['-H', '--help', '-P', '--play'];
-  const foundCommands = args.filter(arg => validCommands.includes(arg));
-  const command = foundCommands[0];
+  const validCommands = ['-h', '--help'];
+  const foundCommands = args.filter(arg => validCommands.includes(arg.toLowerCase()));
+  const command = foundCommands[0].toLowerCase();
   switch (command) {
-    case "-H":
+    case "-h":
       console.log(helpInfo);
+      process.exit()
       break;
     case "--help":
       console.log(helpInfo)
-      break
-    case "--P":
-      playStream(store.get('lastStation'), store.get('lastURL'), true)
-    case "--play":
-      playStream(store.get('lastStation'), store.get('lastURL'), true)
+      process.exit()
+      break;
   }
 
   async function getRBData() {
