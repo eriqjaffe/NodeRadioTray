@@ -34,16 +34,17 @@ const removeEmojis = (str) => str.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5F
 
 const helpInfo = `
 Options:
-  -P, --play      Begins playing the last played station
-  -H, --help      Displays this information
+  -P, --play        Begins playing the last played station
+  -L, --url <url>   Attempt to play the specified URL
+  -H, --help        Displays this information
 
 The following options are also available if NodeRadioTray is currently running:
-  -S, --stop      Stops playback
-  -U, --volup     Raises the stream's volume
-  -D, --voldown   Lowers the streams' volume
-  -M, --mute      Mutes the stream
-  -N, --next      Switches to the next station in the bookmark file
-  -R, --prev      Switches to the previous station in the bookmark file
+  -S, --stop        Stops playback
+  -U, --volup       Raises the stream's volume
+  -D, --voldown     Lowers the stream's volume
+  -M, --mute        Mutes the stream
+  -N, --next        Switches to the next station in the bookmark file
+  -R, --prev        Switches to the previous station in the bookmark file
 `;
 
 if (!gotTheLock) {
@@ -51,10 +52,13 @@ if (!gotTheLock) {
     process.exit(0);
   });
 } else {
+  console.log('got the lock')
   app.on('second-instance', (event, commandLine, workingDirectory) => {
-    const validCommands = ['-S', '-P', '-U', '-D', '-M', '-N', '-R', '--stop', '--play', '--volup', '--voldown', '--mute', '--next', '--prev'];
+    const validCommands = ['-S', '-P', '-U', '-D', '-M', '-N', '-R', '-L', '-s', '-p', '-u', '-d', '-m', '-n', '-r', '-l', '--stop', '--play', '--volup', '--voldown', '--mute', '--next', '--prev', '--url'];
     const foundCommands = commandLine.filter(arg => validCommands.includes(arg));
+    console.log("found command: ",foundCommands)
     const command = foundCommands[0];
+    const url = commandLine[4]
     switch(command) {
       case '-S':
         toggleButtons(false);
@@ -69,13 +73,52 @@ if (!gotTheLock) {
         changeStation('backward')
         break;
       case '-U':
-        changeVolume('up')
+        if (parseFloat(store.get("lastVolume")) < 1) {
+          changeVolume('up')
+        }
         break;
       case '-D':
-        changeVolume('down')
+        if (parseFloat(store.get("lastVolume")) > 0) {
+          changeVolume('down')
+        }
         break;
       case '-M':
         playerWindow.webContents.send('toggle-mute', null)
+        break;
+      case '-L':
+        if (url != undefined || url != null) {
+          playStream('Custom URL', url, false);
+        }
+        break;
+      case '-s':
+        toggleButtons(false);
+        break;
+      case '-p':
+        playStream(store.get('lastStation'), store.get('lastURL'), true);
+        break;
+      case '-n':
+        changeStation("forward")
+        break;
+      case '-r':
+        changeStation('backward')
+        break;
+      case '-u':
+        if (parseFloat(store.get("lastVolume")) < 1) {
+          changeVolume('up')
+        } 
+        break;
+      case '-d':
+        if (parseFloat(store.get("lastVolume")) > 0) {
+          changeVolume('down')
+        }
+        break;
+      case '-m':
+        playerWindow.webContents.send('toggle-mute', null)
+        break;
+      case '-l':
+        if (url != undefined || url != null) {
+          playStream('Custom URL', url, false);
+        }
         break;
       case '--stop':
         toggleButtons(false);
@@ -90,13 +133,22 @@ if (!gotTheLock) {
         changeStation('backward')
         break;
       case '--volup':
-        changeVolume('up')
+        if (parseFloat(store.get("lastVolume")) < 1) {
+          changeVolume('up')
+        }
         break;
       case '--voldown':
-        changeVolume('down')
+        if (parseFloat(store.get("lastVolume")) > 0) {
+          changeVolume('down')
+        }
         break;
       case '--mute':
         playerWindow.webContents.send('toggle-mute', null)
+        break;
+      case '--url':
+        if (url != undefined || url != null) {
+          playStream('Custom URL', url, false);
+        }
         break;
     }
   });
