@@ -20,6 +20,7 @@ const M3U = parsers.M3U;
 const PLS = parsers.PLS;
 const ASX = parsers.ASX
 const log = require('electron-log/main');
+const isUrlHttp = require('is-url-http');
 const gotTheLock = app.requestSingleInstanceLock();
 const userData = app.getPath('userData');
 const tempDir = os.tmpdir();
@@ -86,7 +87,9 @@ if (!gotTheLock) {
         break;
       case '-l':
         if (url != undefined || url != null) {
-          playStream('Custom URL', url, false);
+          if (isUrlHttp(url)) {
+            playStream('Custom URL', url, false);
+          }
         }
         break;
       case '--stop':
@@ -116,7 +119,9 @@ if (!gotTheLock) {
         break;
       case '--url':
         if (url != undefined || url != null) {
-          playStream('Custom URL', url, false);
+          if (isUrlHttp(url)) {
+            playStream('Custom URL', url, false);
+          } 
         }
         break;
     }
