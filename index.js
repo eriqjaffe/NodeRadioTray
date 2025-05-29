@@ -35,9 +35,9 @@ const removeEmojis = (str) => str.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5F
 
 const helpInfo = `
 Options:
-  -P, --play        Begins playing the last played station
-  -L, --url <url>   Attempt to play the specified URL
-  -H, --help        Displays this information
+  -P, --play <optional bookmark>      Begins playing the specified bookmark (bookmark name must be wrapped in quotes).
+                                      If omitted, play the last played station
+  -H, --help                          Displays this information
 
 The following options are also available if NodeRadioTray is currently running:
   -S, --stop        Stops playback
@@ -58,13 +58,20 @@ if (!gotTheLock) {
     const validCommands = ['-s', '-p', '-u', '-d', '-m', '-n', '-r', '-l', '--stop', '--play', '--volup', '--voldown', '--mute', '--next', '--prev', '--url'];
     const foundCommands = commandLine.filter(arg => validCommands.includes(arg.toLowerCase()));
     const command = foundCommands[0];
-    const url = commandLine[4]
+    const stream = commandLine[4]
     switch(command) {
       case '-s':
         toggleButtons(false);
         break;
       case '-p':
-        playStream(store.get('lastStation'), store.get('lastURL'), true);
+        if (stream == null || stream == undefined) {
+          playStream(store.get('lastStation'), store.get('lastURL'), true);
+        } else {
+          let bookmark = getBookmark(stream)
+          if (bookmark != null) {
+            playStream(bookmark.name, bookmark.url, true)
+          }
+        }
         break;
       case '-n':
         changeStation("forward")
@@ -86,9 +93,9 @@ if (!gotTheLock) {
         playerWindow.webContents.send('toggle-mute', null)
         break;
       case '-l':
-        if (url != undefined || url != null) {
-          if (isUrlHttp(url)) {
-            playStream('Custom URL', url, false);
+        if (stream != undefined || stream != null) {
+          if (isUrlHttp(stream)) {
+            playStream('Custom URL', stream, false);
           }
         }
         break;
@@ -96,7 +103,14 @@ if (!gotTheLock) {
         toggleButtons(false);
         break;
       case '--play':
-        playStream(store.get('lastStation'), store.get('lastURL'), true);
+        if (stream == null || stream == undefined) {
+          playStream(store.get('lastStation'), store.get('lastURL'), true);
+        } else {
+          let bookmark = getBookmark(stream)
+          if (bookmark != null) {
+            playStream(bookmark.name, bookmark.url, true)
+          }
+        }
         break;
       case '--next':
         changeStation("forward")
@@ -118,9 +132,9 @@ if (!gotTheLock) {
         playerWindow.webContents.send('toggle-mute', null)
         break;
       case '--url':
-        if (url != undefined || url != null) {
-          if (isUrlHttp(url)) {
-            playStream('Custom URL', url, false);
+        if (stream != undefined || stream != null) {
+          if (isUrlHttp(stream)) {
+            playStream('Custom URL', stream, false);
           } 
         }
         break;
@@ -985,6 +999,18 @@ function editBookmarksGui() {
   } else {
     editorWindow.focus();
   }
+}
+
+function getBookmark(streamName) {
+  let bookmarks = JSON.parse(fs.readFileSync(bookmarkFile));
+  for (const category of bookmarks) {
+    for (const bookmark of category.bookmark) {
+      if (bookmark.name.toLowerCase() === streamName.toLowerCase()) {
+        return bookmark;
+      }
+    }
+  }
+  return null;
 }
 
 async function playStream(streamName, url, fromBookmark) {
