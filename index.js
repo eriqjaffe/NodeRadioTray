@@ -1,6 +1,7 @@
 if(require('electron-squirrel-startup')) return;
 const { nativeTheme, app, Menu, Tray, nativeImage, shell, globalShortcut, BrowserWindow, ipcMain, dialog, screen } = require('electron')
 const fs = require('fs');
+const os = require('os')
 const Store = require("electron-store");
 const chokidar = require("chokidar");
 const prompt = require('electron-prompt');
@@ -19,8 +20,10 @@ const M3U = parsers.M3U;
 const PLS = parsers.PLS;
 const ASX = parsers.ASX
 const log = require('electron-log/main');
+const isUrlHttp = require('is-url-http');
 const gotTheLock = app.requestSingleInstanceLock();
 const userData = app.getPath('userData');
+const tempDir = os.tmpdir();
 //const iconFolder = path.join(userData,"icons")
 
 let countries
@@ -32,13 +35,15 @@ const removeEmojis = (str) => str.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5F
 
 const helpInfo = `
 Options:
-  -P, --play      Begins playing the last played station
-  -H, --help      Displays this information
+  -H, --help                              Displays this information
+  -P, --play <optional bookmark or URL>   Begins playing the specified bookmark or attempts to play URL
+                                          If omitted, play the last played station
+                                          Bookmark name should be wrapped in quotes to be parsed properly
 
 The following options are also available if NodeRadioTray is currently running:
   -S, --stop      Stops playback
   -U, --volup     Raises the stream's volume
-  -D, --voldown   Lowers the streams' volume
+  -D, --voldown   Lowers the stream's volume
   -M, --mute      Mutes the stream
   -N, --next      Switches to the next station in the bookmark file
   -R, --prev      Switches to the previous station in the bookmark file
@@ -50,36 +55,75 @@ if (!gotTheLock) {
   });
 } else {
   app.on('second-instance', (event, commandLine, workingDirectory) => {
-    const validCommands = ['-S', '-P', '-U', '-D', '-M', '-N', '-R', '--stop', '--play', '--volup', '--voldown', '--mute', '--next', '--prev'];
-    const foundCommands = commandLine.filter(arg => validCommands.includes(arg));
-    const command = foundCommands[0];
+    const validCommands = ['-s', '-p', '-u', '-d', '-m', '-n', '-r', '--stop', '--play', '--volup', '--voldown', '--mute', '--next', '--prev'];
+    const foundCommands = commandLine.filter(arg => validCommands.includes(arg.toLowerCase()));
+    const command = (foundCommands[0] != undefined) ? foundCommands[0] : "quit"; 
+    const stream = commandLine[4]
     switch(command) {
-      case '-S':
+      case "quit":
+        break;
+      case '-s':
         toggleButtons(false);
         break;
-      case '-P':
-        playStream(store.get('lastStation'), store.get('lastURL'), true);
+      case '-p':
+        if (stream == null || stream == undefined) {
+          playStream(store.get('lastStation'), store.get('lastURL'), true);
+        } else {
+          if (isUrlHttp(stream)) {
+            let bookmark = getBookmarkByURL(stream)
+            if (bookmark != null) {
+              playStream(bookmark.name, bookmark.url, true)
+            } else {
+              playStream('Custom URL', stream, false);
+            }
+          } else {
+            let bookmark = getBookmark(stream)
+              if (bookmark != null) {
+                playStream(bookmark.name, bookmark.url, true)
+              }
+            }
+        }
         break;
-      case '-N':
+      case '-n':
         changeStation("forward")
         break;
-      case '-R':
+      case '-r':
         changeStation('backward')
         break;
-      case '-U':
-        changeVolume('up')
+      case '-u':
+        if (parseFloat(store.get("lastVolume")) < 1) {
+          changeVolume('up')
+        } 
         break;
-      case '-D':
-        changeVolume('down')
+      case '-d':
+        if (parseFloat(store.get("lastVolume")) > 0) {
+          changeVolume('down')
+        }
         break;
-      case '-M':
+      case '-m':
         playerWindow.webContents.send('toggle-mute', null)
         break;
       case '--stop':
         toggleButtons(false);
         break;
       case '--play':
-        playStream(store.get('lastStation'), store.get('lastURL'), true);
+        if (stream == null || stream == undefined) {
+          playStream(store.get('lastStation'), store.get('lastURL'), true);
+        } else {
+          if (isUrlHttp(stream)) {
+            let bookmark = getBookmarkByURL(stream)
+            if (bookmark != null) {
+              playStream(bookmark.name, bookmark.url, true)
+            } else {
+              playStream('Custom URL', stream, false);
+            }
+          } else {
+            let bookmark = getBookmark(stream)
+              if (bookmark != null) {
+                playStream(bookmark.name, bookmark.url, true)
+              }
+            }
+        }
         break;
       case '--next':
         changeStation("forward")
@@ -88,10 +132,14 @@ if (!gotTheLock) {
         changeStation('backward')
         break;
       case '--volup':
-        changeVolume('up')
+        if (parseFloat(store.get("lastVolume")) < 1) {
+          changeVolume('up')
+        }
         break;
       case '--voldown':
-        changeVolume('down')
+        if (parseFloat(store.get("lastVolume")) > 0) {
+          changeVolume('down')
+        }
         break;
       case '--mute':
         playerWindow.webContents.send('toggle-mute', null)
@@ -481,6 +529,7 @@ var menuTemplate = [
 ]
 
 const createTray = () => {
+  fs.writeFileSync(path.join(tempDir,"NodeRadioTray.txt"), "Not Playing", { encoding: 'utf-8' });
   tray = new Tray(idleIcon)
   
   contextMenu = Menu.buildFromTemplate(menuTemplate)
@@ -690,20 +739,71 @@ app.whenReady().then(() => {
   toggleMMKeys(store.get("mmkeys"))
 
   const args = process.argv;
-  const validCommands = ['-H', '--help', '-P', '--play'];
-  const foundCommands = args.filter(arg => validCommands.includes(arg));
-  const command = foundCommands[0];
+  const validCommands = ['-h', '--help', '-p', '--play'];
+  const foundCommands = args.filter(arg => validCommands.includes(arg.toLowerCase()));
+  const command = (foundCommands[0] != undefined) ? foundCommands[0] : "invalid"; 
+  const stream = args[3]
   switch (command) {
+    case "invalid":
+      break;
     case "-H":
       console.log(helpInfo);
+      process.exit()
+      break;
+    case "-h":
+      console.log(helpInfo);
+      process.exit()
       break;
     case "--help":
       console.log(helpInfo)
-      break
-    case "--P":
-      playStream(store.get('lastStation'), store.get('lastURL'), true)
+      process.exit()
+      break;
+    case "-p":
+      playerWindow.webContents.on('did-finish-load', () => {
+        if (stream == null || stream == undefined) {
+          playStream(store.get('lastStation'), store.get('lastURL'), true);
+        } else {
+          if (isUrlHttp(stream)) {
+            let bookmark = getBookmarkByURL(stream)
+            if (bookmark != null) {
+              playStream(bookmark.name, bookmark.url, true)
+            } else {
+              playStream('Custom URL', stream, false);
+            }
+          } else {
+            let bookmark = getBookmark(stream)
+              if (bookmark != null) {
+                playStream(bookmark.name, bookmark.url, true)
+              } else {
+                process.exit()
+              }
+            }
+        }
+      })
+      break;
     case "--play":
-      playStream(store.get('lastStation'), store.get('lastURL'), true)
+      playerWindow.webContents.on('did-finish-load', () => {
+        if (stream == null || stream == undefined) {
+          playStream(store.get('lastStation'), store.get('lastURL'), true);
+        } else {
+          if (isUrlHttp(stream)) {
+            let bookmark = getBookmarkByURL(stream)
+            if (bookmark != null) {
+              playStream(bookmark.name, bookmark.url, true)
+            } else {
+              playStream('Custom URL', stream, false);
+            }
+          } else {
+            let bookmark = getBookmark(stream)
+              if (bookmark != null) {
+                playStream(bookmark.name, bookmark.url, true)
+              } else {
+                process.exit()
+              }
+            }
+        }
+      })
+      break;
   }
 
   async function getRBData() {
@@ -956,6 +1056,30 @@ function editBookmarksGui() {
   } else {
     editorWindow.focus();
   }
+}
+
+function getBookmark(streamName) {
+  let bookmarks = JSON.parse(fs.readFileSync(bookmarkFile));
+  for (const category of bookmarks) {
+    for (const bookmark of category.bookmark) {
+      if (bookmark.name.toLowerCase() === streamName.toLowerCase()) {
+        return bookmark;
+      }
+    }
+  }
+  return null;
+}
+
+function getBookmarkByURL(url) {
+  let bookmarks = JSON.parse(fs.readFileSync(bookmarkFile));
+  for (const category of bookmarks) {
+    for (const bookmark of category.bookmark) {
+      if (bookmark.url.toLowerCase() === url.toLowerCase()) {
+        return bookmark;
+      }
+    }
+  }
+  return null;
 }
 
 async function playStream(streamName, url, fromBookmark) {
@@ -1393,8 +1517,9 @@ ipcMain.on('get-app-version', (event, response) => {
 })
 
 ipcMain.on('set-tooltip', (event, data) => {
-  currentStreamData = data; 
+  currentStreamData = data;
   if (data.playing) {
+    fs.writeFileSync(path.join(tempDir,"noderadiotray.txt"), data.data, { encoding: 'utf-8' });
     toggleButtons(true)
     tray.setImage(playingIcon);
     if (!htmlToolTip) {
@@ -1423,6 +1548,7 @@ ipcMain.on('set-tooltip', (event, data) => {
       );
     }
   } else {
+    fs.writeFileSync(path.join(tempDir,"noderadiotray.txt"), "Not Playing", { encoding: 'utf-8' });
     if (htmlToolTip) {
       tooltipWindow.webContents.send('tooltip-update', { playing: false, image: playingIcon })
     }
