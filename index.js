@@ -56,7 +56,6 @@ if (!gotTheLock) {
   app.on('second-instance', (event, commandLine, workingDirectory) => {
     const validCommands = ['-s', '-p', '-u', '-d', '-m', '-n', '-r', '-l', '--stop', '--play', '--volup', '--voldown', '--mute', '--next', '--prev', '--url'];
     const foundCommands = commandLine.filter(arg => validCommands.includes(arg.toLowerCase()));
-    console.log("found command: ",foundCommands)
     const command = foundCommands[0];
     const url = commandLine[4]
     switch(command) {
