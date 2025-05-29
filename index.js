@@ -54,42 +54,12 @@ if (!gotTheLock) {
 } else {
   console.log('got the lock')
   app.on('second-instance', (event, commandLine, workingDirectory) => {
-    const validCommands = ['-S', '-P', '-U', '-D', '-M', '-N', '-R', '-L', '-s', '-p', '-u', '-d', '-m', '-n', '-r', '-l', '--stop', '--play', '--volup', '--voldown', '--mute', '--next', '--prev', '--url'];
-    const foundCommands = commandLine.filter(arg => validCommands.includes(arg));
+    const validCommands = ['-s', '-p', '-u', '-d', '-m', '-n', '-r', '-l', '--stop', '--play', '--volup', '--voldown', '--mute', '--next', '--prev', '--url'];
+    const foundCommands = commandLine.filter(arg => validCommands.includes(arg.toLowerCase()));
     console.log("found command: ",foundCommands)
     const command = foundCommands[0];
     const url = commandLine[4]
     switch(command) {
-      case '-S':
-        toggleButtons(false);
-        break;
-      case '-P':
-        playStream(store.get('lastStation'), store.get('lastURL'), true);
-        break;
-      case '-N':
-        changeStation("forward")
-        break;
-      case '-R':
-        changeStation('backward')
-        break;
-      case '-U':
-        if (parseFloat(store.get("lastVolume")) < 1) {
-          changeVolume('up')
-        }
-        break;
-      case '-D':
-        if (parseFloat(store.get("lastVolume")) > 0) {
-          changeVolume('down')
-        }
-        break;
-      case '-M':
-        playerWindow.webContents.send('toggle-mute', null)
-        break;
-      case '-L':
-        if (url != undefined || url != null) {
-          playStream('Custom URL', url, false);
-        }
-        break;
       case '-s':
         toggleButtons(false);
         break;
