@@ -35,18 +35,18 @@ const removeEmojis = (str) => str.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5F
 
 const helpInfo = `
 Options:
-  -H, --help                          Displays this information
-  -P, --play <optional bookmark>      Begins playing the specified bookmark (bookmark name must be wrapped in quotes)
-                                      If omitted, play the last played station
-  -L, --url <url>                     Attempts to play the specified URL. If URL matches a bookmark, will play from the bookmark
+  -H, --help                              Displays this information
+  -P, --play <optional bookmark or URL>   Begins playing the specified bookmark or attempts to play URL
+                                          If omitted, play the last played station
+                                          Bookmark name should be wrapped in quotes to be parsed properly
 
 The following options are also available if NodeRadioTray is currently running:
-  -S, --stop                          Stops playback
-  -U, --volup                         Raises the stream's volume
-  -D, --voldown                       Lowers the stream's volume
-  -M, --mute                          Mutes the stream
-  -N, --next                          Switches to the next station in the bookmark file
-  -R, --prev                          Switches to the previous station in the bookmark file
+  -S, --stop      Stops playback
+  -U, --volup     Raises the stream's volume
+  -D, --voldown   Lowers the stream's volume
+  -M, --mute      Mutes the stream
+  -N, --next      Switches to the next station in the bookmark file
+  -R, --prev      Switches to the previous station in the bookmark file
 `;
 
 if (!gotTheLock) {
@@ -55,7 +55,7 @@ if (!gotTheLock) {
   });
 } else {
   app.on('second-instance', (event, commandLine, workingDirectory) => {
-    const validCommands = ['-s', '-p', '-u', '-d', '-m', '-n', '-r', '-l', '--stop', '--play', '--volup', '--voldown', '--mute', '--next', '--prev', '--url'];
+    const validCommands = ['-s', '-p', '-u', '-d', '-m', '-n', '-r', '--stop', '--play', '--volup', '--voldown', '--mute', '--next', '--prev'];
     const foundCommands = commandLine.filter(arg => validCommands.includes(arg.toLowerCase()));
     const command = (foundCommands[0] != undefined) ? foundCommands[0] : "quit"; 
     const stream = commandLine[4]
@@ -69,10 +69,19 @@ if (!gotTheLock) {
         if (stream == null || stream == undefined) {
           playStream(store.get('lastStation'), store.get('lastURL'), true);
         } else {
-          let bookmark = getBookmark(stream)
-          if (bookmark != null) {
-            playStream(bookmark.name, bookmark.url, true)
-          }
+          if (isUrlHttp(stream)) {
+            let bookmark = getBookmarkByURL(stream)
+            if (bookmark != null) {
+              playStream(bookmark.name, bookmark.url, true)
+            } else {
+              playStream('Custom URL', stream, false);
+            }
+          } else {
+            let bookmark = getBookmark(stream)
+              if (bookmark != null) {
+                playStream(bookmark.name, bookmark.url, true)
+              }
+            }
         }
         break;
       case '-n':
@@ -94,18 +103,6 @@ if (!gotTheLock) {
       case '-m':
         playerWindow.webContents.send('toggle-mute', null)
         break;
-      case '-l':
-        if (stream != undefined || stream != null) {
-          if (isUrlHttp(stream)) {
-            let bookmark = getBookmarkByURL(stream)
-            if (bookmark != null) {
-              playStream(bookmark.name, bookmark.url, true)
-            } else {
-              playStream('Custom URL', stream, false);
-            }
-          }
-        }
-        break;
       case '--stop':
         toggleButtons(false);
         break;
@@ -113,10 +110,19 @@ if (!gotTheLock) {
         if (stream == null || stream == undefined) {
           playStream(store.get('lastStation'), store.get('lastURL'), true);
         } else {
-          let bookmark = getBookmark(stream)
-          if (bookmark != null) {
-            playStream(bookmark.name, bookmark.url, true)
-          }
+          if (isUrlHttp(stream)) {
+            let bookmark = getBookmarkByURL(stream)
+            if (bookmark != null) {
+              playStream(bookmark.name, bookmark.url, true)
+            } else {
+              playStream('Custom URL', stream, false);
+            }
+          } else {
+            let bookmark = getBookmark(stream)
+              if (bookmark != null) {
+                playStream(bookmark.name, bookmark.url, true)
+              }
+            }
         }
         break;
       case '--next':
@@ -137,18 +143,6 @@ if (!gotTheLock) {
         break;
       case '--mute':
         playerWindow.webContents.send('toggle-mute', null)
-        break;
-      case '--url':
-        if (stream != undefined || stream != null) {
-          if (isUrlHttp(stream)) {
-            let bookmark = getBookmarkByURL(stream)
-            if (bookmark != null) {
-              playStream(bookmark.name, bookmark.url, true)
-            } else {
-              playStream('Custom URL', stream, false);
-            }
-          }
-        }
         break;
     }
   });
@@ -745,7 +739,7 @@ app.whenReady().then(() => {
   toggleMMKeys(store.get("mmkeys"))
 
   const args = process.argv;
-  const validCommands = ['-h', '--help', '-p', '--play', '-l', '--url'];
+  const validCommands = ['-h', '--help', '-p', '--play'];
   const foundCommands = args.filter(arg => validCommands.includes(arg.toLowerCase()));
   const command = (foundCommands[0] != undefined) ? foundCommands[0] : "invalid"; 
   const stream = args[3]
@@ -769,12 +763,21 @@ app.whenReady().then(() => {
         if (stream == null || stream == undefined) {
           playStream(store.get('lastStation'), store.get('lastURL'), true);
         } else {
-          let bookmark = getBookmark(stream)
-          if (bookmark != null) {
-            playStream(bookmark.name, bookmark.url, true)
+          if (isUrlHttp(stream)) {
+            let bookmark = getBookmarkByURL(stream)
+            if (bookmark != null) {
+              playStream(bookmark.name, bookmark.url, true)
+            } else {
+              playStream('Custom URL', stream, false);
+            }
           } else {
-            process.exit()
-          }
+            let bookmark = getBookmark(stream)
+              if (bookmark != null) {
+                playStream(bookmark.name, bookmark.url, true)
+              } else {
+                process.exit()
+              }
+            }
         }
       })
       break;
@@ -783,40 +786,21 @@ app.whenReady().then(() => {
         if (stream == null || stream == undefined) {
           playStream(store.get('lastStation'), store.get('lastURL'), true);
         } else {
-          let bookmark = getBookmark(stream)
-          if (bookmark != null) {
-            playStream(bookmark.name, bookmark.url, true)
+          if (isUrlHttp(stream)) {
+            let bookmark = getBookmarkByURL(stream)
+            if (bookmark != null) {
+              playStream(bookmark.name, bookmark.url, true)
+            } else {
+              playStream('Custom URL', stream, false);
+            }
           } else {
-            process.exit()
-          }
-        }
-      })
-      break;
-    case '-l':
-      playerWindow.webContents.on('did-finish-load', () => {
-        if (stream != undefined || stream != null) {
-          if (isUrlHttp(stream)) {
-            let bookmark = getBookmarkByURL(stream)
-            if (bookmark != null) {
-              playStream(bookmark.name, bookmark.url, true)
-            } else {
-              playStream('Custom URL', stream, false);
+            let bookmark = getBookmark(stream)
+              if (bookmark != null) {
+                playStream(bookmark.name, bookmark.url, true)
+              } else {
+                process.exit()
+              }
             }
-          }
-        }
-      })
-      break;
-    case '--url':
-      playerWindow.webContents.on('did-finish-load', () => {
-        if (stream != undefined || stream != null) {
-          if (isUrlHttp(stream)) {
-            let bookmark = getBookmarkByURL(stream)
-            if (bookmark != null) {
-              playStream(bookmark.name, bookmark.url, true)
-            } else {
-              playStream('Custom URL', stream, false);
-            }
-          }
         }
       })
       break;
