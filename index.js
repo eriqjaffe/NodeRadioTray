@@ -735,8 +735,12 @@ app.whenReady().then(() => {
   const args = process.argv;
   const validCommands = ['-h', '--help'];
   const foundCommands = args.filter(arg => validCommands.includes(arg.toLowerCase()));
-  const command = foundCommands[0].toLowerCase();
+  const command = foundCommands[0];
   switch (command) {
+    case "-H":
+      console.log(helpInfo);
+      process.exit()
+      break;
     case "-h":
       console.log(helpInfo);
       process.exit()
