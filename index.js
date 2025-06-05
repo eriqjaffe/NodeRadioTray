@@ -504,7 +504,6 @@ var menuTemplate = [
           }
         }
       }
-      //shell.openExternal(`https://www.google.com/search?q=${left}+${right}`)
     },
     icon: path.join(__dirname, '/images/icons8-spotify-16.png'),
     visible: false
