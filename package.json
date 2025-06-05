@@ -41,8 +41,10 @@
     "jimp": "0.22.12",
     "node-gyp": "^8.4.1",
     "node-notifier": "^10.0.0",
+    "open": "^10.1.2",
     "playlist-parser": "^0.0.12",
-    "read-last-lines": "^1.8.0"
+    "read-last-lines": "^1.8.0",
+    "spotify-web-api-node": "^5.0.2"
   },
   "devDependencies": {
     "electron": "^33.2.1",

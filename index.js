@@ -24,6 +24,7 @@ const isUrlHttp = require('is-url-http');
 const gotTheLock = app.requestSingleInstanceLock();
 const userData = app.getPath('userData');
 const tempDir = os.tmpdir();
+const { authorizeWithPKCE, likeTrack } = require('./spotify.js');
 //const iconFolder = path.join(userData,"icons")
 
 let countries
@@ -470,6 +471,42 @@ var menuTemplate = [
       shell.openExternal(`https://www.google.com/search?q=${left}+${right}`)
     },
     icon: path.join(__dirname, '/images/icons8-google.png'),
+    visible: false
+  },
+  {
+    label: "Like This Song on Spotify",
+    id: "likeIt",
+    click: async() => {
+      let foo = currentStreamData.data.split("\r\n")
+      let parts = foo[1].trim().split(" - ");
+      let artist = `"${parts[0].trim().replace(/ /g, " ")}"`;
+      let title = `"${parts[1].trim().replace(/ /g, " ").replace(/ /g, " ")}"`;
+      await likeCurrentSong(artist, title);
+      
+      async function likeCurrentSong(artist, title) {
+        try {
+          // Try liking the song (this will check token validity inside)
+          await likeTrack(artist, title);
+          errorLog.info("Song liked: "+artist+" - "+title)
+        } catch (error) {
+          if (error.message.includes('Not authorized')) {
+            // No token or invalid token, so ask user to login
+            try {
+              await authorizeWithPKCE();
+              // Now retry liking the song after login
+              await likeTrack(artist, title);
+              errorLog.info("Song liked after Spotify login: "+artist+" - "+title)
+            } catch (authError) {
+              errorLog.error('Authorization failed:', authError.message);
+            }
+          } else {
+            errorLog.error('Failed to like song:', error.message);
+          }
+        }
+      }
+      //shell.openExternal(`https://www.google.com/search?q=${left}+${right}`)
+    },
+    icon: path.join(__dirname, '/images/icons8-spotify-16.png'),
     visible: false
   },
   { 
@@ -1128,6 +1165,7 @@ function toggleButtons(state) {
   let previousButton = contextMenu.getMenuItemById('previousButton')
   let bookmarkButton = contextMenu.getMenuItemById('bookmark');
   googleIt =  contextMenu.getMenuItemById('googleIt')
+  likeIt = contextMenu.getMenuItemById('likeIt')
   if (state == true) {
     playButton.visible = false;
     stopButton.visible = true;
@@ -1137,6 +1175,7 @@ function toggleButtons(state) {
     nextButton.visible = true;
     previousButton.visible = true;
     googleIt.visible = true;
+    likeIt.visible = true;
     bookmarkButton.visible = true;
     tray.setImage(playingIcon);
     tray.setContextMenu(contextMenu)
@@ -1149,6 +1188,7 @@ function toggleButtons(state) {
     nextButton.visible = false;
     previousButton.visible = false;
     googleIt.visible = false;
+    likeIt.visible = false;
     bookmarkButton.visible = false;
     tray.setImage(idleIcon);
     if (!htmlToolTip) {
