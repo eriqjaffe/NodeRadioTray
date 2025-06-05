@@ -6,17 +6,23 @@
   "scripts": {
     "start": "electron .",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "pack:win64": "electron-packager . --out=dist --overwrite --platform=win32 --arch=x64 --icon=build/icon.ico --asar",
-    "pack:linux64": "electron-packager . --out dist/ --overwrite --platform linux --arch x64 --icon=build/icon.png --asar",
-    "pack:arm": "electron-packager . --out dist/ --overwrite --platform linux --arch armv7l --icon=build/icon.png --asar",
-    "pack:darwin": "electron-packager . --out dist/ --overwrite --platform darwin --icon=build/icon.icns --asar",
-    "pack:all": "yarn run pack:win64 && yarn run pack:linux64",
-    "build:win64": "electron-installer-windows --icon ./images/playing.ico --animation ./build/installer.gif --src ./dist/NodeRadioTray-win32-x64/ --dest ./dist/installers/",
-    "build:debian": "electron-installer-debian --src=./dist/NodeRadioTray-linux-x64/ --dest dist/installer --arch amd64",
-    "build:redhat": "electron-installer-redhat --src=./dist/NodeRadioTray-linux-x64/ --dest dist/installer --arch amd64",
-    "build:arm": "electron-installer-debian --src=./dist/NodeRadioTray-linux-armv7l/ --dest dist/installer --arch armv7l",
-    "build:darwinOld": "/usr/libexec/PListBuddy -c 'add LSUIElement string 1' ./dist/NodeRadioTray-darwin-x64/NodeRadioTray.app/Contents/Info.plist && electron-installer-dmg ./dist/NodeRadioTray-darwin-x64/NodeRadioTray.app/ 'NodeRadioTray_' --out ./dist/installer/ --icon=./build/icon.icns --title='NodeRadioTray_' --overwrite",
-    "build:darwin": "VERSION=$(node -p \"require('./package.json').version\") && /usr/libexec/PListBuddy -c 'add LSUIElement string 1' ./dist/NodeRadioTray-darwin-x64/NodeRadioTray.app/Contents/Info.plist && electron-installer-dmg ./dist/NodeRadioTray-darwin-x64/NodeRadioTray.app/ \"NodeRadioTray_${VERSION}\" --out ./dist/installer/ --icon=./build/icon.icns --title=\"NodeRadioTray_${VERSION}\" --overwrite"
+
+    "build:win64": "node package-win.js",
+    "build:linux": "node package-linux.js",
+    "build:macos": "node package-macos.js",
+
+    "_pack:win64": "electron-packager . --out=dist --overwrite --platform=win32 --arch=x64 --icon=build/icon.ico --asar",
+    "_pack:linux64": "electron-packager . --out dist/ --overwrite --platform linux --arch x64 --icon=build/icon.png --asar",
+    "_pack:arm": "electron-packager . --out dist/ --overwrite --platform linux --arch armv7l --icon=build/icon.png --asar",
+    "_pack:darwin": "electron-packager . --out dist/ --overwrite --platform darwin --icon=build/icon.icns --asar",
+    "_pack:all": "yarn run pack:win64 && yarn run pack:linux64",
+    "_build:win64Old": "electron-installer-windows --icon ./images/playing.ico --animation ./build/installer.gif --src ./dist/NodeRadioTray-win32-x64/ --dest ./dist/installers/",
+    
+    "_build:debian": "electron-installer-debian --src=./dist/NodeRadioTray-linux-x64/ --dest dist/installer --arch amd64",
+    "_build:redhat": "electron-installer-redhat --src=./dist/NodeRadioTray-linux-x64/ --dest dist/installer --arch amd64",
+    "_build:arm": "electron-installer-debian --src=./dist/NodeRadioTray-linux-armv7l/ --dest dist/installer --arch armv7l",
+    "_build:darwinOld": "/usr/libexec/PListBuddy -c 'add LSUIElement string 1' ./dist/NodeRadioTray-darwin-x64/NodeRadioTray.app/Contents/Info.plist && electron-installer-dmg ./dist/NodeRadioTray-darwin-x64/NodeRadioTray.app/ 'NodeRadioTray_' --out ./dist/installer/ --icon=./build/icon.icns --title='NodeRadioTray_' --overwrite",
+    "_build:darwin": "VERSION=$(node -p \"require('./package.json').version\") && /usr/libexec/PListBuddy -c 'add LSUIElement string 1' ./dist/NodeRadioTray-darwin-x64/NodeRadioTray.app/Contents/Info.plist && electron-installer-dmg ./dist/NodeRadioTray-darwin-x64/NodeRadioTray.app/ \"NodeRadioTray_${VERSION}\" --out ./dist/installer/ --icon=./build/icon.icns --title=\"NodeRadioTray_${VERSION}\" --overwrite"
   },
   "author": {
     "name": "Eriq Jaffe",
@@ -26,6 +32,7 @@
   "license": "ISC",
   "dependencies": {
     "@luigivampa/radio-browser-api": "^6.0.2",
+    "archiver": "^7.0.1",
     "auto-launch": "^5.0.5",
     "chokidar": "^3.5.3",
     "country-code-lookup": "^0.1.3",
