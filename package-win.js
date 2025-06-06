@@ -5,7 +5,7 @@ const archiver = require("archiver");
 
 const pkg = require("./package.json");
 
-const appName = "NodeRadioTray"; // Replace with your actual app name
+const appName = pkg.name;
 const platform = "win32";
 const arch = "x64";
 const outDir = "dist";
@@ -16,7 +16,7 @@ const zipName = `${folderName}-${version}-portable.zip`;
 const zipPath = path.join(outDir, "installers", zipName);
 const installerDest = path.join(outDir, "installers");
 
-console.log(`Packing app...`);
+console.log(`Packing app to dist/${folderName}...`);
 
 exec(
   `electron-packager . --out=${outDir} --overwrite --platform=${platform} --arch=${arch} --icon=build/icon.ico --asar`,
