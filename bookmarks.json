@@ -121,7 +121,7 @@
       "bookmark": [
          {
             "name": "Christmas Lounge",
-            "url": "http://ice1.somafm.com:80/christmas-128-aac",
+            "url": "https://ice1.somafm.com:80/christmas-128-aac",
             "img": ""
          },
          {
@@ -131,7 +131,7 @@
          },
          {
             "name": "Xmas Rocks",
-            "url": "http://ice1.somafm.com:80/xmasrocks-128-aac",
+            "url": "https://ice1.somafm.com:80/xmasrocks-128-aac",
             "img": ""
          }
       ]
