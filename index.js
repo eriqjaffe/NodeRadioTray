@@ -1480,7 +1480,9 @@ ipcMain.on("audio-devices-list", (event, devices) => {
   contextMenu = Menu.buildFromTemplate(menuTemplate)
   tray.setContextMenu(contextMenu)
   const selectedItem = menuTemplate[8].submenu.find(item => item.checked)
-  selectedItem.click()
+  if (selectedItem) {
+    selectedItem.click()
+  }
   playerWindow.webContents.send("get-player-status", null)
 });
 
