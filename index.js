@@ -843,35 +843,56 @@ app.whenReady().then(() => {
   }
 
   async function getRBData() {
-    const { RadioBrowserApi } = await import('@luigivampa/radio-browser-api');
-      const api = new RadioBrowserApi('NodeRadioTray')
-      const tagReturn = await api.getTags()
-      tags = tagReturn.map(entry => removeEmojis(entry.name).trim());
-      if (!tags.includes("Any")) {
-        tags.push("Any");
-      }
-      tags.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-      tags = ["Any", ...tags.filter(tag => tag !== "Any")];
-      tags = tags.filter(tag => {
-        return tag.trim().length > 18;
-      });
+    try {
+      // COUNTRIES
+      const countriesResponse = await fetch("http://de1.api.radio-browser.info/json/countries");
       
-      const countryReturn = await api.getCountryCodes()
-      countries = countryReturn.map(entry => lookup.byIso(entry.name).country);
-      countries.sort((a, b) => a.localeCompare(b));
-      countries = ["Any", ...countries.filter(tag => tag !== "Any")];
-      countries = [...new Set(countries)];
-
-      const langReturn = await api.getLanguages()
-      languages = langReturn.map(entry => entry.name);
-      if (!languages.includes("Any")) {
-        languages.push("Any");
+      if (!countriesResponse.ok) {
+        throw new Error(`HTTP error! status: ${countriesResponse.status}`);
       }
-      languages.sort((a, b) => a.localeCompare(b));
-      languages = ["Any", ...languages.filter(tag => tag !== "Any")];
-      languages = languages.filter(lang => {
-        return lang.trim().length > 18;
-      });
+      
+      countries = await countriesResponse.json();
+
+      countries = countries.filter(item => typeof item.name === "string" && item.name.trim().length > 0);
+      
+      countries.sort((a, b) => a.name.localeCompare(b.name));
+      countries = countries.filter(item => typeof item.name === "string" && item.name.trim().length > 0)
+      countries = countries.filter(item => item.stationcount > 0);
+      countries.unshift({ "name": "Any", "iso_3166_1": "ANY", "stationcount": 0 })
+      countries = [...new Set(countries)];
+    
+      // LANGUAGUES
+      const languagesResponse = await fetch("http://de1.api.radio-browser.info/json/languages");
+      
+      if (!languagesResponse.ok) {
+        throw new Error(`HTTP error! status: ${languagesResponse.status}`);
+      }
+      
+      languages = await languagesResponse.json()
+
+      languages.sort((a, b) => a.name.localeCompare(b.name));
+      languages = languages.filter(item => typeof item.name === "string" && item.name.trim().length > 0);
+      languages = languages.filter(item => item.stationcount > 0);
+      languages.unshift({ "name": "Any", "stationcount": 0 })
+      languages = [...new Set(languages)];
+
+      // TAGS
+      const tagsResponse = await fetch("http://de1.api.radio-browser.info/json/tags");
+      
+      if (!tagsResponse.ok) {
+        throw new Error(`HTTP error! status: ${tagsResponse.status}`);
+      }
+      
+      tags = await tagsResponse.json()
+      
+      tags.sort((a, b) => a.name.localeCompare(b.name));
+      tags = tags.filter(item => typeof item.name === "string" && item.name.trim().length > 0);
+      tags = tags.filter(item => item.stationcount > 0);
+      tags.unshift({ "name": "Any", "stationcount": 0 })
+      tags = [...new Set(tags)];
+    } catch (error) {
+      console.error('Failed to fetch and parse:', error);
+    }
   }
 })
 
@@ -1778,7 +1799,7 @@ ipcMain.on('find-random-station', (event, arg) => {
   };
 
   if (arg.country !== 'Any') {
-    query.countryCode = lookup.byCountry(arg.country).iso2;
+    query.countryCode = arg.country;
   }
 
   if (arg.language !== 'Any') {

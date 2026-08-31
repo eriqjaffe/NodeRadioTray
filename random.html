@@ -41,17 +41,21 @@
     ipcRenderer.send('get-radio-browser-stuff', null)
 
     ipcRenderer.on('get-radio-browser-stuff-response', (event, data) => {
+      //alert(JSON.stringify(data.countries))
       $("#countries").empty()
       $("#langs").empty()
       $("#tags").empty()
       data.countries.forEach(function(country) {
-        $('<option>').val(country).appendTo($("#countries"));
+        $('<option>')
+          .val(country.name)
+          .attr('data-iso', country.iso_3166_1)
+          .appendTo($("#countries"));
       });
       data.languages.forEach(function(lang) {
-        $('<option>').val(lang).appendTo($("#langs"));
+        $('<option>').val(lang.name).appendTo($("#langs"));
       });
       data.tags.forEach(function(tag) {
-        $('<option>').val(tag).appendTo($("#tags"));
+        $('<option>').val(tag.name).appendTo($("#tags"));
       });
     })
 
@@ -61,6 +65,13 @@
 
     $("#submit").on("click", function(e) {
       e.preventDefault()
+
+      const selectedName = $("#countryList").val();
+      const selectedOption = $("#countries option").filter(function() {
+        return $(this).val() === selectedName;
+      });
+      const selectedIso = selectedOption.attr('data-iso') || "";
+
       $.magnificPopup.open({
         items: {
           src: '#checkingStream'
@@ -69,7 +80,8 @@
         showCloseBtn: false,
         type: 'inline'
       });
-      ipcRenderer.send('find-random-station', {country: $("#countryList").val(), language: $("#langList").val(), tag: $("#tagList").val()})
+
+      ipcRenderer.send('find-random-station', {country: selectedIso, language: $("#langList").val(), tag: $("#tagList").val()})
     })
 
     ipcRenderer.on('test-station', (event, data) => {
