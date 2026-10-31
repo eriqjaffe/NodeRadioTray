@@ -1,5 +1,9 @@
 #!/bin/sh
+# Usage: ./build_macos.sh [arm64|x64|all]
+# Defaults to arm64 (Apple Silicon).
 
-yarn run pack:darwin
-/usr/libexec/PListBuddy -c 'add LSUIElement string 1' ./dist/NodeRadioTray-darwin-x64/NodeRadioTray.app/Contents/Info.plist
-electron-installer-dmg ./dist/NodeRadioTray-darwin-x64/NodeRadioTray.app/ "NodeRadioTray_" --out ./dist/installer/ --icon=./build/icon.icns --title="NodeRadioTray_" --overwrite
+set -e
+
+ARCH="${1:-arm64}"
+
+node package-macos.js --arch="$ARCH"

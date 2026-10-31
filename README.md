@@ -15,6 +15,17 @@ yarn start
 ```
 Note that the ```yarn start``` method will cause the "Autostart with OS" option to not work properly.
 
+## Building installers
+
+macOS builds must be run on macOS (they use `PlistBuddy` and `codesign`):
+
+- `yarn build:macos:arm64` - Apple Silicon (arm64) DMG
+- `yarn build:macos:x64` - Intel (x64) DMG
+- `yarn build:macos` - both architectures
+- `./build_macos.sh [arm64|x64|all]` - shortcut for the above (defaults to arm64)
+
+DMGs are written to `dist/installer/` as `NodeRadioTray_<version>_<arch>.dmg`. The app bundle is signed ad-hoc after packaging, which is enough to run locally on Apple Silicon; for public distribution you should sign with a Developer ID certificate and notarize.
+
 ## Usage notes
 
 - To play a station, simply pick it from the list.
