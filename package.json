@@ -6,23 +6,22 @@
   "scripts": {
     "start": "electron .",
     "test": "echo \"Error: no test specified\" && exit 1",
-
     "build:win64": "node package-win.js",
     "build:linux": "node package-linux.js",
-    "build:macos": "node package-macos.js",
-
+    "build:macos": "node package-macos.js --arch=all",
+    "build:macos:arm64": "node package-macos.js --arch=arm64",
+    "build:macos:x64": "node package-macos.js --arch=x64",
     "_pack:win64": "electron-packager . --out=dist --overwrite --platform=win32 --arch=x64 --icon=build/icon.ico --asar",
     "_pack:linux64": "electron-packager . --out dist/ --overwrite --platform linux --arch x64 --icon=build/icon.png --asar",
     "_pack:arm": "electron-packager . --out dist/ --overwrite --platform linux --arch armv7l --icon=build/icon.png --asar",
-    "_pack:darwin": "electron-packager . --out dist/ --overwrite --platform darwin --icon=build/icon.icns --asar",
+    "_pack:darwin": "electron-packager . --out dist/ --overwrite --platform darwin --arch=arm64 --icon=build/icon.icns --asar",
     "_pack:all": "yarn run pack:win64 && yarn run pack:linux64",
     "_build:win64Old": "electron-installer-windows --icon ./images/playing.ico --animation ./build/installer.gif --src ./dist/NodeRadioTray-win32-x64/ --dest ./dist/installers/",
-    
     "_build:debian": "electron-installer-debian --src=./dist/NodeRadioTray-linux-x64/ --dest dist/installer --arch amd64",
     "_build:redhat": "electron-installer-redhat --src=./dist/NodeRadioTray-linux-x64/ --dest dist/installer --arch amd64",
     "_build:arm": "electron-installer-debian --src=./dist/NodeRadioTray-linux-armv7l/ --dest dist/installer --arch armv7l",
     "_build:darwinOld": "/usr/libexec/PListBuddy -c 'add LSUIElement string 1' ./dist/NodeRadioTray-darwin-x64/NodeRadioTray.app/Contents/Info.plist && electron-installer-dmg ./dist/NodeRadioTray-darwin-x64/NodeRadioTray.app/ 'NodeRadioTray_' --out ./dist/installer/ --icon=./build/icon.icns --title='NodeRadioTray_' --overwrite",
-    "_build:darwin": "VERSION=$(node -p \"require('./package.json').version\") && /usr/libexec/PListBuddy -c 'add LSUIElement string 1' ./dist/NodeRadioTray-darwin-x64/NodeRadioTray.app/Contents/Info.plist && electron-installer-dmg ./dist/NodeRadioTray-darwin-x64/NodeRadioTray.app/ \"NodeRadioTray_${VERSION}\" --out ./dist/installer/ --icon=./build/icon.icns --title=\"NodeRadioTray_${VERSION}\" --overwrite"
+    "_build:darwin": "VERSION=$(node -p \"require('./package.json').version\") && /usr/libexec/PListBuddy -c 'add LSUIElement string 1' ./dist/NodeRadioTray-darwin-arm64/NodeRadioTray.app/Contents/Info.plist && codesign --force --deep --sign - ./dist/NodeRadioTray-darwin-arm64/NodeRadioTray.app && electron-installer-dmg ./dist/NodeRadioTray-darwin-arm64/NodeRadioTray.app/ \"NodeRadioTray_${VERSION}_arm64\" --out ./dist/installer/ --icon=./build/icon.icns --title=\"NodeRadioTray_${VERSION}_arm64\" --overwrite"
   },
   "author": {
     "name": "Eriq Jaffe",
@@ -55,6 +54,7 @@
   },
   "devDependencies": {
     "electron": "^33.2.1",
+    "electron-installer-dmg": "^5.0.1",
     "electron-installer-windows": "^3.0.0"
   }
 }
